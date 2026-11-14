@@ -5,6 +5,7 @@ window.Globe = (() => {
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const unit = (lat, lng, r = 1) => { const p = lat * D2R, l = lng * D2R; return [r * Math.cos(p) * Math.cos(l), r * Math.cos(p) * Math.sin(l), r * Math.sin(p)]; };
   let tex = null, sats = [], icons = {}, open = false, speed = 1, simT = 0, lastReal = 0, lastEarth = 0, raf = 0;
+  let free = false, vlat = 0, vlng = 0, zoom = 1, dirty = false; // vlastní pohled uživatele (otáčení a přiblížení)
   const big = { css: 340 }, mini = { css: 34 };
 
   // Bod na kouli ve směru (azimut) a úhlové vzdálenosti od výchozího bodu
@@ -28,6 +29,9 @@ window.Globe = (() => {
   const P = (F, v) => [dot(v, F.i), dot(v, F.j), dot(v, F.k)];       // do souřadnic obrazovky (v poloměrech Země)
   const seen = (q) => q[2] > 0 || q[0] * q[0] + q[1] * q[1] > 1;      // není schovaný za Zemí
 
+  // Zesvětlení tmavých barev snímku (oceány, lesy), aniž by se led přepálil do čisté bílé
+  const LUT = Float32Array.from({ length: 256 }, (_, v) => 255 * Math.pow(v / 255, 0.72));
+
   // Povrch Země: pro každý bod kotouče se dopočítá zeměpisná poloha a vezme barva ze snímku Blue Marble
   function paintEarth(cv, R, F, sun) {
     const S = cv.width, ctx = cv.getContext("2d"), img = ctx.createImageData(S, S), o = img.data, c = S / 2;
@@ -41,8 +45,8 @@ window.Globe = (() => {
         const px = dx * i[0] + dy * j[0] + z * k[0], py = dx * i[1] + dy * j[1] + z * k[1], pz = dx * i[2] + dy * j[2] + z * k[2];
         const tx = Math.min(TW - 1, ((Math.atan2(py, px) / Math.PI + 1) / 2 * TW) | 0), ty = Math.min(TH - 1, ((0.5 - Math.asin(Math.max(-1, Math.min(1, pz))) / Math.PI) * TH) | 0), t = (ty * TW + tx) * 4;
         const d = px * sun[0] + py * sun[1] + pz * sun[2], f = d > 0.1 ? 1 : d < -0.1 ? 0 : (d + 0.1) / 0.2; // den / soumrak / noc
-        const b = (0.38 + 0.62 * f) * (0.55 + 0.45 * z) * 1.5, q = (y * S + x) * 4;
-        o[q] = Math.min(255, T[t] * b); o[q + 1] = Math.min(255, T[t + 1] * b); o[q + 2] = Math.min(255, T[t + 2] * b + (1 - f) * 16);
+        const b = (0.38 + 0.62 * f) * (0.55 + 0.45 * z) * 1.1, q = (y * S + x) * 4;
+        o[q] = Math.min(255, LUT[T[t]] * b); o[q + 1] = Math.min(255, LUT[T[t + 1]] * b); o[q + 2] = Math.min(255, LUT[T[t + 2]] * b + (1 - f) * 16);
         o[q + 3] = Math.min(1, (1 - Math.sqrt(r2)) * R) * 255;
       }
     }
@@ -53,8 +57,10 @@ window.Globe = (() => {
     const n = sats[0], p = Sats.at(n, date);
     if (!p) return null;
     // Kamera stojí 50° vlevo od dráhy NISARu – na straně, kam se dívá radar, takže je paprsek vidět z boku
-    const [clat, clng] = dest(p.lat, p.lng, p.head - 90, 50), F = view(clat, clng), sun = sunVec(date);
-    const cv = g.cv, S = cv.width, R = S * 0.385, c = S / 2, ctx = cv.getContext("2d"), dpr = S / g.css;
+    const follow = dest(p.lat, p.lng, p.head - 90, 50), own = g === big && free;
+    if (g === big && !free) [vlat, vlng] = follow; // odtud se pokračuje, když uživatel začne koulí otáčet
+    const F = view(own ? vlat : follow[0], own ? vlng : follow[1]), sun = sunVec(date);
+    const cv = g.cv, S = cv.width, R = S * 0.385 * (g === big ? zoom : 1), c = S / 2, ctx = cv.getContext("2d"), dpr = S / g.css;
     if (!g.earth) g.earth = Object.assign(document.createElement("canvas"), { width: S, height: S });
     if (repaint) paintEarth(g.earth, R, F, sun);
     const XY = (q) => [c + q[0] * R, c - q[1] * R], at3 = (st) => P(F, unit(st.lat, st.lng, 1 + st.alt / RE));
@@ -143,8 +149,9 @@ window.Globe = (() => {
     const real = performance.now(), dtReal = real - lastReal;
     lastReal = real;
     if (speed > 1) simT += dtReal * speed;
-    const date = new Date(speed > 1 ? simT : Date.now()), repaint = speed > 1 || real - lastEarth > 1000;
+    const date = new Date(speed > 1 ? simT : Date.now()), repaint = speed > 1 || dirty || real - lastEarth > 1000;
     if (repaint) lastEarth = real;
+    dirty = false;
     const info = draw(big, date, true, repaint);
     if (info && repaint) {
       el("#orbit-text").innerHTML = describe(date, info);
@@ -163,7 +170,7 @@ window.Globe = (() => {
     open = show;
     el("#orbit").hidden = !show;
     el("#globe-btn").setAttribute("aria-expanded", show);
-    if (!show) { setSpeed(1); return; }
+    if (!show) { setSpeed(1); setFree(false); zoom = 1; return; }
     el("#orbit").style.top = el(".top").offsetHeight + 8 + "px";
     size(big, Math.min(400, el("#orbit").clientWidth - 32));
     lastReal = performance.now(); lastEarth = 0;
@@ -174,6 +181,35 @@ window.Globe = (() => {
     speed = v; simT = Date.now(); lastEarth = 0;
     el("#orbit-fast").setAttribute("aria-pressed", v > 1);
     el("#orbit-fast").textContent = v > 1 ? "Back to live" : "Speed up time ×300";
+  }
+
+  // Vlastní pohled: tažením se koule otáčí, kolečkem nebo tlačítky přibližuje
+  function setFree(v) { free = v; dirty = true; el("#orbit-follow").hidden = !v && zoom === 1; }
+  function setZoom(z) { zoom = Math.max(1, Math.min(4, z)); dirty = true; el("#orbit-follow").hidden = !free && zoom === 1; }
+  function turn(dx, dy) { // posun v pixelech obrazovky
+    const k = 57.3 / (big.css * 0.385 * zoom);
+    if (!free) setFree(true);
+    vlng = ((vlng - dx * k + 540) % 360) - 180;
+    vlat = Math.max(-89, Math.min(89, vlat + dy * k));
+    dirty = true;
+  }
+  function controls() {
+    const cv = big.cv;
+    let drag = null;
+    cv.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY }; try { cv.setPointerCapture(e.pointerId); } catch { /* nevadí */ } cv.classList.add("grabbing"); });
+    cv.addEventListener("pointermove", (e) => { if (!drag) return; turn(e.clientX - drag.x, e.clientY - drag.y); drag = { x: e.clientX, y: e.clientY }; });
+    const end = () => { drag = null; cv.classList.remove("grabbing"); };
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+    cv.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15)); }, { passive: false });
+    cv.addEventListener("keydown", (e) => {
+      const step = { ArrowLeft: [40, 0], ArrowRight: [-40, 0], ArrowUp: [0, 40], ArrowDown: [0, -40] }[e.key];
+      if (step) { e.preventDefault(); turn(...step); }
+      else if (e.key === "+" || e.key === "=") setZoom(zoom * 1.3);
+      else if (e.key === "-") setZoom(zoom / 1.3);
+    });
+    el("#orbit-in").onclick = () => setZoom(zoom * 1.4);
+    el("#orbit-out").onclick = () => setZoom(zoom / 1.4);
+    el("#orbit-follow").onclick = () => { zoom = 1; setFree(false); };
   }
 
   async function init() {
@@ -195,8 +231,9 @@ window.Globe = (() => {
     el("#globe-btn").onclick = () => toggle(!open);
     el("#orbit-close").onclick = () => toggle(false);
     el("#orbit-fast").onclick = () => setSpeed(speed > 1 ? 1 : 300);
+    controls();
     addEventListener("keydown", (e) => { if (e.key === "Escape" && open) toggle(false); });
   }
 
-  return { init, _state: () => ({ open, speed, ready: !!tex }) };
+  return { init, _state: () => ({ open, speed, ready: !!tex, free, zoom, vlat: Math.round(vlat), vlng: Math.round(vlng) }) };
 })();
