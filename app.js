@@ -430,7 +430,8 @@ new ResizeObserver(() => map.resize()).observe($("#map"));
 addEventListener("hashchange", () => {
   const h = readHash(), d = state.data;
   if ("live" in h) { if (!Live.on) goLive(h.live); return; }
-  if (!d || !state.sites.some((s) => s.id === h.site)) return;
+  if (!state.sites.some((s) => s.id === h.site)) return;
+  if (!d || Live.on) { loadSite(h.site, h); return; } // z živého režimu na konkrétní místo
   const same = h.site === state.site && h.date === d.frames[state.i].date && (h.layer || state.layer) === state.layer && (h.compare === "1") === state.compare;
   if (!same) loadSite(h.site, h);
 });
