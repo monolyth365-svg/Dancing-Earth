@@ -129,7 +129,7 @@ body.live #head, body.live .insight, body.live .timeline, body.live #story, body
 .evlist time { font: 11px var(--mono); color: var(--muted); margin-left: 8px; }
 
 /* Satellites on the live map: see-through so the map stays readable */
-.sat { position: relative; width: 44px; height: 44px; pointer-events: none; opacity: .88; }
+.sat { width: 44px; height: 44px; pointer-events: none; opacity: .88; }
 .sat span { position: absolute; left: 46px; top: 15px; }
 .sat-icon { width: 44px; height: 44px; transform-origin: 50% 50%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.8)); }
 .sat-icon svg { display: block; }
