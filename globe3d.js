@@ -47,10 +47,23 @@ window.Globe3D = (() => {
     viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 1; viewer.clock.currentTime = C.JulianDate.now();
     viewer.scene.globe.enableLighting = false;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
+    viewer.scene.globe.maximumScreenSpaceError = 2.6; // o něco méně dlaždic najednou = plynulejší pohyb
+    viewer.scene.globe.tileCacheSize = 300;
+    // Když počítač nestíhá (pod 24 snímků za vteřinu), sníží se postupně rozlišení a detail dlaždic, aby se obraz nesekal
+    let frames = 0, since = performance.now();
+    viewer.scene.postRender.addEventListener(() => {
+      frames++;
+      const t = performance.now();
+      if (t - since < 3000) return;
+      const fps = (frames * 1000) / (t - since);
+      frames = 0; since = t;
+      if (fps < 24 && viewer.resolutionScale > 0.55) { viewer.resolutionScale = Math.max(0.55, viewer.resolutionScale - 0.15); viewer.scene.globe.maximumScreenSpaceError = Math.min(6, viewer.scene.globe.maximumScreenSpaceError + 1); }
+    });
 
     sats = Sats.all();
     sel = sats[0];
     el("#g3d-sats").innerHTML = sats.map((x) => `<button data-sat3="${x.id}" aria-pressed="${x === sel}" title="${x.role}"><i style="background:${x.color}"></i>${x.name}</button>`).join("");
+    const lines = viewer.scene.primitives.add(new C.PolylineCollection());
     for (const s of sats) {
       const col = C.Color.fromCssColorString(s.color), nisar = s.id === "nisar";
       viewer.entities.add({ // zdálky obrázek se šipkou směru letu a popisek
@@ -58,27 +71,36 @@ window.Globe3D = (() => {
         billboard: { image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(Sats.icon(s, 96)), width: nisar ? 46 : 38, height: nisar ? 46 : 38, alignedAxis: new C.CallbackProperty(() => st(s)?.fwd, false), distanceDisplayCondition: new C.DistanceDisplayCondition(2.2e6, Number.MAX_VALUE) },
         label: { text: s.name, font: '500 13px "JetBrains Mono", monospace', pixelOffset: new C.Cartesian2(28, 0), horizontalOrigin: C.HorizontalOrigin.LEFT, fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 4, style: C.LabelStyle.FILL_AND_OUTLINE },
       });
-      // zblízka prostorový náčrt: tělo, solární panely, u NISARu rameno a velká anténa na levé straně
-      const gold = C.Color.fromCssColorString("#dcae3f"), blue = C.Color.fromCssColorString("#2b4fa8");
-      const part = (f, l, u, shape) => viewer.entities.add({ position: posProp(() => { const S = st(s); return S && offset(S, f, l, u); }), orientation: new C.CallbackProperty(() => st(s)?.quat, false), ...shape });
-      const box = (x, y, z, material) => ({ box: { dimensions: new C.Cartesian3(x * SCALE, y * SCALE, z * SCALE), material, outline: true, outlineColor: C.Color.BLACK.withAlpha(0.6) } });
-      part(0, 0, 0, box(2.6, 1.8, 1.8, gold));
+      // Zblízka prostorový náčrt: tělo, solární panely, u NISARu rameno a velká anténa na levé straně.
+      // Staví se JEDNOU a pak se jen posouvá (modelMatrix) – dřív se přestavoval každý snímek a obraz se sekal.
+      const gold = C.Color.fromCssColorString("#dcae3f"), blue = C.Color.fromCssColorString("#2b4fa8"), vf = C.PerInstanceColorAppearance.VERTEX_FORMAT;
+      const at = (f, l, u) => C.Matrix4.fromTranslation(new C.Cartesian3(f * SCALE, l * SCALE, u * SCALE));
+      const box = (f, l, u, x, y, z, color) => new C.GeometryInstance({ geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(x * SCALE, y * SCALE, z * SCALE), vertexFormat: vf }), modelMatrix: at(f, l, u), attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(color) } });
+      const inst = [box(0, 0, 0, 2.6, 1.8, 1.8, gold)];
       if (nisar) {
-        part(4.2, 0, 0, box(5, 2.4, 0.12, blue)); part(-4.2, 0, 0, box(5, 2.4, 0.12, blue));
-        part(0, 5, 0.4, box(0.3, 8.5, 0.3, C.Color.LIGHTGRAY));
-        part(0, 11, -0.6, { ellipsoid: { radii: new C.Cartesian3(6 * SCALE, 6 * SCALE, 0.9 * SCALE), material: C.Color.fromCssColorString("#e8c766").withAlpha(0.95) } });
-      } else { part(0, 4.6, 0, box(2.2, 6, 0.12, blue)); part(0, -4.6, 0, box(2.2, 6, 0.12, blue)); }
-      // šipka směru letu u prostorového modelu
-      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(s); return S ? [offset(S, 2, 0, 0), offset(S, 14, 0, 0)] : []; }, false), width: 10, arcType: C.ArcType.NONE, material: new C.PolylineArrowMaterialProperty(col) } });
-      // dráha: plná = posledních 50 minut, čárkovaná = dalších 50
-      s._past = []; s._future = [];
-      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => s._past, false), width: nisar ? 2.5 : 1.6, arcType: C.ArcType.NONE, material: col.withAlpha(0.8) } });
-      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => s._future, false), width: nisar ? 2 : 1.3, arcType: C.ArcType.NONE, material: new C.PolylineDashMaterialProperty({ color: col.withAlpha(0.6), dashLength: 14 }) } });
+        inst.push(box(4.2, 0, 0, 5, 2.4, 0.12, blue), box(-4.2, 0, 0, 5, 2.4, 0.12, blue), box(0, 5, 0.4, 0.3, 8.5, 0.3, C.Color.LIGHTGRAY));
+        inst.push(new C.GeometryInstance({ geometry: new C.EllipsoidGeometry({ radii: new C.Cartesian3(6 * SCALE, 6 * SCALE, 0.9 * SCALE), vertexFormat: vf, stackPartitions: 16, slicePartitions: 24 }), modelMatrix: at(0, 11, -0.6), attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString("#e8c766")) } }));
+      } else inst.push(box(0, 4.6, 0, 2.2, 6, 0.12, blue), box(0, -4.6, 0, 2.2, 6, 0.12, blue));
+      s._model = viewer.scene.primitives.add(new C.Primitive({ geometryInstances: inst, appearance: new C.PerInstanceColorAppearance({ closed: true, translucent: false }), asynchronous: false }));
+      // šipka směru letu a dráha (plná = posledních 50 minut, čárkovaná = dalších 50) – čáry v jedné společné sadě
+      s._arrow = lines.add({ width: 10, material: C.Material.fromType("PolylineArrow", { color: col }) });
+      s._pastL = lines.add({ width: nisar ? 2.5 : 1.6, material: C.Material.fromType("Color", { color: col.withAlpha(0.8) }) });
+      s._futL = lines.add({ width: nisar ? 2 : 1.3, material: C.Material.fromType("PolylineDash", { color: col.withAlpha(0.6), dashLength: 14 }) });
     }
     // Paprsek radaru NISAR: vějíř paprsků od družice k pruhu na zemi + jasná čára, kde paprsek dopadá
     const n = sats[0], RAYS = 9, ground = (S, k) => { const e = S.p.edges, a = k / (RAYS - 1); return cart(e[0][0] + (e[1][0] - e[0][0]) * a, e[0][1] + (e[1][1] - e[0][1]) * a); };
-    for (let k = 0; k < RAYS; k++) viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(n); return S ? [S.pos, ground(S, k)] : []; }, false), width: k === 0 || k === RAYS - 1 ? 3 : 1.5, arcType: C.ArcType.NONE, material: new C.PolylineGlowMaterialProperty({ color: C.Color.fromCssColorString("#ffe9a8").withAlpha(k === 0 || k === RAYS - 1 ? 0.9 : 0.45), glowPower: 0.25 }) } });
-    viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(n); return S ? [ground(S, 0), ground(S, RAYS - 1)] : []; }, false), width: 6, clampToGround: false, material: C.Color.fromCssColorString("#fff3c0") } });
+    const rays = Array.from({ length: RAYS }, (_, k) => lines.add({ width: k === 0 || k === RAYS - 1 ? 3 : 1.5, material: C.Material.fromType("PolylineGlow", { color: C.Color.fromCssColorString("#ffe9a8").withAlpha(k === 0 || k === RAYS - 1 ? 0.9 : 0.45), glowPower: 0.25 }) }));
+    const base = lines.add({ width: 6, material: C.Material.fromType("Color", { color: C.Color.fromCssColorString("#fff3c0") }) });
+    // Každý snímek se jen posunou hotové modely a čáry
+    viewer.scene.preUpdate.addEventListener(() => {
+      for (const s of sats) {
+        const S = st(s); if (!S) continue;
+        s._model.modelMatrix = frame(S);
+        s._arrow.positions = [offset(S, 2, 0, 0), offset(S, 14, 0, 0)];
+      }
+      const S = st(n);
+      if (S?.p.edges) { rays.forEach((r, k) => { r.positions = [S.pos, ground(S, k)]; }); base.positions = [ground(S, 0), ground(S, RAYS - 1)]; }
+    });
     swath = viewer.entities.add({ polygon: { hierarchy: new C.PolygonHierarchy([]), material: C.Color.fromCssColorString("#e9b949").withAlpha(0.35), height: 0 } });
 
     viewer.clock.onTick.addEventListener(() => {
@@ -89,8 +111,9 @@ window.Globe3D = (() => {
       const t = +now();
       for (const s of sats) {
         const past = [], future = [];
-        for (let dt = -3000; dt <= 3000; dt += 60) { const p = Sats.at(s, new Date(t + dt * 1000)); if (p) (dt <= 0 ? past : future).push(cart(p.lng, p.lat, p.alt)); if (p && dt === 0) future.push(cart(p.lng, p.lat, p.alt)); }
-        s._past = past; s._future = future;
+        for (let dt = -3000; dt <= 3000; dt += 60) { const p = Sats.sub(s, new Date(t + dt * 1000)); if (!p) continue; const c = cart(p.lng, p.lat, p.alt); (dt <= 0 ? past : future).push(c); if (dt === 0) future.push(c); }
+        if (past.length > 1) s._pastL.positions = past;
+        if (future.length > 1) s._futL.positions = future;
       }
       const nearE = [], farE = [];
       for (let dt = -12 * 60; dt <= 0; dt += 30) { const p = Sats.at(n, new Date(t + dt * 1000)); if (p?.edges) { nearE.push(cart(p.edges[0][0], p.edges[0][1])); farE.push(cart(p.edges[1][0], p.edges[1][1])); } }

@@ -226,7 +226,7 @@ window.Globe = (() => {
     big.cv = el("#globe"); mini.cv = el("#globe-mini");
     size(mini, mini.css);
     el("#globe-btn").hidden = false;
-    const tickMini = () => { if (!document.hidden) draw(mini, new Date(), false, true); };
+    const tickMini = () => { if (!document.hidden && !window.Globe3D?.open) draw(mini, new Date(), false, true); };
     tickMini(); setInterval(tickMini, 3000);
     // Nejdřív zkusit velkou 3D zeměkouli; když se knihovna nenačte (bez připojení), otevře se jednodušší kreslená
     el("#globe-btn").onclick = () => { if (open) return toggle(false); Globe3D.toggle().catch(() => toggle(true)); };
