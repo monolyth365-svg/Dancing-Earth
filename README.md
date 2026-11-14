@@ -36,6 +36,7 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
   - one button compares two passes of the same track, colours what changed and plays it as music;
   - satellites overhead right now (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A) with their direction, their path for the last and next 50 minutes, and the strip NISAR's radar is looking at. The strip was checked against real NISAR images.
 - **Live globe** – the small globe in the top right corner opens a 3D view of Earth with the satellites at their true height, their orbits, and NISAR's radar beam reaching the ground, all drawn to scale and updated live. It says whether the radar is looking at day or night (it works in both), and time can be sped up ×300.
+- **Three tabs** keep the side panel short: *Explore* (what happened, numbers, timeline, chart), *Tools* (measure, trace, quiz, compare dates, simulation, export) and *About* (story, method, sources).
 - **Start here** – a short welcome card explains the app in four steps on the first visit (the "?" button reopens it).
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
 - **Click any spot** on the image to get the time series of that exact place.
