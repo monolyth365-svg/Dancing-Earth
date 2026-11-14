@@ -266,7 +266,7 @@ function drawChart(s, lo, hi) {
     <polyline points="${pts}" fill="none" stroke="#e9b949" stroke-width="1.5"/>
     ${idx.map((j) => `<circle cx="${x(j)}" cy="${y(vals[j])}" r="${j === state.i ? 4 : 2}" fill="#e9b949"/>`).join("")}
     <line x1="${x(state.i)}" y1="${P / 2}" x2="${x(state.i)}" y2="${H - P}" stroke="#e8eaed" stroke-dasharray="2 3"/>
-    ${ev != null ? `<line x1="${ev}" y1="${P / 2}" x2="${ev}" y2="${H - P}" stroke="#ff6a3d"/><text x="${ev + 4}" y="${H - P - 4}" style="fill:#ff6a3d">fire starts</text>` : ""}
+    ${ev != null ? `<line x1="${ev}" y1="${P / 2}" x2="${ev}" y2="${H - P}" stroke="#ff6a3d"/><text x="${ev + 4}" y="${P / 2 + 8}" style="fill:#ff6a3d">fire starts</text>` : ""}
     <text x="${PL}" y="${H - 6}">${fr[0].date}</text><text x="${W - P}" y="${H - 6}" text-anchor="end">${fr.at(-1).date}</text>
     <text x="${PL - 6}" y="${P + 3}" text-anchor="end">${fmt(hi)}</text><text x="${PL - 6}" y="${H - P + 3}" text-anchor="end">${fmt(lo)}</text><text x="${PL - 6}" y="${P - 9}" text-anchor="end">${s.unit}</text>`;
   $("#chart").onclick = (e) => {

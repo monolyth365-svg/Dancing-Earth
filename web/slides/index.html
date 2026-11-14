@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dancing Earth – project slides</title>
+<meta name="description" content="Seven slides about Dancing Earth, a NASA Space Apps 2026 project for the challenge Dancing with the SARs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0b0d10; --panel: #12151a; --line: #232830; --text: #e8eaed; --muted: #9aa2ad; --accent: #e9b949; --red: #ff4632; --blue: #3c8cff;
+  --sans: "Instrument Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace; }
+* { box-sizing: border-box; }
+html { scroll-snap-type: y mandatory; background: #000; }
+body { margin: 0; color: var(--text); font-family: var(--sans); }
+.slide { scroll-snap-align: start; min-height: 100vh; display: grid; place-items: center; padding: 2vmin; }
+/* Each slide is a fixed 16:9 stage; all sizes inside use cqw so it scales like a picture */
+.stage { container-type: inline-size; width: min(96vw, 170vh); aspect-ratio: 16 / 9; background: var(--bg); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.in { position: absolute; inset: 0; padding: 4.2cqw 5cqw 3.4cqw; display: flex; flex-direction: column; font-size: 1.55cqw; line-height: 1.45; }
+.tag { font: 500 1cqw var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 1cqw; }
+h1 { font-size: 6.4cqw; line-height: 1; margin: 0; letter-spacing: -0.03em; font-weight: 600; }
+h2 { font-size: 3.1cqw; line-height: 1.1; margin: 0 0 2cqw; letter-spacing: -0.02em; font-weight: 600; max-width: 22em; }
+p { margin: 0 0 1cqw; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); }
+.num { position: absolute; right: 2cqw; bottom: 1.4cqw; font: 0.9cqw var(--mono); color: var(--muted); }
+.cols { display: grid; gap: 3cqw; flex: 1; min-height: 0; }
+.c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: repeat(3, 1fr); } .c58 { grid-template-columns: 5fr 8fr; } .c85 { grid-template-columns: 8fr 5fr; }
+img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--line); border-radius: .3cqw; }
+figure { margin: 0; min-height: 0; display: flex; flex-direction: column; gap: .6cqw; }
+figure img { height: auto; object-fit: contain; }
+figure.fill img { flex: 1; min-height: 0; height: 100%; object-fit: cover; }
+figcaption { font-size: 1cqw; color: var(--muted); }
+ul, ol { margin: 0; padding-left: 1.3em; }
+li { margin-bottom: .8cqw; }
+li b, p b { font-weight: 600; }
+.card { border: 1px solid var(--line); background: var(--panel); border-radius: .3cqw; padding: 1.6cqw 1.8cqw; display: flex; flex-direction: column; }
+.card h3 { margin: 0 0 .8cqw; font-size: 1.7cqw; font-weight: 600; }
+.big { font: 500 3.6cqw var(--mono); color: var(--accent); line-height: 1.1; margin-bottom: .6cqw; white-space: nowrap; }
+.big small { font-size: 1.3cqw; color: var(--muted); }
+.small { font-size: 1.3cqw; }
+.s2 .card p { font-size: 1.75cqw; }
+.s2 .card h3 { font-size: 2cqw; margin-bottom: 1.2cqw; }
+.stack { display: flex; flex-direction: column; gap: 1.2cqw; min-height: 0; }
+.stack .card { flex: 1; justify-content: center; padding: 1.1cqw 1.6cqw; }
+.stack .card h3 { font-size: 1.5cqw; margin-bottom: .4cqw; }
+.stack .big { font-size: 2.8cqw; margin-bottom: .4cqw; }
+.stack .big small { font-size: 1.15cqw; }
+.stack p { margin-bottom: .5cqw; font-size: 1.2cqw; }
+a { color: var(--text); }
+.links { font: 1.25cqw var(--mono); }
+.links div { margin-bottom: .5cqw; }
+/* title slide */
+.cover img { position: absolute; inset: 0; border: 0; border-radius: 0; opacity: .9; object-position: 100% 50%; width: 135%; left: auto; right: -12%; }
+.cover .in { justify-content: flex-end; background: linear-gradient(90deg, rgba(11,13,16,1) 0%, rgba(11,13,16,.94) 34%, rgba(11,13,16,0) 62%); }
+.cover .who { display: grid; grid-template-columns: auto 1fr; gap: .4cqw 2cqw; margin-top: 3cqw; font-size: 1.35cqw; }
+.cover .who span { color: var(--muted); font: 1cqw var(--mono); text-transform: uppercase; letter-spacing: .08em; align-self: center; }
+.sub { font-size: 2.1cqw; color: var(--text); margin-top: 1.6cqw; max-width: 24em; line-height: 1.3; }
+.hint { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); font: 12px var(--mono); color: #7b828c; background: rgba(0,0,0,.6); padding: 4px 10px; border-radius: 3px; }
+@media print {
+  @page { size: 13.333in 7.5in; margin: 0; }
+  html { scroll-snap-type: none; } .hint { display: none; }
+  .slide { min-height: 0; height: 7.5in; padding: 0; break-after: page; }
+  .stage { width: 13.333in; border: 0; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<section class="slide" id="s1" aria-label="Slide 1: title">
+  <div class="stage cover">
+    <img src="app-fire.png" alt="">
+    <div class="in">
+      <div class="tag">NASA Space Apps Challenge 2026</div>
+      <h1>Dancing Earth</h1>
+      <p class="sub">See and hear how Earth's surface changes, with NISAR radar.</p>
+      <div class="who">
+        <span>Team</span><div>AlgoryX</div>
+        <span>Member</span><div>Jan Hajduk</div>
+        <span>Challenge</span><div>Dancing with the SARs</div>
+        <span>Live app</span><div class="mono">monolyth365-svg.github.io/Dancing-Earth</div>
+      </div>
+    </div>
+    <div class="num">1 / 7</div>
+  </div>
+</section>
+
+<section class="slide" id="s2" aria-label="Slide 2: the idea">
+  <div class="stage s2"><div class="in">
+    <div class="tag">The idea</div>
+    <h2>Radar sees floods and fires through cloud and smoke. But a radar image is hard to read.</h2>
+    <div class="cols c3">
+      <div class="card"><h3>1 · Show the change</h3><p>A coloured map marks where the surface changed, with a before / after slider and a timeline of every satellite pass.</p></div>
+      <div class="card"><h3>2 · Say it in numbers</h3><p>One plain sentence tells what happened, with square kilometres and a trend. The data can be downloaded as CSV.</p></div>
+      <div class="card"><h3>3 · Let it play</h3><p>Each image becomes music: brightness sets the pitch, the amount of change sets the loudness. Places that change sound different from places that stay still.</p></div>
+    </div>
+    <p class="muted" style="margin-top:2cqw">Main topic: <b style="color:var(--text)">water</b> (floods and lakes). Also wildfires, forest clearing and farm fields.</p>
+  </div><div class="num">2 / 7</div></div>
+</section>
+
+<section class="slide" id="s3" aria-label="Slide 3: the project">
+  <div class="stage"><div class="in">
+    <div class="tag">The project</div>
+    <div class="cols c85" style="align-items:center">
+      <figure><img src="app-water.png" alt="Screenshot of the app: Tonlé Sap lake with new open water shown in blue, a before and after divider, and a data panel with a chart of open water area."><figcaption>Tonlé Sap, Cambodia. Left of the yellow line: 19 June 2026. Right: 17 October 2026, new open water in blue.</figcaption></figure>
+      <div>
+        <h2 style="font-size:2.5cqw">One screen: map, story, numbers, sound</h2>
+        <ul>
+          <li><b>Layers</b> HH, HV and Change</li>
+          <li><b>Before / after</b> slider</li>
+          <li><b>What happened</b> sentence made from the data</li>
+          <li><b>Timeline</b> with Play and sound</li>
+          <li><b>Click a spot</b> for its own time series</li>
+          <li><b>CSV</b> export and a <b>link</b> to share the exact view</li>
+        </ul>
+        <p class="muted small" style="margin-top:1.4cqw">Works on a phone, with a keyboard, and has text for screen readers.</p>
+      </div>
+    </div>
+  </div><div class="num">3 / 7</div></div>
+</section>
+
+<section class="slide" id="s4" aria-label="Slide 4: how it is used">
+  <div class="stage"><div class="in">
+    <div class="tag">How it is used</div>
+    <h2>Pick a place, press Play, read the answer</h2>
+    <div class="cols c58">
+      <ol>
+        <li><b>Choose a place</b>: lake, wildfire, forest or farmland.</li>
+        <li><b>Read the sentence</b> and the three key numbers.</li>
+        <li><b>Press Play</b> to watch and hear every pass.</li>
+        <li><b>Drag Before / after</b> to reveal what changed.</li>
+        <li><b>Click the map</b> to follow one exact spot.</li>
+        <li><b>Download CSV</b> or copy the link to share.</li>
+      </ol>
+      <div class="cols" style="gap:1.2cqw">
+        <div class="card"><h3>Flood and fire managers</h3><p class="small">How much water is there now, and is it rising? Where inside the fire perimeter was woody vegetation really lost?</p></div>
+        <div class="card"><h3>Scientists</h3><p class="small">Numbers per pass, thresholds, granule names, CSV, and a method section with the limits.</p></div>
+        <div class="card"><h3>Teachers and the public</h3><p class="small">A short story for each place, a slider, and music that makes change easy to notice.</p></div>
+      </div>
+    </div>
+  </div><div class="num">4 / 7</div></div>
+</section>
+
+<section class="slide" id="s5" aria-label="Slide 5: results">
+  <div class="stage"><div class="in">
+    <div class="tag">What the data shows</div>
+    <div class="cols c2">
+      <div class="stack">
+      <div class="card">
+        <h3>Water: Tonlé Sap flood pulse</h3>
+        <div class="big">1,043 → 1,572 <small>km² of open water</small></div>
+        <p class="small">19 June to 17 October 2026, about 1.5 times more. <span class="muted">Lesson from the data: on 18 August wind made the lake bright in HH. HV stays dark over water, so the app maps water from HV.</span></p>
+      </div>
+      <div class="card">
+        <h3>Fire: Shingle Fire burn scar</h3>
+        <div class="big">96 % <small>of detected loss is inside the official perimeter</small></div>
+        <p class="small">104 km² of vegetation loss, compared with the average of the passes before the fire. The perimeter is used only as an independent check.</p>
+      </div>
+      <div class="card">
+        <h3>An honest limit: Big Grass Fire</h3>
+        <div class="big">5–9 % <small>of the burn area is visible</small></div>
+        <p class="small">A 2,350 km² grass fire that L-band radar barely sees. The app shows it and explains why, instead of hiding it.</p>
+      </div>
+      </div>
+      <figure class="fill"><img src="app-fire.png" alt="Screenshot of the app: Shingle Fire in Oregon. Red patches of vegetation loss sit inside the dashed white official fire perimeter." style="object-position: 30% 60%"><figcaption>Shingle Fire, Oregon, 19 October 2026. Red: HV dropped. Dashed line: official perimeter.</figcaption></figure>
+    </div>
+  </div><div class="num">5 / 7</div></div>
+</section>
+
+<section class="slide" id="s6" aria-label="Slide 6: role of NASA data">
+  <div class="stage"><div class="in">
+    <div class="tag">Role of NASA data</div>
+    <h2>Every picture, number and note comes from NISAR</h2>
+    <div class="cols c2">
+      <div>
+        <ul>
+          <li><b>NISAR L2 GCOV</b> (NASA-ISRO L-band radar), from the <b>NASA ASF DAAC</b>: 67 satellite passes over 5 places, HH and HV polarization.</li>
+          <li><b>NASA EONET</b>: used to find the 2026 Oregon wildfires.</li>
+          <li><b>NASA GIBS</b> Blue Marble: the basemap.</li>
+          <li><b>NASA Earthdata</b> SAR learning pages and the NISAR Data User Guide: the physics in the stories.</li>
+        </ul>
+        <p class="muted small" style="margin-top:1.2cqw">Other data: official fire perimeters from NIFC (US National Interagency Fire Center), used to check the fire result.</p>
+      </div>
+      <div class="card">
+        <h3>How the data is processed</h3>
+        <ol>
+          <li>Read only a small window of each 1.8 GB file over the internet.</li>
+          <li>Average in linear power, then convert to dB.</li>
+          <li>Smooth to reduce speckle and compare with a reference pass.</li>
+          <li>Count area above a threshold: open water, vegetation loss.</li>
+          <li>Turn each image into 16 notes for the music.</li>
+        </ol>
+      </div>
+    </div>
+  </div><div class="num">6 / 7</div></div>
+</section>
+
+<section class="slide" id="s7" aria-label="Slide 7: open source, AI use, links">
+  <div class="stage"><div class="in">
+    <div class="tag">Open source · use of AI · links</div>
+    <h2>Free to use, honest about how it was made</h2>
+    <div class="cols c2">
+      <div>
+        <p><b>Open source</b>, MIT licence. Add a new place by adding its coordinates to one file.</p>
+        <p><b>Use of AI.</b> The idea and the decisions are human: a map of surface change, water first, plus fires, plus music from the change. An AI assistant (Claude by Anthropic) wrote most of the code and drafted the English text. No AI-generated images, video or audio are used.</p>
+        <p class="muted small"><b>Limits.</b> A drop in radar signal is a hint, not proof. Grass fires and water under trees are mostly invisible. Area numbers are approximate.</p>
+      </div>
+      <div class="card" style="justify-content:center">
+        <div class="links">
+          <div class="muted">Live app</div>
+          <div><a href="https://monolyth365-svg.github.io/Dancing-Earth/">https://monolyth365-svg.github.io/Dancing-Earth/</a></div>
+          <div class="muted" style="margin-top:1.4cqw">Source code and full list of resources</div>
+          <div><a href="https://github.com/monolyth365-svg/Dancing-Earth">https://github.com/monolyth365-svg/Dancing-Earth</a></div>
+          <div class="muted" style="margin-top:1.4cqw">Data</div>
+          <div><a href="https://search.asf.alaska.edu/">https://search.asf.alaska.edu/</a></div>
+        </div>
+      </div>
+    </div>
+    <p class="muted small" style="margin-top:1.6cqw">Team AlgoryX · Jan Hajduk · NASA Space Apps Challenge 2026 · Dancing with the SARs</p>
+  </div><div class="num">7 / 7</div></div>
+</section>
+
+<div class="hint">Scroll or use ↓ ↑ · 7 slides</div>
+<script>
+// Arrow keys and Page Up/Down move one slide at a time
+const slides = [...document.querySelectorAll(".slide")];
+addEventListener("keydown", (e) => {
+  const d = ["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key) ? -1 : 0;
+  if (!d) return;
+  e.preventDefault();
+  const cur = slides.reduce((b, s, i) => (Math.abs(s.getBoundingClientRect().top) < Math.abs(slides[b].getBoundingClientRect().top) ? i : b), 0);
+  slides[Math.max(0, Math.min(slides.length - 1, cur + d))].scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+});
+</script>
+</body>
+</html>
