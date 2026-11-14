@@ -261,3 +261,14 @@ body.storm #head, body.storm > main .side > .insight, body.storm > main .side > 
 .g3d-card .hint b { color: var(--text); font-weight: 600; }
 .g3d .cesium-viewer-bottom { font-size: 10px; }
 @media (max-width: 700px) { .g3d-card { top: auto; bottom: 12px; max-height: 46%; } .g3d-card .hint { display: none; } }
+
+/* What-if simulation */
+#sim-open { margin-top: 10px; width: 100%; border-color: #ff8a1f; color: #ffb066; }
+.sim { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ff8a1f; }
+.simtag { font: 500 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #111; background: #ff8a1f; display: inline-block; padding: 2px 6px; border-radius: 2px; margin-bottom: 4px; }
+.sim input[type=range] { width: 100%; accent-color: #ff8a1f; }
+.sim .tools { margin-top: 8px; align-items: center; }
+.sim .tools button { font-size: 12px; padding: 4px 8px; }
+.sim .hint b { color: var(--text); font-weight: 600; }
+.sim details { margin-top: 6px; font-size: 13px; }
+.sim summary { cursor: pointer; }

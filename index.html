@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794663901" rel="stylesheet">
+<link href="style.css?v=1794664210" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -126,6 +126,21 @@
         <input id="fire-day" type="range" min="0" max="0" value="0" aria-label="Day of the fire, for the heat detections">
         <svg id="fire-spark" class="spark" viewBox="0 0 400 36" preserveAspectRatio="none" role="img" aria-label="Number of heat detections on each day; white ticks mark radar passes"></svg>
         <p class="hint" id="fire-note" role="status"></p>
+        <button id="sim-open" hidden>What if the wind had been different? Try a simulation</button>
+        <div id="sim" class="sim" hidden>
+          <div class="simtag">Simulation · “What if…” · not a measurement</div>
+          <label class="pick">Wind blows from <b id="sim-dir-l"></b></label>
+          <input id="sim-dir" type="range" min="0" max="355" step="5" aria-label="Direction the wind blows from, in degrees">
+          <label class="pick">Wind speed <b id="sim-spd-l"></b></label>
+          <input id="sim-spd" type="range" min="0" max="70" step="1" aria-label="Wind speed in kilometres per hour">
+          <div class="tools">
+            <button id="sim-reset">Back to the real wind</button>
+            <label class="sound"><input id="sim-orig" type="checkbox" checked> Show the real-wind result too</label>
+            <button id="sim-close">Close simulation</button>
+          </div>
+          <p id="sim-out" class="hint" role="status"></p>
+          <details><summary>What this model is, and is not</summary><p id="sim-about" class="hint"></p></details>
+        </div>
       </div>
       <div class="refrow">
         <label class="pick">Reference image <select id="ref" title="The 'before' image that every other date is compared with"></select></label>
@@ -159,16 +174,17 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794663901"></script>
-<script src="stories.js?v=1794663901"></script>
-<script src="sound.js?v=1794663901"></script>
-<script src="satellite.min.js?v=1794663901"></script>
-<script src="sats.js?v=1794663901"></script>
-<script src="globe3d.js?v=1794663901"></script>
-<script src="globe.js?v=1794663901"></script>
-<script src="storm.js?v=1794663901"></script>
-<script src="fire.js?v=1794663901"></script>
-<script src="live.js?v=1794663901"></script>
-<script src="app.js?v=1794663901"></script>
+<script src="catalog.js?v=1794664210"></script>
+<script src="stories.js?v=1794664210"></script>
+<script src="sound.js?v=1794664210"></script>
+<script src="satellite.min.js?v=1794664210"></script>
+<script src="sats.js?v=1794664210"></script>
+<script src="globe3d.js?v=1794664210"></script>
+<script src="globe.js?v=1794664210"></script>
+<script src="storm.js?v=1794664210"></script>
+<script src="fire.js?v=1794664210"></script>
+<script src="sim.js?v=1794664210"></script>
+<script src="live.js?v=1794664210"></script>
+<script src="app.js?v=1794664210"></script>
 </body>
 </html>

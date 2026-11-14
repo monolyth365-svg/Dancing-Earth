@@ -303,5 +303,24 @@
   "last": "2026-08-21",
   "start": "2026-07-21",
   "end": "2026-10-09"
+ },
+ "sim": {
+  "ignition": [
+   -119.8964,
+   44.4693
+  ],
+  "start": "2026-07-23T20:40Z",
+  "wind": {
+   "speedKmh": 6.3,
+   "fromDeg": 290,
+   "gustKmh": 40.7,
+   "hours": 24,
+   "source": "Open-Meteo historical weather API (ERA5 reanalysis), wind 10 m above ground, mean of the first 24 hours"
+  },
+  "observed": {
+   "reachKm24": 5.5,
+   "detections24": 309,
+   "spreadToDeg": 145
+  }
  }
 }
