@@ -217,6 +217,7 @@ async function loadSite(id, opts = {}) {
   }
   $("#insight").textContent = insight(d) + cloudNote(d);
   Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); });
+  document.dispatchEvent(new Event("de:site"));
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";
@@ -362,7 +363,8 @@ async function dynChange(i, b) {
     o[q * 4] = c[0]; o[q * 4 + 1] = c[1]; o[q * 4 + 2] = c[2]; o[q * 4 + 3] = Math.min(1, (Math.abs(v) - a0) / (1 - a0)) * 200 + 40;
   }
   c2.putImageData(im, 0, 0);
-  const px = (d.extentKm[0] * d.extentKm[1]) / (N * N), res = { cv: cv2, lossKm2: loss * px, gainKm2: gain * px };
+  for (let q = 0; q < N * N; q++) diff[q] -= bias;
+  const px = (d.extentKm[0] * d.extentKm[1]) / (N * N), res = { cv: cv2, lossKm2: loss * px, gainKm2: gain * px, diff, ok: okAll, pxKm2: px };
   dyn.set(key, res);
   if (dyn.size > 60) dyn.delete(dyn.keys().next().value);
   return res;
@@ -443,6 +445,7 @@ function show(i, sound = true) {
   Fire.sync(f.date);
   legend();
   writeHash();
+  document.dispatchEvent(new Event("de:show"));
   if (!state.timer) say(`${f.date}: ${s.label} ${fmt(cur, s.unit)}`);
   if (sound && $("#sound").checked) {
     const prev = s.vals.slice(0, i).reverse().find((v) => v != null) ?? cur;
@@ -492,7 +495,7 @@ function setPoint(ll) {
   $("#point-hint").hidden = true; $("#clear-point").hidden = false; $(".pick").hidden = true;
   return true;
 }
-map.on("click", (e) => { if (!Live.on && !Storm.on && Fire.hit(e)) return; if (!Live.on && !Storm.on && state.cube && setPoint(e.lngLat)) show(state.i); });
+map.on("click", (e) => { if (window.DE_TOOL) return; if (!Live.on && !Storm.on && Fire.hit(e)) return; if (!Live.on && !Storm.on && state.cube && setPoint(e.lngLat)) show(state.i); });
 const pointMarker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 $("#clear-point").onclick = () => { state.point = null; pointMarker.remove(); $("#point-hint").hidden = false; $("#clear-point").hidden = true; $(".pick").hidden = false; show(state.i, false); };
 
