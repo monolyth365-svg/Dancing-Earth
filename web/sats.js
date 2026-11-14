@@ -101,7 +101,7 @@ window.Sats = (() => {
   }
 
   function draw() {
-    if (!on) return;
+    if (!on || window.Globe3D?.open) return;
     const t = new Date();
     if (+t - lastTracks > 2000) {
       const g = tracks(t);
@@ -171,5 +171,5 @@ window.Sats = (() => {
     };
   }
 
-  return { show, hide, bind, load, icon, at: now, all: () => sats, meta: () => meta, _now: () => sats.map((s) => ({ id: s.id, ...s.pos })) };
+  return { show, hide, bind, load, icon, at: now, sub: (s, d) => sub(s.rec, d), all: () => sats, meta: () => meta, _now: () => sats.map((s) => ({ id: s.id, ...s.pos })) };
 })();
