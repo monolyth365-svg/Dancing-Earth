@@ -191,6 +191,9 @@ async function loadSite(id, opts = {}) {
   const loaded = Loader.show("Loading radar images…");
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json().catch((e) => { loaded(); throw e; });
   loaded.progress(0.15); // čára průběhu: popis místa 15 %, datová kostka do 80 %, první snímek 100 %
+  // Číslo snímku musí platit pro nové místo hned (může mít méně přeletů než to předchozí)
+  const want = d.frames.findIndex((f) => f.date === opts.date);
+  state.i = want >= 0 ? want : d.frames.length - 1;
   markNav(`site:${id}`);
   const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter, cat = CATALOG.find(`site:${id}`);
   $("#head").innerHTML = `<div class="kind">${st.label}</div><h1>${st.title}</h1>
@@ -256,14 +259,14 @@ async function loadSite(id, opts = {}) {
   }
   $("#insight").textContent = insight(d) + cloudNote(d);
   Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); });
-  document.dispatchEvent(new Event("de:site"));
-  img(path(state.i, "hh")).then(loaded, loaded); // ukazatel zmizí, až je první snímek opravdu načtený
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";
     document.querySelectorAll("[data-layer]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.layer === "change"));
   }
   show(at >= 0 ? at : d.frames.length - 1, false);
+  document.dispatchEvent(new Event("de:site")); // nástroje se přizpůsobí novému místu (až po prvním vykreslení)
+  img(path(state.i, "hh")).then(loaded, loaded); // ukazatel načítání zmizí, až je první snímek opravdu načtený
 }
 
 // Věta „co se stalo“ – skládá se jen z čísel v datech
