@@ -13,6 +13,7 @@ Pick a place, then watch, compare and listen:
 
 - **Change map** – a coloured layer shows where the radar signal dropped or rose.
 - **Before / after slider** – swipe between the reference pass and any later pass.
+- **Optical layer** – a photo from a camera satellite (NASA VIIRS) taken on the same day. With the slider it sits next to the radar image, so you can see the clouds that radar looks through. A camera saw mostly cloud on 24 of the 67 radar pass days (rough estimate).
 - **Time-series animation** – press Play to step through every satellite pass.
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
 - **Click any spot** on the image to get the time series of that exact place.
@@ -45,7 +46,8 @@ Pick a place, then watch, compare and listen:
    - for fires, pixels that already varied before the event are left out.
 4. **Open water** = smoothed HV below −24 dB. HV is used because wind makes water bright in HH (visible on 18 August 2026 over Tonlé Sap) but not in HV.
 5. **Fire validation** – the detected HV loss is compared with the official fire perimeter (NIFC), which is not used in the detection itself.
-6. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
+6. `pipeline/fetch_optical.py` downloads the VIIRS true-colour image of the same calendar day from NASA GIBS, resamples it to the radar grid and makes a rough cloud estimate (share of bright, colourless pixels).
+7. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
 
 All thresholds are listed in the app under "Method and limits" for each place.
 
@@ -55,6 +57,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - L-band radar detects loss of woody vegetation. Grass fires are almost invisible (see Big Grass Fire).
 - Open-water area does not include water under trees or floating vegetation.
 - Area numbers are approximate (pixel size 78–195 m, simple thresholds).
+- The optical photo is from the same calendar day, not the same hour, and its cloud percentage is a rough estimate that smoke, haze, fog or bright ground can confuse.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
@@ -72,6 +75,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env          # then paste your Earthdata token into .env
 .venv/bin/python pipeline/fetch_nisar.py            # all places, or name one: shingle
+.venv/bin/python pipeline/fetch_optical.py          # no token needed
 .venv/bin/python pipeline/make_cube.py
 ```
 
@@ -87,6 +91,7 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - NISAR Data User Guide – https://nisar-docs.asf.alaska.edu/
 - NASA Earthdata, "What is Synthetic Aperture Radar?" – https://www.earthdata.nasa.gov/learn/earth-observation-data-basics/sar
 - NASA GIBS (Global Imagery Browse Services), Blue Marble Next Generation basemap – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg (docs: https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
+- NASA GIBS, VIIRS NOAA-20 Corrected Reflectance (True Color), daily optical images for the Optical layer – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `VIIRS_NOAA20_CorrectedReflectance_TrueColor`)
 - NASA EONET (Earth Observatory Natural Event Tracker), used to find the wildfires – https://eonet.gsfc.nasa.gov/api/v3/events
 
 ### Other data and tools

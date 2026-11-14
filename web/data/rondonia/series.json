@@ -43,7 +43,10 @@
    "sceneShiftDb": 0.0,
    "lossKm2": 0.0,
    "gainKm2": 0.0,
-   "change": "2025-11-14_change.png"
+   "change": "2025-11-14_change.png",
+   "optical": "2025-11-14_optical.jpg",
+   "cloudPct": 38,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   },
   {
    "date": "2026-06-18",
@@ -58,7 +61,10 @@
    "sceneShiftDb": 0.14,
    "lossKm2": 3.4,
    "gainKm2": 5.9,
-   "change": "2026-06-18_change.png"
+   "change": "2026-06-18_change.png",
+   "optical": "2026-06-18_optical.jpg",
+   "cloudPct": 32,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   },
   {
    "date": "2026-07-12",
@@ -73,7 +79,10 @@
    "sceneShiftDb": 0.58,
    "lossKm2": 1.8,
    "gainKm2": 6.2,
-   "change": "2026-07-12_change.png"
+   "change": "2026-07-12_change.png",
+   "optical": "2026-07-12_optical.jpg",
+   "cloudPct": 100,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   },
   {
    "date": "2026-08-29",
@@ -88,7 +97,10 @@
    "sceneShiftDb": -0.26,
    "lossKm2": 16.8,
    "gainKm2": 3.8,
-   "change": "2026-08-29_change.png"
+   "change": "2026-08-29_change.png",
+   "optical": "2026-08-29_optical.jpg",
+   "cloudPct": 25,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   },
   {
    "date": "2026-09-22",
@@ -103,7 +115,10 @@
    "sceneShiftDb": -0.41,
    "lossKm2": 12.2,
    "gainKm2": 0.8,
-   "change": "2026-09-22_change.png"
+   "change": "2026-09-22_change.png",
+   "optical": "2026-09-22_optical.jpg",
+   "cloudPct": 62,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   },
   {
    "date": "2026-10-16",
@@ -118,7 +133,10 @@
    "sceneShiftDb": -0.3,
    "lossKm2": 9.3,
    "gainKm2": 0.2,
-   "change": "2026-10-16_change.png"
+   "change": "2026-10-16_change.png",
+   "optical": "2026-10-16_optical.jpg",
+   "cloudPct": 57,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   }
  ],
  "analysis": {
@@ -154,5 +172,13 @@
   ],
   "scale": 100,
   "nodata": -32768
+ },
+ "optical": {
+  "source": "NASA GIBS, Corrected Reflectance (True Color)",
+  "sensors": [
+   "VIIRS NOAA20"
+  ],
+  "pixelM": 250,
+  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
  }
 }
