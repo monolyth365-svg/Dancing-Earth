@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794671740" rel="stylesheet">
+<link href="style.css?v=1794672003" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -75,6 +75,7 @@
     </div>
     <div class="legend" id="legend"></div>
     <div id="quiz" class="intro quizcard" role="dialog" aria-label="Quiz" hidden></div>
+    <div id="storycard" class="intro quizcard storycard" role="status" aria-live="polite" hidden></div>
     <div id="intro" class="intro" role="dialog" aria-labelledby="intro-h" hidden>
       <h2 id="intro-h">Welcome to Dancing Earth</h2>
       <p>Radar on the NISAR satellite sees Earth's surface through cloud, smoke and darkness. Here you can watch the surface change, and hear it.</p>
@@ -125,6 +126,7 @@
       </div>
       <input id="frame" type="range" min="0" max="0" value="0" aria-label="Satellite pass (date)">
       <div id="fire" class="firebox" hidden>
+        <button id="fire-story" class="primary" hidden>▶ Play the story of this fire</button>
         <label class="pick" for="fire-day">Day of the fire <b id="fire-label" class="mono"></b></label>
         <input id="fire-day" type="range" min="0" max="0" value="0" aria-label="Day of the fire, for the heat detections">
         <svg id="fire-spark" class="spark" viewBox="0 0 400 36" preserveAspectRatio="none" role="img" aria-label="Number of heat detections on each day; white ticks mark radar passes"></svg>
@@ -188,18 +190,18 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794671740"></script>
-<script src="stories.js?v=1794671740"></script>
-<script src="sound.js?v=1794671740"></script>
-<script src="satellite.min.js?v=1794671740"></script>
-<script src="sats.js?v=1794671740"></script>
-<script src="globe3d.js?v=1794671740"></script>
-<script src="globe.js?v=1794671740"></script>
-<script src="storm.js?v=1794671740"></script>
-<script src="fire.js?v=1794671740"></script>
-<script src="sim.js?v=1794671740"></script>
-<script src="live.js?v=1794671740"></script>
-<script src="app.js?v=1794671740"></script>
-<script src="tools.js?v=1794671740"></script>
+<script src="catalog.js?v=1794672003"></script>
+<script src="stories.js?v=1794672003"></script>
+<script src="sound.js?v=1794672003"></script>
+<script src="satellite.min.js?v=1794672003"></script>
+<script src="sats.js?v=1794672003"></script>
+<script src="globe3d.js?v=1794672003"></script>
+<script src="globe.js?v=1794672003"></script>
+<script src="storm.js?v=1794672003"></script>
+<script src="fire.js?v=1794672003"></script>
+<script src="sim.js?v=1794672003"></script>
+<script src="live.js?v=1794672003"></script>
+<script src="app.js?v=1794672003"></script>
+<script src="tools.js?v=1794672003"></script>
 </body>
 </html>

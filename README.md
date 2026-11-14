@@ -18,11 +18,13 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
   - outline a field, forest or bay and get the hectares where radar saw a change;
   - drag along a river or shore and hear the change under your finger; the place with the biggest change lights up;
   - a quiz: two radar images, guess what changed, then reveal the Change layer;
-  - for the Shingle Fire, show the 4 % of detected loss that lies outside the official fire line, with before / after;
+  - at a fire, click a red patch to ask **why it is red**: did the radar drop last on later passes, did satellites detect heat right there, is it inside the official fire line, and a cautious verdict from the three;
+  - **play the story of the fire** in three steps: the first heat detection, the day with the most detections, and what radar shows about a month later;
+  - for any date, show the share of detected loss that lies outside the official fire line (4 % for the Shingle Fire on 19 October), with before / after;
   - place a lake's water change over any other town at the same scale.
 - **Fire seen two ways** – radar shows the burned area; a Heat layer shows where satellites (VIIRS) detected fire on each day. A day slider replays the spread; click a point for the time of detection, satellite, radiated power and source.
 - **Hurricane at its real size** – centre, track and the reach of three wind strengths in each quarter of the storm (so its asymmetry is visible), category, wind, pressure, reach of high waves, and the satellite photo of that day.
-- **"What if…" simulation** – change wind direction and speed and see how a simple fire-spread model changes from the same ignition point, next to the real-wind result and the real detections. Clearly labelled as a simulation.
+- **"What if…" simulation** – change wind direction and speed and see how a simple fire-spread model changes from the same ignition point, next to the real-wind result and the real detections, with a score: how many real first-day heat detections fall inside the simulated area and how much of that area they fill (86 % and about 40 % for the Shingle Fire with the real wind). Clearly labelled as a simulation.
 - **3D Earth** – a globe whose surface sharpens as you zoom (only the part you look at is loaded), with each satellite as its own simplified 3D model built from its real layout (the ISS truss with eight solar wings, SWOT's two antennas on a mast, Sentinel-6's house shape…), their orbits and NISAR's radar beam; you can pick any of nine satellites (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A, the ISS, Suomi NPP, Terra, Sentinel-6) and fly beside it while the camera follows; you can also zoom right down to the ground and tilt the view.
 - **Change map** – a coloured layer shows where the radar signal dropped or rose.
 - **Before / after slider** – swipe between the reference pass and any later pass.

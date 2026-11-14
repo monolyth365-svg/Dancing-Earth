@@ -23,6 +23,17 @@ window.Sim = (() => {
     return { ring, area: Math.PI * a * b, head, to };
   }
 
+  // Kolik skutečných detekcí žáru z prvního dne leží uvnitř simulované plochy (a jak moc ji vyplňují)
+  function score(ring, area) {
+    const obs = Fire.early(26); // první den = tři přelety družic do 25 hodin po prvním záchytu (stejné okno jako při kalibraci)
+    if (!obs.length) return null;
+    const inside = (x, y) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) if ((ring[i][1] > y) !== (ring[j][1] > y) && x < ((ring[j][0] - ring[i][0]) * (y - ring[i][1])) / (ring[j][1] - ring[i][1]) + ring[i][0]) c = !c; return c; };
+    const dLat = 0.375 / 111.32, dLon = dLat / Math.cos(S.ignition[1] * D2R), cells = new Set();
+    let hit = 0;
+    for (const [x, y] of obs) if (inside(x, y)) { hit++; cells.add(`${Math.round(x / dLon)},${Math.round(y / dLat)}`); }
+    return { hit, n: obs.length, pct: Math.round((hit / obs.length) * 100), fill: Math.min(100, Math.round(((cells.size * 0.1406) / area) * 100)) };
+  }
+
   function draw() {
     const U = +el("#sim-spd").value, from = +el("#sim-dir").value, fc = (f) => ({ type: "FeatureCollection", features: f });
     const mine = HOURS.map((h) => shape(U, from, h)), real = HOURS.map((h) => shape(S.wind.speedKmh, S.wind.fromDeg, h));
@@ -31,7 +42,7 @@ window.Sim = (() => {
     el("#sim-dir-l").textContent = `the ${comp(from)} (${from}°)`;
     el("#sim-spd-l").textContent = `${U} km/h`;
     const m = mine[2], r = real[2], same = U === Math.round(S.wind.speedKmh) && from === Math.round(S.wind.fromDeg / 5) * 5;
-    el("#sim-out").innerHTML = `${same ? "<b>This is the real wind of the first day.</b>" : "<b>Your scenario.</b>"} After 24 hours the model fire reaches ${m.head.toFixed(1)} km towards the ${comp(m.to)} and covers ${m.area < 10 ? m.area.toFixed(1) : Math.round(m.area)} km²${same ? "" : `; with the real wind (${S.wind.speedKmh} km/h from the ${comp(S.wind.fromDeg)}) it covers ${r.area < 10 ? r.area.toFixed(1) : Math.round(r.area)} km²`}. Orange rings: 6, 12 and 24 hours. White dashed rings: the same with the real wind. Bright dots: where satellites really saw heat in the first day.<br>Reality check: the real fire spread towards the ${comp(S.observed.spreadToDeg)}, while the model with the real wind points ${comp((S.wind.fromDeg + 180) % 360)}. Hills and fuel, which the model ignores, make the difference.`;
+    el("#sim-out").innerHTML = `${same ? "<b>This is the real wind of the first day.</b>" : "<b>Your scenario.</b>"} After 24 hours the model fire reaches ${m.head.toFixed(1)} km towards the ${comp(m.to)} and covers ${m.area < 10 ? m.area.toFixed(1) : Math.round(m.area)} km²${same ? "" : `; with the real wind (${S.wind.speedKmh} km/h from the ${comp(S.wind.fromDeg)}) it covers ${r.area < 10 ? r.area.toFixed(1) : Math.round(r.area)} km²`}. Orange rings: 6, 12 and 24 hours. White dashed rings: the same with the real wind. Bright dots: where satellites really saw heat in the first day.${(() => { const k = score(m.ring, m.area); return k ? `<br><b>How well does it match? ${k.hit} of the ${k.n} real heat detections from the first day (${k.pct}%) lie inside ${same ? "the" : "your"} simulated 24-hour area</b>, and detections fill about ${k.fill}% of that area. ${same ? "The model was tuned to reach as far as the real fire, so this mainly tests its direction and shape." : "A bigger area catches more detections but is mostly empty, so look at both numbers."}` : ""; })()}<br>Reality check: the real fire spread towards the ${comp(S.observed.spreadToDeg)}, while the model with the real wind points ${comp((S.wind.fromDeg + 180) % 360)}. Hills and fuel, which the model ignores, make the difference.`;
   }
 
   function open() {
