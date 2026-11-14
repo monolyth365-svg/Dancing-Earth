@@ -15,6 +15,7 @@ Pick a place, then watch, compare and listen:
 - **Before / after slider** – swipe between the reference pass and any later pass.
 - **Optical layer** – a photo from a camera satellite (NASA VIIRS) taken on the same day. With the slider it sits next to the radar image, so you can see the clouds that radar looks through. A camera saw mostly cloud on 24 of the 67 radar pass days (rough estimate).
 - **Time-series animation** – press Play to step through every satellite pass.
+- **Live world** – a world map of natural events NASA is tracking right now (wildfires, storms, ice, floods, volcanoes). Click an event, or any place on land, and the app loads the newest NISAR radar quick-look image of that spot straight from NASA's archive, lists earlier passes to flip through, and estimates the next pass. Nothing is pre-computed; it runs in your browser.
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
 - **Click any spot** on the image to get the time series of that exact place.
 - **Music from the image** – each radar image is cut into 16 vertical strips. Brightness sets the pitch of a note, the amount of change since the previous pass sets its loudness, and the position (west to east) sets left/right. Places that change sound different from places that stay the same.
@@ -58,6 +59,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Open-water area does not include water under trees or floating vegetation.
 - Area numbers are approximate (pixel size 78–195 m, simple thresholds).
 - The optical photo is from the same calendar day, not the same hour, and its cloud percentage is a rough estimate that smoke, haze, fog or bright ground can confuse.
+- Live world shows NASA's quick-look images as they are, with no change analysis; "right now" means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
@@ -92,7 +94,8 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - NASA Earthdata, "What is Synthetic Aperture Radar?" – https://www.earthdata.nasa.gov/learn/earth-observation-data-basics/sar
 - NASA GIBS (Global Imagery Browse Services), Blue Marble Next Generation basemap – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg (docs: https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
 - NASA GIBS, VIIRS NOAA-20 Corrected Reflectance (True Color), daily optical images for the Optical layer – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `VIIRS_NOAA20_CorrectedReflectance_TrueColor`)
-- NASA EONET (Earth Observatory Natural Event Tracker), used to find the wildfires – https://eonet.gsfc.nasa.gov/api/v3/events
+- NISAR GCOV browse (quick-look) images and KML footprints, NASA ASF DAAC, read live in the Live world mode – https://nisar.asf.earthdatacloud.nasa.gov/
+- NASA EONET (Earth Observatory Natural Event Tracker), used to find the wildfires and read live for the event map – https://eonet.gsfc.nasa.gov/api/v3/events
 
 ### Other data and tools
 

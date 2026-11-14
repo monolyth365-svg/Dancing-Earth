@@ -103,3 +103,27 @@ select:focus-visible, summary:focus-visible, a:focus-visible, .side:focus-visibl
   .legend { max-width: calc(100% - 24px); bottom: 34px; }
 }
 @media (max-width: 420px) { .kpis { grid-template-columns: 1fr 1fr; } .kpis div:last-child { grid-column: span 2; } .kpis span { min-height: 0; } }
+
+/* Live world mode */
+.livebox { display: none; padding: 20px; }
+body.live .livebox { display: block; }
+body.live #head, body.live .insight, body.live .timeline, body.live #story, body.live .mapui, body.live .legend { display: none; }
+.livebtn { color: #ff6a5a; border-color: #5a2a26; }
+.livebtn[aria-pressed="true"] { background: #ff4632; border-color: #ff4632; color: #fff; }
+.livebox .kind { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #ff6a5a; }
+.livebox h1 { font-size: 22px; line-height: 1.2; margin: 6px 0 10px; font-weight: 600; letter-spacing: -0.01em; }
+.livebox h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+.livebox > h2 { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; margin: 18px 0 8px; }
+.livebox p { color: #c3c8cf; margin: 0 0 10px; }
+.livebox p b { color: var(--text); font-weight: 600; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.cats i, .evlist i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; flex: none; }
+.cats b { color: var(--text); font-weight: 500; }
+.detail:not(:empty) { border: 1px solid var(--line); border-radius: 3px; padding: 14px; margin-top: 14px; background: var(--bg); }
+.passes { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+.passes button { font: 12px var(--mono); padding: 4px 7px; }
+.evlist { list-style: none; margin: 0; padding: 0; }
+.evlist button { display: flex; align-items: center; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 2px; font-size: 13px; }
+.evlist button:hover { background: rgba(255,255,255,.04); }
+.evlist span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evlist time { font: 11px var(--mono); color: var(--muted); margin-left: 8px; }

@@ -51,15 +51,25 @@ async function init() {
     $("#head").innerHTML = `<div class="empty">No processed NISAR data yet. Run <code class="mono">pipeline/fetch_nisar.py</code>.</div>`;
     return;
   }
-  $("#sites").innerHTML = state.sites.map((s) => `<button data-site="${s.id}" aria-pressed="false">${s.name.split(",")[0]}</button>`).join("");
-  $("#sites").onclick = (e) => e.target.dataset.site && loadSite(e.target.dataset.site);
+  $("#sites").innerHTML = state.sites.map((s) => `<button data-site="${s.id}" aria-pressed="false">${s.name.split(",")[0]}</button>`).join("")
+    + `<button data-site="live" aria-pressed="false" class="livebtn">● Live world</button>`;
+  $("#sites").onclick = (e) => { const s = e.target.dataset.site; if (s === "live") goLive(); else if (s) loadSite(s); };
+  Live.bind(map);
   const h = readHash(), first = state.sites.some((s) => s.id === h.site) ? h.site : state.sites[0].id;
-  const go = () => loadSite(first, h);
+  const go = () => ("live" in h ? goLive(h.live) : loadSite(first, h));
   map.loaded() ? go() : map.once("load", go);
+}
+
+// Živý režim: mapa světa s událostmi a snímky čtenými přímo z NASA (viz live.js)
+function goLive(at) {
+  stop();
+  state.point = null; pointMarker.remove();
+  Live.enter(map, at);
 }
 
 async function loadSite(id, opts = {}) {
   stop();
+  Live.exit();
   state.site = id;
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json();
   document.querySelectorAll("#sites button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.site === id));
@@ -312,7 +322,7 @@ function setPoint(ll) {
   $("#point-hint").hidden = true; $("#clear-point").hidden = false; $(".pick").hidden = true;
   return true;
 }
-map.on("click", (e) => { if (state.cube && setPoint(e.lngLat)) show(state.i); });
+map.on("click", (e) => { if (!Live.on && state.cube && setPoint(e.lngLat)) show(state.i); });
 const pointMarker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 $("#clear-point").onclick = () => { state.point = null; pointMarker.remove(); $("#point-hint").hidden = false; $("#clear-point").hidden = true; $(".pick").hidden = false; show(state.i, false); };
 
@@ -387,7 +397,7 @@ document.querySelector(".layers").onclick = (e) => {
   show(state.i, false);
 };
 document.addEventListener("keydown", (e) => {
-  if (!state.data || e.target.closest("input, button, select, a, summary, .maplibregl-map")) return;
+  if (!state.data || Live.on || e.target.closest("input, button, select, a, summary, .maplibregl-map")) return;
   if (e.key === "ArrowRight") { stop(); show(Math.min(state.i + 1, state.data.frames.length - 1)); }
   if (e.key === "ArrowLeft") { stop(); show(Math.max(state.i - 1, 0)); }
   if (e.key === " ") { e.preventDefault(); $("#play").click(); }
@@ -397,6 +407,7 @@ new ResizeObserver(() => map.resize()).observe($("#map"));
 // Vložený nebo ručně změněný odkaz přepne pohled bez znovunačtení stránky
 addEventListener("hashchange", () => {
   const h = readHash(), d = state.data;
+  if ("live" in h) { if (!Live.on) goLive(h.live); return; }
   if (!d || !state.sites.some((s) => s.id === h.site)) return;
   const same = h.site === state.site && h.date === d.frames[state.i].date && (h.layer || state.layer) === state.layer && (h.compare === "1") === state.compare;
   if (!same) loadSite(h.site, h);
