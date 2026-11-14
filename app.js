@@ -81,6 +81,13 @@ async function init() {
   map.loaded() ? go() : map.once("load", go);
 }
 
+// Pravý panel má tři záložky: Explore (čas, graf, bod), Tools (nástroje) a About (příběh, metoda, zdroje)
+function setTab(t) {
+  $("#panel").dataset.tab = t;
+  document.querySelectorAll("[data-tabbtn]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tabbtn === t));
+}
+document.querySelector(".tabs").onclick = (e) => { const b = e.target.closest("[data-tabbtn]"); if (b) setTab(b.dataset.tabbtn); };
+
 // Krátký úvod pro nového návštěvníka
 function intro(open) {
   $("#intro").hidden = !open;
@@ -495,7 +502,7 @@ function setPoint(ll) {
   $("#point-hint").hidden = true; $("#clear-point").hidden = false; $(".pick").hidden = true;
   return true;
 }
-map.on("click", (e) => { if (window.DE_TOOL) return; if (!Live.on && !Storm.on && Fire.hit(e)) return; if (!Live.on && !Storm.on && state.cube && setPoint(e.lngLat)) show(state.i); });
+map.on("click", (e) => { if (window.DE_TOOL) return; if (!Live.on && !Storm.on && Fire.hit(e)) return; if (!Live.on && !Storm.on && state.cube && setPoint(e.lngLat)) { setTab("explore"); show(state.i); } });
 const pointMarker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 $("#clear-point").onclick = () => { state.point = null; pointMarker.remove(); $("#point-hint").hidden = false; $("#clear-point").hidden = true; $(".pick").hidden = false; show(state.i, false); };
 

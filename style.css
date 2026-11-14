@@ -316,3 +316,19 @@ body.tooling .maplibregl-canvas { cursor: crosshair !important; }
 .storycard p { margin: 0 0 10px; }
 .storycard b { color: var(--text); }
 #toolbar button:disabled { opacity: .5; cursor: default; }
+
+/* Side panel tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 3; }
+.tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 8px; color: var(--muted); font-weight: 500; }
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+#panel[data-tab="explore"] [data-in]:not([data-in="explore"]), #panel[data-tab="tools"] [data-in]:not([data-in="tools"]), #panel[data-tab="about"] [data-in]:not([data-in="about"]) { display: none !important; }
+#panel[data-tab="about"] .timeline { display: none; }
+body.live .tabs, body.storm .tabs { display: none; }
+body.live #panel .credits[data-in], body.storm #panel .credits[data-in] { display: block !important; } /* zdroje jsou v živém režimu a u hurikánu vidět vždy */
+.timeline h2.mini.first { margin-top: 0; }
+#simwrap { margin-top: 14px; }
+#simwrap #sim-open { margin-top: 0; }
+#simwrap .sim { border-top: 0; padding-top: 0; margin-top: 0; }
+#simwrap #sim-open:not([hidden]) + .sim:not([hidden]) { margin-top: 10px; }
+.head { padding-bottom: 14px; border-bottom: 0; }

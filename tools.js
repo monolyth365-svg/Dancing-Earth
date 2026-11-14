@@ -366,7 +366,7 @@
     const a = e.target.closest("[data-act]")?.dataset.act; if (!a) return;
     if (a === "area-done") areaDone(); else if (a === "area-cancel" || a === "area-clear") areaCancel();
     else if (a === "trace-cancel" || a === "trace-clear") traceCancel();
-    else if (a === "trace-point") { const b = tr.best.ll; drop("t-trace"); out(""); if (setPoint(b)) show(state.i, false); }
+    else if (a === "trace-point") { const b = tr.best.ll; drop("t-trace"); out(""); if (setPoint(b)) { setTab("explore"); show(state.i, false); } }
     else if (a === "ghost-cancel") { setMode(null); out(""); }
     else if (a === "ghost-here") navigator.geolocation?.getCurrentPosition((p) => ghostPlace({ lng: p.coords.longitude, lat: p.coords.latitude }), () => out(`Your location is not available. Click on the map instead. <button data-act="ghost-cancel">Cancel</button>`));
     else if (a === "ghost-back") ghostClear(true); else if (a === "ghost-clear") ghostClear(false);
@@ -384,6 +384,7 @@
     outsideLabel();
     storyEnd();
     q("#fire-story").hidden = !(d.kind === "fire" && d.hotspots);
+    q("#simwrap").hidden = !(d.kind === "fire" && d.sim && d.hotspots);
     q("#point-hint").textContent = d.kind === "fire" ? "Click a red patch on the map to ask why it is red. You also get its own chart and sound." : d.kind === "water" ? "Click anywhere by the lake to see when that spot was water and when it was dry." : "Click anywhere on the radar image to chart and hear that exact spot.";
   });
   document.addEventListener("de:show", () => { pointInfo(); fvShow(); outsideLabel(); });

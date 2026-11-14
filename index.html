@@ -3,12 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dancing Earth</title>
-<meta name="description" content="Hear and see how Earth's surface moves, using NISAR L-band radar.">
+<title>Dancing Earth – see and hear Earth's surface change</title>
+<meta name="description" content="See and hear how Earth's surface changes: floods, fires and forest loss mapped with NASA-ISRO NISAR radar. Open-source project for NASA Space Apps 2026.">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dancing Earth – see and hear Earth's surface change">
+<meta property="og:description" content="Floods, fires and forest loss mapped with NISAR radar, turned into maps, numbers and music.">
+<meta property="og:image" content="https://monolyth365-svg.github.io/Dancing-Earth/slides/cover.jpg">
+<meta property="og:url" content="https://monolyth365-svg.github.io/Dancing-Earth/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794672003" rel="stylesheet">
+<link href="style.css?v=1794672845" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -66,7 +74,7 @@
         <button id="fv" aria-pressed="false" title="Possible water standing under trees, shrubs or rice (HH much brighter than before)" hidden>Under plants</button>
         <button id="heat" aria-pressed="true" title="Places where satellites detected the heat of the fire" hidden>Heat</button>
         <button id="perim" aria-pressed="true" hidden>Fire perimeter</button>
-        <label class="op">Opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.9"></label>
+        <label class="op" hidden>Opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.9"></label>
       </div>
       <div class="cmp" id="cmp" hidden>
         <span class="mono" id="compare-note"></span>
@@ -93,7 +101,7 @@
     </div>
   </section>
 
-  <aside class="side" id="panel" tabindex="-1" aria-label="Data panel">
+  <aside class="side" id="panel" tabindex="-1" aria-label="Data panel" data-tab="explore">
     <section id="live" class="livebox" aria-label="Live events and radar images from NASA">
       <div class="kind">Live · straight from NASA</div>
       <h1>What is happening on Earth right now</h1>
@@ -111,26 +119,59 @@
     <section id="stormbox" class="stormbox" aria-label="Hurricane"></section>
 
     <header id="head" class="story head"></header>
+    <div class="tabs" role="tablist" aria-label="Sections of this panel">
+      <button role="tab" data-tabbtn="explore" aria-selected="true">Explore</button>
+      <button role="tab" data-tabbtn="tools" aria-selected="false">Tools</button>
+      <button role="tab" data-tabbtn="about" aria-selected="false">About</button>
+    </div>
 
-    <section class="insight" aria-labelledby="ins-h">
+    <section class="insight" aria-labelledby="ins-h" data-in="explore">
       <h2 id="ins-h">What happened</h2>
       <p id="insight"></p>
       <div class="kpis" id="kpis"></div>
     </section>
 
-    <section class="timeline" aria-label="Timeline">
-      <div class="tl-head">
+    <section class="timeline" aria-label="Timeline and tools">
+      <!-- Explore: time, chart and what the clicked spot tells -->
+      <div class="tl-head" data-in="explore">
         <button id="play" class="play">Play</button>
         <label class="sound"><input id="sound" type="checkbox" checked> Sound</label>
         <span id="date" class="mono date">—</span>
       </div>
-      <input id="frame" type="range" min="0" max="0" value="0" aria-label="Satellite pass (date)">
-      <div id="fire" class="firebox" hidden>
+      <input id="frame" type="range" min="0" max="0" value="0" aria-label="Satellite pass (date)" data-in="explore">
+      <div id="fire" class="firebox" data-in="explore" hidden>
         <button id="fire-story" class="primary" hidden>▶ Play the story of this fire</button>
         <label class="pick" for="fire-day">Day of the fire <b id="fire-label" class="mono"></b></label>
         <input id="fire-day" type="range" min="0" max="0" value="0" aria-label="Day of the fire, for the heat detections">
         <svg id="fire-spark" class="spark" viewBox="0 0 400 36" preserveAspectRatio="none" role="img" aria-label="Number of heat detections on each day; white ticks mark radar passes"></svg>
         <p class="hint" id="fire-note" role="status"></p>
+      </div>
+      <label class="pick" data-in="explore">Chart <select id="metric"></select></label>
+      <svg id="chart" class="chart" viewBox="0 0 400 140" role="img" aria-label="Time series" data-in="explore"></svg>
+      <div class="metrics mono" id="metrics" data-in="explore"></div>
+      <p class="hint" id="point-hint" data-in="explore">Click anywhere on the radar image to chart and hear that exact spot.</p>
+      <button id="clear-point" data-in="explore" hidden>Back to whole area</button>
+      <p id="fv-note" class="hint fvnote" role="status" data-in="explore"></p>
+      <div id="point-info" class="pointinfo" role="status" data-in="explore"></div>
+
+      <!-- Tools: things to try yourself -->
+      <h2 class="mini first" data-in="tools">Explore it yourself</h2>
+      <div class="tools" id="toolbar" data-in="tools">
+        <button id="t-area" title="Outline a field, a forest or a bay and get the changed area in hectares">Measure an area</button>
+        <button id="t-trace" title="Drag along a river or a shore and hear where the change is biggest">Trace a line and listen</button>
+        <button id="t-quiz" title="Two images, one question: what changed?">Quiz: what changed?</button>
+        <button id="t-outside" hidden></button>
+        <button id="t-ghost" hidden>Put this water over another place</button>
+      </div>
+      <div id="tool-out" class="toolout" role="status" aria-live="polite" data-in="tools"></div>
+      <h2 class="mini" data-in="tools">Compare with another date</h2>
+      <div class="refrow" data-in="tools">
+        <label class="pick">Reference image <select id="ref" title="The 'before' image that every other date is compared with"></select></label>
+        <button id="ref-set" title="Use the date shown now as the reference image">Use shown date</button>
+        <button id="ref-reset" hidden>Reset</button>
+      </div>
+      <p id="ref-note" class="hint refnote" role="status" data-in="tools"></p>
+      <div id="simwrap" class="firebox" data-in="tools" hidden>
         <button id="sim-open" hidden>What if the wind had been different? Try a simulation</button>
         <div id="sim" class="sim" hidden>
           <div class="simtag">Simulation · “What if…” · not a measurement</div>
@@ -147,38 +188,17 @@
           <details><summary>What this model is, and is not</summary><p id="sim-about" class="hint"></p></details>
         </div>
       </div>
-      <div class="refrow">
-        <label class="pick">Reference image <select id="ref" title="The 'before' image that every other date is compared with"></select></label>
-        <button id="ref-set" title="Use the date shown now as the reference image">Use shown date</button>
-        <button id="ref-reset" hidden>Reset</button>
-      </div>
-      <p id="ref-note" class="hint refnote" role="status"></p>
-      <label class="pick">Chart <select id="metric"></select></label>
-      <svg id="chart" class="chart" viewBox="0 0 400 140" role="img" aria-label="Time series"></svg>
-      <div class="metrics mono" id="metrics"></div>
-      <p class="hint" id="point-hint">Click anywhere on the radar image to chart and hear that exact spot.</p>
-      <button id="clear-point" hidden>Back to whole area</button>
-      <div class="tools">
+      <h2 class="mini" data-in="tools">Take it with you</h2>
+      <div class="tools" data-in="tools">
         <button id="csv">Download CSV</button>
         <button id="share">Copy link to this view</button>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <p id="fv-note" class="hint fvnote" role="status"></p>
-      <div id="point-info" class="pointinfo" role="status"></div>
-      <h2 class="mini">Explore it yourself</h2>
-      <div class="tools" id="toolbar">
-        <button id="t-area" title="Outline a field, a forest or a bay and get the changed area in hectares">Measure an area</button>
-        <button id="t-trace" title="Drag along a river or a shore and hear where the change is biggest">Trace a line and listen</button>
-        <button id="t-quiz" title="Two images, one question: what changed?">Quiz: what changed?</button>
-        <button id="t-outside" hidden></button>
-        <button id="t-ghost" hidden>Put this water over another place</button>
-      </div>
-      <div id="tool-out" class="toolout" role="status" aria-live="polite"></div>
     </section>
 
-    <article id="story" class="story"></article>
+    <article id="story" class="story" data-in="about"></article>
 
-    <footer class="credits">
+    <footer class="credits" data-in="about">
       Data: NASA-ISRO NISAR L2 GCOV via <a href="https://search.asf.alaska.edu/">ASF DAAC</a>.
       Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>. Satellite orbits: <a href="https://celestrak.org/">CelesTrak</a>. Hurricanes: <a href="https://www.nhc.noaa.gov/">NOAA NHC</a>. Place names: NASA GIBS reference labels, © OpenStreetMap contributors.
       Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>. Heat detections: <a href="https://www.earthdata.nasa.gov/data/tools/firms">NASA FIRMS</a>.
@@ -190,18 +210,18 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794672003"></script>
-<script src="stories.js?v=1794672003"></script>
-<script src="sound.js?v=1794672003"></script>
-<script src="satellite.min.js?v=1794672003"></script>
-<script src="sats.js?v=1794672003"></script>
-<script src="globe3d.js?v=1794672003"></script>
-<script src="globe.js?v=1794672003"></script>
-<script src="storm.js?v=1794672003"></script>
-<script src="fire.js?v=1794672003"></script>
-<script src="sim.js?v=1794672003"></script>
-<script src="live.js?v=1794672003"></script>
-<script src="app.js?v=1794672003"></script>
-<script src="tools.js?v=1794672003"></script>
+<script src="catalog.js?v=1794672845"></script>
+<script src="stories.js?v=1794672845"></script>
+<script src="sound.js?v=1794672845"></script>
+<script src="satellite.min.js?v=1794672845"></script>
+<script src="sats.js?v=1794672845"></script>
+<script src="globe3d.js?v=1794672845"></script>
+<script src="globe.js?v=1794672845"></script>
+<script src="storm.js?v=1794672845"></script>
+<script src="fire.js?v=1794672845"></script>
+<script src="sim.js?v=1794672845"></script>
+<script src="live.js?v=1794672845"></script>
+<script src="app.js?v=1794672845"></script>
+<script src="tools.js?v=1794672845"></script>
 </body>
 </html>
