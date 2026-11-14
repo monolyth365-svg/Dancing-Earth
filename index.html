@@ -22,11 +22,16 @@
 
 <section id="orbit" class="orbit" aria-label="Satellites around Earth right now" hidden>
   <div class="orbit-head"><h2>Satellites around Earth right now</h2><button id="orbit-close" aria-label="Close">✕</button></div>
-  <canvas id="globe" role="img" aria-label="Globe showing where NISAR and four other Earth-observing satellites are right now, their orbits, and the strip of ground NISAR's radar is pointing at."></canvas>
+  <canvas id="globe" tabindex="0" role="img" aria-label="Globe showing where NISAR and four other Earth-observing satellites are right now, their orbits, and the strip of ground NISAR's radar is pointing at. Drag or use the arrow keys to turn it, plus and minus to zoom."></canvas>
   <p id="orbit-text" class="orbit-text" role="status" aria-live="off"></p>
   <div id="orbit-legend" class="cats"></div>
-  <div class="tools"><button id="orbit-fast" aria-pressed="false">Speed up time ×300</button></div>
-  <p class="hint">Earth, the satellites' heights and the radar beam are drawn to scale; only the satellite pictures are enlarged. The arrow in front of each satellite shows where it is flying. Solid line: last 50 minutes, dashed: next 50. NISAR's beam is a thin fan, about 240 km wide across the track; the radar does not record all the time. Positions are computed from CelesTrak orbital elements; Earth image: NASA Blue Marble.</p>
+  <div class="tools">
+    <button id="orbit-in" aria-label="Zoom in" title="Zoom in">+</button>
+    <button id="orbit-out" aria-label="Zoom out" title="Zoom out">−</button>
+    <button id="orbit-fast" aria-pressed="false">Speed up time ×300</button>
+    <button id="orbit-follow" class="primary" hidden>Follow NISAR again</button>
+  </div>
+  <p class="hint"><b>Drag the globe to turn it</b> and look at the other side of the planet; scroll or use + and − to zoom in on the radar beam. Earth, the satellites' heights and the radar beam are drawn to scale; only the satellite pictures are enlarged. The arrow in front of each satellite shows where it is flying. Solid line: last 50 minutes, dashed: next 50. NISAR's beam is a thin fan, about 240 km wide across the track; the radar does not record all the time. Positions are computed from CelesTrak orbital elements; Earth image: NASA Blue Marble.</p>
 </section>
 
 <main class="layout">

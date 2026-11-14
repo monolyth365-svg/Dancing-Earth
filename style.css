@@ -181,3 +181,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   .globebtn { flex: none; }
 }
 @media (min-width: 861px) and (max-width: 1500px) { .brand .sub { display: none; } }
+
+#globe { cursor: grab; touch-action: none; border-radius: 6px; }
+#globe.grabbing { cursor: grabbing; }
+#globe:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.orbit .hint b { color: var(--text); font-weight: 600; }
