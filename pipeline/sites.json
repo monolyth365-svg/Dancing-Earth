@@ -11,6 +11,20 @@
   "track": "083",
   "waterPol": "hv"
  },
+ "poyang": {
+  "name": "Poyang Lake, China",
+  "kind": "water",
+  "center": [
+   116.35,
+   29.1
+  ],
+  "sizeKm": 90,
+  "waterDb": -22,
+  "waterPol": "hv",
+  "track": "018",
+  "start": "2026-06-01",
+  "edgePx": 25
+ },
  "shingle": {
   "name": "Shingle Fire, Oregon",
   "kind": "fire",

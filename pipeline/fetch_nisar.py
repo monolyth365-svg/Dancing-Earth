@@ -278,7 +278,7 @@ def analyze(site_id):
 
     # Společná platná oblast: jen pixely změřené při všech přeletech, bez okraje dráhy (tam je šum)
     common = np.all([np.isfinite(load(fr, "hh")) for fr in frames], axis=0)
-    common = box(common.astype("float32"), 2 * k + 1) > 0.999
+    common = box(common.astype("float32"), site.get("edgePx", 2 * k + 1)) > 0.999  # edgePx: širší ořez u míst na kraji dráhy
     meta["validKm2"] = round(float(common.sum()) * px, 1)
     sm = {}
     for fr in frames:
@@ -288,7 +288,15 @@ def analyze(site_id):
         fr["meanHV"] = round(float(10 * np.log10(np.nanmean(10 ** (hv[valid] / 10)))), 2) if hv is not None else None
         # Volná voda: HV je nad vodou tmavé i za větru; HH vítr zesvětlí (hladina se zvlní)
         wsrc = hv if site.get("waterPol") == "hv" else hh
-        fr["waterKm2"] = round(float(((smooth(wsrc, 5) < site.get("waterDb", -18)) & common).sum()) * px, 1) if wsrc is not None else None
+        ws = smooth(wsrc, 5) if wsrc is not None else None
+        area = lambda db: round(float(((ws < db) & common).sum()) * px, 1) if ws is not None else None
+        thr = site.get("waterDb", -18)
+        fr["waterKm2"] = area(thr)
+        if site["kind"] == "water":
+            # Citlivost: plocha s prahem o 2 dB volnějším. Práh leží těsně nad šumem radaru, takže níž jít nejde;
+            # výš ano, a pak se započítají i okraje jezera s plovoucí vegetací nebo mokrým bahnem.
+            fr["waterHiKm2"] = area(thr + 2)
+            fr.pop("waterLoKm2", None)
         cur = hh if pol == "hh" else hv
         sm[fr["date"]] = smooth(cur, k) if cur is not None else None
 

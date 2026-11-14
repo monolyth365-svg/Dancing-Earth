@@ -1,0 +1,65 @@
+{
+ "fetched": "2026-11-14T11:48Z",
+ "source": "CelesTrak (https://celestrak.org/)",
+ "sats": [
+  {
+   "id": "nisar",
+   "name": "NISAR",
+   "catnr": 65053,
+   "color": "#e9b949",
+   "role": "NASA-ISRO L-band radar: every radar image in this app",
+   "swathKm": [
+    435,
+    675
+   ],
+   "tle": [
+    "1 65053U 25163A   26318.13032220  .00000187  00000+0  69532-4 0  9993",
+    "2 65053  98.4060 143.6346 0001242  89.9625 270.1708 14.42502111 68003"
+   ]
+  },
+  {
+   "id": "noaa20",
+   "name": "NOAA-20",
+   "catnr": 43013,
+   "color": "#7fd6e8",
+   "role": "Carries VIIRS, the camera behind our Optical layer",
+   "tle": [
+    "1 43013U 17073A   26318.06554295  .00000075  00000+0  56576-4 0  9999",
+    "2 43013  98.7926 256.2770 0001174 130.7130 229.4148 14.19536934465731"
+   ]
+  },
+  {
+   "id": "swot",
+   "name": "SWOT",
+   "catnr": 54754,
+   "color": "#3c8cff",
+   "role": "NASA-CNES mission that measures water height",
+   "tle": [
+    "1 54754U 22173A   26318.11359431  .00000115  00000+0  79416-4 0  9994",
+    "2 54754  77.6105 192.9209 0000456  55.0221 305.0974 14.00169113200135"
+   ]
+  },
+  {
+   "id": "landsat9",
+   "name": "Landsat 9",
+   "catnr": 49260,
+   "color": "#7bd88f",
+   "role": "NASA-USGS optical land imager",
+   "tle": [
+    "1 49260U 21088A   26318.17131576  .00000299  00000+0  76449-4 0  9994",
+    "2 49260  98.2127  26.4010 0001043  88.5326 271.5992 14.57112574272840"
+   ]
+  },
+  {
+   "id": "sentinel1a",
+   "name": "Sentinel-1A",
+   "catnr": 39634,
+   "color": "#b07cff",
+   "role": "ESA C-band radar, NISAR's European cousin",
+   "tle": [
+    "1 39634U 14016A   26318.15572712  .00000783  00000+0  17224-3 0  9993",
+    "2 39634  98.1580 323.3148 0001339  86.5858 273.5495 14.60160702671891"
+   ]
+  }
+ ]
+}

@@ -16,6 +16,23 @@ window.STORIES = {
     ],
     limits: "Open water is counted where smoothed HV is below the threshold, which sits close to the radar noise floor, so very smooth bare ground can be counted by mistake. Water under trees or floating vegetation is not counted, so the true flooded area is larger."
   },
+  // Místo s vlastním příběhem (klíč = id místa); ostatní místa berou příběh podle typu
+  poyang: {
+    label: "Water · a lake that empties",
+    instrument: "Each strip of the image is a note. Where the water retreats the image gets brighter, so the notes climb and get louder",
+    title: "The lake that drains away",
+    body: [
+      "Poyang is China's largest freshwater lake. Five rivers feed it and it drains into the Yangtze. In the summer flood season it swells into a small sea; in autumn the water runs out and much of the lake bed turns into mudflats and grassland.",
+      "Those drying flats are the winter feeding grounds of hundreds of thousands of migrating birds, among them most of the world's Siberian cranes. How fast the lake empties matters for them, for fishing and for the water supply of the towns around it."
+    ],
+    why: "Open water is very dark for radar because the smooth surface reflects the pulse away from the satellite. As the lake retreats, the exposed ground sends more signal back and the dark area shrinks. Water is mapped from HV, because wind can make a lake bright in HH. Summer cloud often hides this lake from cameras, as the Optical layer shows; radar is not affected.",
+    use: [
+      ["Water and wetland managers", "follow how fast the lake empties from one pass to the next, whatever the weather."],
+      ["Scientists", "download the CSV and compare the curve with lake-level gauges or Yangtze discharge."],
+      ["Teachers and the public", "press Play to watch the lake drain, and compare it with Tonlé Sap, which fills over the same months."]
+    ],
+    limits: "Open water is counted where smoothed HV is below the threshold. Very smooth wet mud can look like water, so in the dry season the true water area may be smaller than the number shown. Wind and rain can roughen the water and hide part of it on single days, which is why the curve is not perfectly smooth."
+  },
   fire: {
     label: "Fire · burn scar",
     instrument: "Each strip of the image is a note; where vegetation burned the note drops and gets louder",

@@ -13,9 +13,14 @@ Pick a place, then watch, compare and listen:
 
 - **Change map** – a coloured layer shows where the radar signal dropped or rose.
 - **Before / after slider** – swipe between the reference pass and any later pass.
-- **Optical layer** – a photo from a camera satellite (NASA VIIRS) taken on the same day. With the slider it sits next to the radar image, so you can see the clouds that radar looks through. A camera saw mostly cloud on 24 of the 67 radar pass days (rough estimate).
+- **Optical layer** – a photo from a camera satellite (NASA VIIRS) taken on the same day. With the slider it sits next to the radar image, so you can see the clouds that radar looks through. A camera saw mostly cloud on 29 of the 77 radar pass days (rough estimate).
 - **Time-series animation** – press Play to step through every satellite pass.
-- **Live world** – a world map of natural events NASA is tracking right now (wildfires, storms, ice, floods, volcanoes). Click an event, or any place on land, and the app loads the newest NISAR radar quick-look image of that spot straight from NASA's archive, lists earlier passes to flip through, and estimates the next pass. Nothing is pre-computed; it runs in your browser.
+- **Live world** – a world map that reads everything live from NASA in your browser:
+  - natural events NASA is tracking right now (wildfires, storms, ice, floods, volcanoes);
+  - click an event, or any place on land, to load the newest NISAR quick-look radar image of that spot, with earlier passes to flip through and an estimate of the next pass;
+  - one button compares two passes of the same track, colours what changed and plays it as music;
+  - satellites overhead right now (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A) with their direction, their path for the last and next 50 minutes, and the strip NISAR's radar is looking at. The strip was checked against real NISAR images.
+- **Start here** – a short welcome card explains the app in four steps on the first visit (the "?" button reopens it).
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
 - **Click any spot** on the image to get the time series of that exact place.
 - **Music from the image** – each radar image is cut into 16 vertical strips. Brightness sets the pitch of a note, the amount of change since the previous pass sets its loudness, and the position (west to east) sets left/right. Places that change sound different from places that stay the same.
@@ -26,6 +31,7 @@ Pick a place, then watch, compare and listen:
 | Place | Topic | What the radar shows |
 | --- | --- | --- |
 | Tonlé Sap, Cambodia | Water – monsoon flood pulse | Open water mapped from HV grows from about 1,040 km² to about 1,570 km² between June and October 2026 |
+| Poyang Lake, China | Water – a lake that empties | Open water mapped from HV shrinks from summer to autumn as the lake drains into the Yangtze |
 | Shingle Fire, Oregon, USA | Wildfire – burn scar | HV drops inside the fire; 96 % of the detected loss lies inside the official fire perimeter |
 | Big Grass Fire, Oregon, USA | Wildfire – limit of the method | A large grass fire that L-band radar barely sees (about 5–9 % of the official burn area) |
 | Rondônia, Brazil | Forest clearing | HV loss and gain between dual-pol passes |
@@ -48,7 +54,9 @@ Pick a place, then watch, compare and listen:
 4. **Open water** = smoothed HV below −24 dB. HV is used because wind makes water bright in HH (visible on 18 August 2026 over Tonlé Sap) but not in HV.
 5. **Fire validation** – the detected HV loss is compared with the official fire perimeter (NIFC), which is not used in the detection itself.
 6. `pipeline/fetch_optical.py` downloads the VIIRS true-colour image of the same calendar day from NASA GIBS, resamples it to the radar grid and makes a rough cloud estimate (share of bright, colourless pixels).
-7. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
+7. `pipeline/fetch_tle.py` downloads orbital elements (TLE) from CelesTrak; the browser turns them into live satellite positions with the SGP4 model (satellite.js).
+8. `pipeline/update_sites.py` and `.github/workflows/update.yml` re-run the pipeline once a day on GitHub, so new NISAR passes appear in the app automatically (needs an `EARTHDATA_TOKEN` repository secret; without it only the orbits are refreshed).
+9. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
 
 All thresholds are listed in the app under "Method and limits" for each place.
 
@@ -59,7 +67,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Open-water area does not include water under trees or floating vegetation.
 - Area numbers are approximate (pixel size 78–195 m, simple thresholds).
 - The optical photo is from the same calendar day, not the same hour, and its cloud percentage is a rough estimate that smoke, haze, fog or bright ground can confuse.
-- Live world shows NASA's quick-look images as they are, with no change analysis; "right now" means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate.
+- Live world works with NASA's quick-look images, which are not calibrated, so its change map is a rough visual comparison, not a measurement. Satellite positions are computed from orbital elements and are good to a few kilometres; the radar strip shows where the radar points, not whether it is recording. "Right now" for radar images means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
@@ -78,6 +86,7 @@ python3 -m venv .venv
 cp .env.example .env          # then paste your Earthdata token into .env
 .venv/bin/python pipeline/fetch_nisar.py            # all places, or name one: shingle
 .venv/bin/python pipeline/fetch_optical.py          # no token needed
+.venv/bin/python pipeline/fetch_tle.py              # satellite orbits, no token needed
 .venv/bin/python pipeline/make_cube.py
 ```
 
@@ -100,6 +109,8 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 ### Other data and tools
 
 - NIFC (US National Interagency Fire Center) WFIGS Interagency Fire Perimeters, year to date – https://data-nifc.opendata.arcgis.com/ (service: https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_YearToDate/FeatureServer/0)
+- CelesTrak, orbital elements (TLE) of the satellites shown in Live world – https://celestrak.org/
+- satellite.js 5.0.0 (MIT), SGP4 orbit propagation in the browser – https://github.com/shashwatak/satellite-js
 - MapLibre GL JS 4.7.1 (BSD-3-Clause) – https://maplibre.org/
 - Fonts Instrument Sans and JetBrains Mono (SIL Open Font License) via Google Fonts – https://fonts.google.com/
 - Python libraries: NumPy https://numpy.org/ , h5py https://www.h5py.org/ , Requests https://requests.readthedocs.io/ , pyproj https://pyproj4.github.io/pyproj/ , Pillow https://python-pillow.org/

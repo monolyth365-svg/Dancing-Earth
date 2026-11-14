@@ -1,0 +1,266 @@
+{
+ "name": "Poyang Lake, China",
+ "kind": "water",
+ "center": [
+  116.35,
+  29.1
+ ],
+ "sizeKm": 90,
+ "track": [
+  "018",
+  "74",
+  "DESCENDING"
+ ],
+ "corners": [
+  [
+   115.88370891723322,
+   29.50268490426207
+  ],
+  [
+   116.81139219661402,
+   29.507236300780594
+  ],
+  [
+   116.8128659388648,
+   28.695637902515873
+  ],
+  [
+   115.8924292651729,
+   28.691235007604796
+  ]
+ ],
+ "frames": [
+  {
+   "date": "2026-06-27",
+   "granule": "NISAR_L2_PR_GCOV_024_018_D_074_2005_DHDH_A_20260627T110142_20260627T110217_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-06-27_hh.png",
+   "hv": "2026-06-27_hv.png",
+   "meanHH": -5.97,
+   "meanHV": -14.28,
+   "waterKm2": 2022.6,
+   "sceneShiftDb": null,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2026-06-27_change.png",
+   "waterHiKm2": 2617.7,
+   "optical": "2026-06-27_optical.jpg",
+   "cloudPct": 33,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-07-09",
+   "granule": "NISAR_L2_PR_GCOV_025_018_D_074_2005_DHDH_A_20260709T110142_20260709T110216_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-09_hh.png",
+   "hv": "2026-07-09_hv.png",
+   "meanHH": -5.77,
+   "meanHV": -14.24,
+   "waterKm2": 2203.5,
+   "sceneShiftDb": null,
+   "lossKm2": 47.3,
+   "gainKm2": 41.8,
+   "change": "2026-07-09_change.png",
+   "waterHiKm2": 2711.1,
+   "optical": "2026-07-09_optical.jpg",
+   "cloudPct": 62,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-07-21",
+   "granule": "NISAR_L2_PR_GCOV_026_018_D_074_2005_DHDH_A_20260721T110141_20260721T110216_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-21_hh.png",
+   "hv": "2026-07-21_hv.png",
+   "meanHH": -5.35,
+   "meanHV": -13.58,
+   "waterKm2": 1481.1,
+   "sceneShiftDb": null,
+   "lossKm2": 11.0,
+   "gainKm2": 197.1,
+   "change": "2026-07-21_change.png",
+   "waterHiKm2": 2308.9,
+   "optical": "2026-07-21_optical.jpg",
+   "cloudPct": 100,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-08-14",
+   "granule": "NISAR_L2_PR_GCOV_028_018_D_074_2005_DHDH_A_20260814T110140_20260814T110214_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-14_hh.png",
+   "hv": "2026-08-14_hv.png",
+   "meanHH": -5.33,
+   "meanHV": -13.83,
+   "waterKm2": 1114.9,
+   "sceneShiftDb": null,
+   "lossKm2": 27.3,
+   "gainKm2": 478.3,
+   "change": "2026-08-14_change.png",
+   "waterHiKm2": 2022.0,
+   "optical": "2026-08-14_optical.jpg",
+   "cloudPct": 99,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-08-26",
+   "granule": "NISAR_L2_PR_GCOV_029_018_D_074_2005_DHDH_A_20260826T110140_20260826T110214_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-26_hh.png",
+   "hv": "2026-08-26_hv.png",
+   "meanHH": -5.81,
+   "meanHV": -14.31,
+   "waterKm2": 1169.1,
+   "sceneShiftDb": null,
+   "lossKm2": 21.0,
+   "gainKm2": 247.2,
+   "change": "2026-08-26_change.png",
+   "waterHiKm2": 2206.5,
+   "optical": "2026-08-26_optical.jpg",
+   "cloudPct": 53,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-09-07",
+   "granule": "NISAR_L2_PR_GCOV_030_018_D_074_2005_DHDH_A_20260907T110139_20260907T110214_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-07_hh.png",
+   "hv": "2026-09-07_hv.png",
+   "meanHH": -5.53,
+   "meanHV": -14.33,
+   "waterKm2": 1630.9,
+   "sceneShiftDb": null,
+   "lossKm2": 16.1,
+   "gainKm2": 65.8,
+   "change": "2026-09-07_change.png",
+   "waterHiKm2": 2499.5,
+   "optical": "2026-09-07_optical.jpg",
+   "cloudPct": 8,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-09-19",
+   "granule": "NISAR_L2_PR_GCOV_031_018_D_074_2005_DHDH_A_20260919T110140_20260919T110214_P05023_F_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-19_hh.png",
+   "hv": "2026-09-19_hv.png",
+   "meanHH": -5.57,
+   "meanHV": -14.42,
+   "waterKm2": 643.8,
+   "sceneShiftDb": null,
+   "lossKm2": 16.0,
+   "gainKm2": 603.1,
+   "change": "2026-09-19_change.png",
+   "waterHiKm2": 1805.4,
+   "optical": "2026-09-19_optical.jpg",
+   "cloudPct": 6,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-10-01",
+   "granule": "NISAR_L2_PR_GCOV_032_018_D_074_2005_DHDH_A_20261001T110140_20261001T110214_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-01_hh.png",
+   "hv": "2026-10-01_hv.png",
+   "meanHH": -5.26,
+   "meanHV": -14.1,
+   "waterKm2": 832.6,
+   "sceneShiftDb": null,
+   "lossKm2": 14.5,
+   "gainKm2": 674.6,
+   "change": "2026-10-01_change.png",
+   "waterHiKm2": 1766.9,
+   "optical": "2026-10-01_optical.jpg",
+   "cloudPct": 91,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-10-13",
+   "granule": "NISAR_L2_PR_GCOV_033_018_D_074_2005_DHDH_A_20261013T110140_20261013T110214_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-13_hh.png",
+   "hv": "2026-10-13_hv.png",
+   "meanHH": -5.44,
+   "meanHV": -14.2,
+   "waterKm2": 693.1,
+   "sceneShiftDb": null,
+   "lossKm2": 28.1,
+   "gainKm2": 623.9,
+   "change": "2026-10-13_change.png",
+   "waterHiKm2": 1826.8,
+   "optical": "2026-10-13_optical.jpg",
+   "cloudPct": 49,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-10-25",
+   "granule": "NISAR_L2_PR_GCOV_034_018_D_074_2005_DHDH_A_20261025T110140_20261025T110215_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-25_hh.png",
+   "hv": "2026-10-25_hv.png",
+   "meanHH": -5.7,
+   "meanHV": -14.33,
+   "waterKm2": 776.1,
+   "sceneShiftDb": null,
+   "lossKm2": 35.2,
+   "gainKm2": 664.1,
+   "change": "2026-10-25_change.png",
+   "waterHiKm2": 1844.8,
+   "optical": "2026-10-25_optical.jpg",
+   "cloudPct": 13,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  }
+ ],
+ "extentKm": [
+  89.88,
+  90.33
+ ],
+ "validKm2": 8118.9,
+ "unstableKm2": null,
+ "analysis": {
+  "pol": "HV",
+  "scaleDb": 8,
+  "showDb": 2.0,
+  "thresholdDb": 3.0,
+  "smoothingPx": 5,
+  "pixelM": 176,
+  "sceneShiftRemoved": false,
+  "baselineDates": [
+   "2026-06-27"
+  ],
+  "waterDb": -22,
+  "waterPol": "HV",
+  "colors": {
+   "loss": "#3c8cff",
+   "gain": "#ff9628"
+  }
+ },
+ "optical": {
+  "source": "NASA GIBS, Corrected Reflectance (True Color)",
+  "sensors": [
+   "VIIRS NOAA20"
+  ],
+  "pixelM": 250,
+  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
+ },
+ "cube": {
+  "file": "cube.bin",
+  "size": 128,
+  "pols": [
+   "hh",
+   "hv"
+  ],
+  "scale": 100,
+  "nodata": -32768
+ }
+}
