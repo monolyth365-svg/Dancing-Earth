@@ -6,6 +6,9 @@ window.Globe3D = (() => {
   const BASE = "https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/", SCALE = 4000, el = (s) => document.querySelector(s);
   const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/";
   let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, swath = null;
+  // Tablety a telefony mají málo grafické paměti (Safari na iPadu jinak stránku shodí) → úsporný režim
+  const LIGHT = matchMedia("(pointer: coarse)").matches || /iPad|iPhone|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+  let mapLost = null;
   let sel = null, track = null, spot = null; // vybraná družice; kamera letí s ní (track) nebo stojí na zemi a dívá se na ni (spot)
 
   const loadLib = () => (loading ??= new Promise((ok, bad) => {
@@ -39,16 +42,18 @@ window.Globe3D = (() => {
   function build() {
     viewer = new C.Viewer("g3d-view", {
       baseLayer: new C.ImageryLayer(new C.UrlTemplateImageryProvider({ url: GIBS + "BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg", maximumLevel: 8, credit: "NASA GIBS Blue Marble" })),
+      scene3DOnly: true, msaaSamples: 1, skyBox: LIGHT ? false : undefined, contextOptions: { webgl: { antialias: false, powerPreference: "default" } },
       baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
     });
     // Ostrý detail zblízka: mozaika Landsat 30 m; černá (= bez dat, moře) se zprůhlední, aby byl vidět Blue Marble
-    const detail = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: GIBS + "Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpg", minimumLevel: 7, maximumLevel: 12, credit: "NASA Landsat WELD mosaic" }));
+    const detail = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: GIBS + "Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpg", minimumLevel: 7, maximumLevel: LIGHT ? 10 : 12, credit: "NASA Landsat WELD mosaic" }));
     detail.colorToAlpha = C.Color.BLACK; detail.colorToAlphaThreshold = 0.02;
     viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 1; viewer.clock.currentTime = C.JulianDate.now();
     viewer.scene.globe.enableLighting = false;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
-    viewer.scene.globe.maximumScreenSpaceError = 2.6; // o něco méně dlaždic najednou = plynulejší pohyb
-    viewer.scene.globe.tileCacheSize = 300;
+    viewer.scene.globe.maximumScreenSpaceError = LIGHT ? 4 : 2.6; // méně dlaždic najednou = plynulejší pohyb a méně paměti
+    viewer.scene.globe.tileCacheSize = LIGHT ? 30 : 100;
+    if (LIGHT) { viewer.resolutionScale = 0.8; viewer.scene.fog.enabled = false; viewer.scene.sun && (viewer.scene.sun.show = false); viewer.scene.moon && (viewer.scene.moon.show = false); }
     // Když počítač nestíhá (pod 24 snímků za vteřinu), sníží se postupně rozlišení a detail dlaždic, aby se obraz nesekal
     let frames = 0, since = performance.now();
     viewer.scene.postRender.addEventListener(() => {
@@ -194,15 +199,25 @@ window.Globe3D = (() => {
     viewer.camera.flyTo({ destination: dest, orientation: { direction: dir, up }, duration: sec });
   }
 
+  // Na tabletu se po dobu 3D pohledu uvolní grafická paměť ploché mapy pod ním; při zavření se obnoví
+  function releaseMap(release) {
+    if (!LIGHT || typeof map === "undefined") return;
+    try {
+      if (release && !mapLost) { mapLost = map.painter.context.gl.getExtension("WEBGL_lose_context"); mapLost?.loseContext(); }
+      else if (!release && mapLost) { mapLost.restoreContext(); mapLost = null; setTimeout(() => map.triggerRepaint(), 300); }
+    } catch { mapLost = null; }
+  }
+
   async function show() {
     const box = el("#g3d");
+    releaseMap(true);
     box.hidden = false; open = true;
     box.style.top = el(".top").offsetHeight + "px";
     el("#globe-btn").setAttribute("aria-expanded", "true");
     if (!viewer) {
       el("#g3d-text").textContent = "Loading the 3D Earth…";
       try { await loadLib(); await Sats.load(); C = window.Cesium; build(); }
-      catch (e) { box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); throw e; }
+      catch (e) { box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); releaseMap(false); throw e; }
     } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; whole(0); }
     el("#g3d-beside").textContent = `Fly beside ${sel.name}`;
     el("#g3d-fast").setAttribute("aria-pressed", "false"); el("#g3d-fast").textContent = "Speed up time ×300";
@@ -211,6 +226,7 @@ window.Globe3D = (() => {
   function hide() {
     open = false; el("#g3d").hidden = true; el("#globe-btn").setAttribute("aria-expanded", "false");
     if (viewer) viewer.useDefaultRenderLoop = false; // nekreslit, když není vidět
+    releaseMap(false);
   }
   const toggle = () => (open ? (hide(), Promise.resolve()) : show());
 

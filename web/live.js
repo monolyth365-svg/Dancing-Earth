@@ -140,7 +140,7 @@ window.Live = (() => {
     });
     job.catch(() => cache.delete(p.granuleName));
     cache.set(p.granuleName, job);
-    if (cache.size > 16) cache.delete(cache.keys().next().value);
+    if (cache.size > (matchMedia("(pointer: coarse)").matches ? 6 : 16)) cache.delete(cache.keys().next().value);
     return job;
   }
   function put(cv, coords) {
