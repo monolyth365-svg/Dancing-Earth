@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794663493" rel="stylesheet">
+<link href="style.css?v=1794663901" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -21,6 +21,22 @@
 </header>
 
 <div id="menu" class="menu" hidden></div>
+
+<section id="g3d" class="g3d" aria-label="3D Earth with satellites" hidden>
+  <div id="g3d-view"></div>
+  <div class="g3d-card">
+    <div class="orbit-head"><h2>Earth and its satellites, right now</h2><button id="g3d-close" aria-label="Close">✕</button></div>
+    <p id="g3d-text" class="orbit-text" role="status" aria-live="off"></p>
+    <div class="tools">
+      <button id="g3d-whole">Whole Earth</button>
+      <button id="g3d-beside">Fly beside NISAR</button>
+      <button id="g3d-below" class="primary">Look up from the ground</button>
+      <button id="g3d-fast" aria-pressed="false">Speed up time ×300</button>
+      <button id="g3d-light" aria-pressed="false">Day and night</button>
+    </div>
+    <p class="hint"><b>Drag</b> to turn the Earth, <b>scroll</b> to zoom right down to the ground, <b>Ctrl + drag</b> (or two fingers) to tilt the view. The surface sharpens as you zoom in: only the part you look at is loaded. Earth, orbits, heights and the radar beam are to scale; the satellite models are simple sketches enlarged about 4,000 times. Imagery: NASA Blue Marble and Landsat mosaic. Orbits: CelesTrak.</p>
+  </div>
+</section>
 
 <section id="orbit" class="orbit" aria-label="Satellites around Earth right now" hidden>
   <div class="orbit-head"><h2>Satellites around Earth right now</h2><button id="orbit-close" aria-label="Close">✕</button></div>
@@ -143,15 +159,16 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794663493"></script>
-<script src="stories.js?v=1794663493"></script>
-<script src="sound.js?v=1794663493"></script>
-<script src="satellite.min.js?v=1794663493"></script>
-<script src="sats.js?v=1794663493"></script>
-<script src="globe.js?v=1794663493"></script>
-<script src="storm.js?v=1794663493"></script>
-<script src="fire.js?v=1794663493"></script>
-<script src="live.js?v=1794663493"></script>
-<script src="app.js?v=1794663493"></script>
+<script src="catalog.js?v=1794663901"></script>
+<script src="stories.js?v=1794663901"></script>
+<script src="sound.js?v=1794663901"></script>
+<script src="satellite.min.js?v=1794663901"></script>
+<script src="sats.js?v=1794663901"></script>
+<script src="globe3d.js?v=1794663901"></script>
+<script src="globe.js?v=1794663901"></script>
+<script src="storm.js?v=1794663901"></script>
+<script src="fire.js?v=1794663901"></script>
+<script src="live.js?v=1794663901"></script>
+<script src="app.js?v=1794663901"></script>
 </body>
 </html>

@@ -133,14 +133,14 @@ window.Globe = (() => {
   }
 
   const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
-  function describe(date, info) {
+  function describe(date, info, sim = speed > 1 ? speed : 0) {
     const { p, sun } = info, n = sats[0];
     const v = satellite.propagate(n.rec, date).velocity, kms = v ? Math.hypot(v.x, v.y, v.z) : null;
     const mid = [(p.edges[0][0] + p.edges[1][0]) / 2, (p.edges[0][1] + p.edges[1][1]) / 2]; // střed pruhu (stačí přibližně)
     const elev = dot(unit(mid[1], mid[0]), sun), light = elev > 0.1 ? "daytime" : elev < -0.1 ? "night" : "twilight";
     const h = ((date.getUTCHours() + date.getUTCMinutes() / 60 + mid[0] / 15) % 24 + 24) % 24, lst = `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`;
     const ll = `${Math.abs(p.lat).toFixed(1)}°${p.lat >= 0 ? "N" : "S"} ${Math.abs(p.lng).toFixed(1)}°${p.lng >= 0 ? "E" : "W"}`;
-    return `${speed > 1 ? `<b class="sim">Simulated time ×${speed}: ${date.toISOString().slice(0, 16).replace("T", " ")} UTC (not live)</b><br>` : ""}<b>NISAR</b> is over ${ll}, ${Math.round(p.alt)} km up, flying ${COMPASS[Math.round((((p.head % 360) + 360) % 360) / 45) % 8]}${kms ? ` at ${kms.toFixed(1)} km/s` : ""}. Its radar points at a strip 435–675 km to its left, where it is ${light} (${lst} local solar time). Radar brings its own light, so day or night makes no difference.`;
+    return `${sim ? `<b class="sim">Simulated time ×${sim}: ${date.toISOString().slice(0, 16).replace("T", " ")} UTC (not live)</b><br>` : ""}<b>NISAR</b> is over ${ll}, ${Math.round(p.alt)} km up, flying ${COMPASS[Math.round((((p.head % 360) + 360) % 360) / 45) % 8]}${kms ? ` at ${kms.toFixed(1)} km/s` : ""}. Its radar points at a strip 435–675 km to its left, where it is ${light} (${lst} local solar time). Radar brings its own light, so day or night makes no difference.`;
   }
 
   function frame() {
@@ -228,12 +228,15 @@ window.Globe = (() => {
     el("#globe-btn").hidden = false;
     const tickMini = () => { if (!document.hidden) draw(mini, new Date(), false, true); };
     tickMini(); setInterval(tickMini, 3000);
-    el("#globe-btn").onclick = () => toggle(!open);
+    // Nejdřív zkusit velkou 3D zeměkouli; když se knihovna nenačte (bez připojení), otevře se jednodušší kreslená
+    el("#globe-btn").onclick = () => { if (open) return toggle(false); Globe3D.toggle().catch(() => toggle(true)); };
+    Globe3D.bind();
     el("#orbit-close").onclick = () => toggle(false);
     el("#orbit-fast").onclick = () => setSpeed(speed > 1 ? 1 : 300);
     controls();
     addEventListener("keydown", (e) => { if (e.key === "Escape" && open) toggle(false); });
   }
 
-  return { init, _state: () => ({ open, speed, ready: !!tex, free, zoom, vlat: Math.round(vlat), vlng: Math.round(vlng) }) };
+  const describeAt = (date, sim) => { const p = Sats.at(sats[0], date); return p ? describe(date, { p, sun: sunVec(date) }, sim) : ""; };
+  return { init, describeAt, _state: () => ({ open, speed, ready: !!tex, free, zoom, vlat: Math.round(vlat), vlng: Math.round(vlng) }) };
 })();
