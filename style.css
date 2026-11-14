@@ -129,8 +129,10 @@ body.live #head, body.live .insight, body.live .timeline, body.live #story, body
 .evlist time { font: 11px var(--mono); color: var(--muted); margin-left: 8px; }
 
 /* Satellites on the live map: see-through so the map stays readable */
-.sat { display: flex; align-items: center; gap: 5px; pointer-events: none; opacity: .85; }
-.sat-arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 15px solid #fff; filter: drop-shadow(0 0 2px #000); transform-origin: 50% 50%; }
+.sat { position: relative; width: 44px; height: 44px; pointer-events: none; opacity: .88; }
+.sat span { position: absolute; left: 46px; top: 15px; }
+.sat-icon { width: 44px; height: 44px; transform-origin: 50% 50%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.8)); }
+.sat-icon svg { display: block; }
 .sat span { font: 500 11px var(--mono); color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; white-space: nowrap; }
 .satlist button { align-items: flex-start; }
 .satlist i { margin-top: 5px; }
@@ -147,3 +149,35 @@ body.live #head, body.live .insight, body.live .timeline, body.live #story, body
 .intro li b { color: var(--text); font-weight: 600; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 600; }
 #help { border-radius: 50%; width: 32px; padding: 5px 0; color: var(--muted); }
+
+/* Live globe: small button in the header, opens a panel */
+.top { position: relative; }
+.globebtn { display: flex; align-items: center; gap: 8px; padding: 3px 10px 3px 4px; border-radius: 28px; order: 3; font: 500 10px/1.15 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: left; }
+.globebtn canvas { display: block; border-radius: 50%; }
+.globebtn[aria-expanded="true"] { border-color: var(--accent); color: var(--text); }
+.orbit { position: absolute; z-index: 30; right: 12px; width: min(432px, calc(100vw - 24px)); background: #0e1115; border: 1px solid #3a414c; border-radius: 6px; padding: 14px 16px 16px; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+.orbit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.orbit-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.orbit-head button { border: 0; font-size: 15px; color: var(--muted); padding: 4px 8px; }
+.orbit canvas { display: block; margin: 6px auto 4px; }
+.orbit-text { font-size: 13px; color: #c3c8cf; margin: 4px 0 10px; }
+.orbit-text b { color: var(--text); font-weight: 600; }
+.orbit-text .sim { color: #ff6a5a; }
+.orbit .cats .off { opacity: .45; }
+.orbit .tools { margin-top: 10px; }
+@media (max-width: 860px) {
+  .brand { flex: 1; }
+  .globebtn { order: 2; }
+  .sites { order: 3; flex-basis: 100%; }
+  .orbit { right: 12px; left: 12px; width: auto; }
+}
+.sites { margin-left: auto; }
+.globebtn { margin-left: 4px; }
+
+@media (min-width: 861px) {
+  .top { flex-wrap: nowrap; }
+  .brand { min-width: 0; }
+  .sites { justify-content: flex-end; }
+  .globebtn { flex: none; }
+}
+@media (min-width: 861px) and (max-width: 1500px) { .brand .sub { display: none; } }
