@@ -370,3 +370,16 @@ body.view3d .mapui { top: 54px; right: 12px; } /* horní řádek patří tlačí
 .g3d-pop [data-close] { position: absolute; top: 2px; right: 2px; border: 0; padding: 2px 8px; font-size: 16px; color: #e8eaed; }
 .g3d-pop .src { color: var(--muted); }
 #map { isolation: isolate; } /* ovládání a značky ploché mapy zůstanou pod 3D pohledem */
+
+/* Charts tab */
+#panel[data-tab="charts"] [data-in]:not([data-in="charts"]) { display: none !important; }
+#panel[data-tab="charts"] .timeline { display: none; }
+body.live .chartsbox, body.storm .chartsbox { display: none !important; }
+.chartsbox { padding: 16px 20px 6px; }
+.chartsbox .lead { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.chartsbox figure { margin: 0 0 20px; }
+.chartsbox .svgwrap { cursor: pointer; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.chartsbox svg { display: block; width: 100%; height: auto; }
+.chartsbox figcaption { font-size: 13px; line-height: 1.45; color: #c3c8cf; margin-top: 7px; }
+.chartsbox button { font-size: 12px; padding: 3px 8px; margin-top: 7px; }
+.tabs button { padding-left: 4px; padding-right: 4px; }
