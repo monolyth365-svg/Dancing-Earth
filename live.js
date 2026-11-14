@@ -20,7 +20,6 @@ window.Live = (() => {
     document.body.classList.add("live");
     for (const l of ["perim", "sar"]) if (map.getLayer(l)) map.removeLayer(l);
     for (const s of ["perim", "sar"]) if (map.getSource(s)) map.removeSource(s);
-    document.querySelectorAll("#sites button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.site === "live"));
     history.replaceState(null, "", "#live" + (at ? "=" + at : ""));
     if (!at) { map.resize(); map.fitBounds([[-150, -50], [160, 68]], { padding: 4, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 }); }
     el("#live-detail").innerHTML = "";

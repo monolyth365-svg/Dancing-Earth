@@ -316,5 +316,13 @@
   ],
   "pixelM": 250,
   "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
+ },
+ "hotspots": {
+  "file": "hotspots.json",
+  "count": 15919,
+  "first": "2026-07-23",
+  "last": "2026-08-26",
+  "start": "2026-07-21",
+  "end": "2026-09-22"
  }
 }
