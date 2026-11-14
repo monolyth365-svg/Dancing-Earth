@@ -46,14 +46,18 @@ window.Globe3D = (() => {
       baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
     });
     // Ostrý detail zblízka: mozaika Landsat 30 m; černá (= bez dat, moře) se zprůhlední, aby byl vidět Blue Marble
-    const detail = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: GIBS + "Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpg", minimumLevel: 7, maximumLevel: LIGHT ? 10 : 12, credit: "NASA Landsat WELD mosaic" }));
+    // POZOR: nepoužívat u této vrstvy „minimumLevel“ – nutilo by to načíst všechny dlaždice dané úrovně pro celou
+    // viditelnou polokouli (tisíce obrázků), což sekalo obraz a na iPadu shodilo Safari. Správně: vrstva se ukáže
+    // až na dlaždicích terénu od úrovně 7 výš, tedy jen zblízka a jen tam, kam se uživatel dívá.
+    const detail = new C.ImageryLayer(new C.UrlTemplateImageryProvider({ url: GIBS + "Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpg", maximumLevel: LIGHT ? 11 : 12, credit: "NASA Landsat WELD mosaic" }), { minimumTerrainLevel: 7 });
+    viewer.imageryLayers.add(detail);
     detail.colorToAlpha = C.Color.BLACK; detail.colorToAlphaThreshold = 0.02;
     viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 1; viewer.clock.currentTime = C.JulianDate.now();
     viewer.scene.globe.enableLighting = false;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
-    viewer.scene.globe.maximumScreenSpaceError = LIGHT ? 4 : 2.6; // méně dlaždic najednou = plynulejší pohyb a méně paměti
-    viewer.scene.globe.tileCacheSize = LIGHT ? 30 : 100;
-    if (LIGHT) { viewer.resolutionScale = 0.8; viewer.scene.fog.enabled = false; viewer.scene.sun && (viewer.scene.sun.show = false); viewer.scene.moon && (viewer.scene.moon.show = false); }
+    viewer.scene.globe.maximumScreenSpaceError = LIGHT ? 3 : 2.6; // méně dlaždic najednou = plynulejší pohyb a méně paměti
+    viewer.scene.globe.tileCacheSize = LIGHT ? 60 : 100;
+    if (LIGHT) { viewer.scene.fog.enabled = false; viewer.scene.sun && (viewer.scene.sun.show = false); viewer.scene.moon && (viewer.scene.moon.show = false); }
     // Když počítač nestíhá (pod 24 snímků za vteřinu), sníží se postupně rozlišení a detail dlaždic, aby se obraz nesekal
     let frames = 0, since = performance.now();
     viewer.scene.postRender.addEventListener(() => {
@@ -201,6 +205,7 @@ window.Globe3D = (() => {
 
   // Na tabletu se po dobu 3D pohledu uvolní grafická paměť ploché mapy pod ním; při zavření se obnoví
   function releaseMap(release) {
+    return; // vypnuto: příčinou pádů bylo hromadné načítání dlaždic, ne paměť mapy; ponecháno jen pro případ potřeby
     if (!LIGHT || typeof map === "undefined") return;
     try {
       if (release && !mapLost) { mapLost = map.painter.context.gl.getExtension("WEBGL_lose_context"); mapLost?.loseContext(); }
