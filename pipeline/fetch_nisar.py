@@ -342,6 +342,17 @@ def analyze(site_id):
         fr["gainKm2"] = round(float((diff[ok] > cfg["thr"]).sum()) * px, 1)
         if inside is not None:
             fr["lossInsideKm2"] = round(float(((diff < -cfg["thr"]) & ok & inside).sum()) * px, 1)
+            # Úbytek mimo oficiální obrys: samostatný obrázek (fialově) a místo, kde je ho nejvíc pohromadě
+            out = (diff < -cfg["thr"]) & ok & ~inside
+            o_rgba = np.zeros((*out.shape, 4), "uint8"); o_rgba[out] = (255, 60, 220, 235)
+            Image.fromarray(o_rgba, "RGBA").save(d / f"{fr['date']}_outside.png", optimize=True)
+            fr["outside"] = f"{fr['date']}_outside.png"
+            fr["lossOutsideKm2"] = round(float(out.sum()) * px, 1)
+            blocks = out.reshape(16, SIZE // 16, 16, SIZE // 16).sum(axis=(1, 3))
+            by, bx = np.unravel_index(int(blocks.argmax()), blocks.shape)
+            u, v = (bx + 0.5) / 16, (by + 0.5) / 16
+            tl, tr, _, bl = meta["corners"]
+            fr["outsideFocus"] = [round(tl[0] + u * (tr[0] - tl[0]) + v * (bl[0] - tl[0]), 4), round(tl[1] + u * (tr[1] - tl[1]) + v * (bl[1] - tl[1]), 4)] if blocks.max() else None
             fr["meanInsideDb"] = round(float(np.mean(diff[ok & inside])), 2)
             fr["meanOutsideDb"] = round(float(np.mean(diff[ok & ~inside])), 2)
         v = np.clip(np.nan_to_num(diff) / cfg["scale"], -1, 1)

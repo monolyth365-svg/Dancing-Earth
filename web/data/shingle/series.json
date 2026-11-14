@@ -50,7 +50,10 @@
    "meanOutsideDb": -0.02,
    "optical": "2026-06-21_optical.jpg",
    "cloudPct": 0,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-06-21_outside.png",
+   "lossOutsideKm2": 0.0,
+   "outsideFocus": null
   },
   {
    "date": "2026-07-03",
@@ -71,7 +74,10 @@
    "meanOutsideDb": -0.01,
    "optical": "2026-07-03_optical.jpg",
    "cloudPct": 0,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-07-03_outside.png",
+   "lossOutsideKm2": 0.0,
+   "outsideFocus": null
   },
   {
    "date": "2026-07-15",
@@ -92,7 +98,10 @@
    "meanOutsideDb": 0.03,
    "optical": "2026-07-15_optical.jpg",
    "cloudPct": 25,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-07-15_outside.png",
+   "lossOutsideKm2": 0.0,
+   "outsideFocus": null
   },
   {
    "date": "2026-07-27",
@@ -113,7 +122,10 @@
    "meanOutsideDb": 0.01,
    "optical": "2026-07-27_optical.jpg",
    "cloudPct": 14,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-07-27_outside.png",
+   "lossOutsideKm2": 0.0,
+   "outsideFocus": null
   },
   {
    "date": "2026-08-20",
@@ -134,7 +146,13 @@
    "meanOutsideDb": 0.0,
    "optical": "2026-08-20_optical.jpg",
    "cloudPct": 1,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-08-20_outside.png",
+   "lossOutsideKm2": 0.2,
+   "outsideFocus": [
+    -119.9678,
+    44.639
+   ]
   },
   {
    "date": "2026-09-01",
@@ -155,7 +173,13 @@
    "meanOutsideDb": 0.01,
    "optical": "2026-09-01_optical.jpg",
    "cloudPct": 0,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-09-01_outside.png",
+   "lossOutsideKm2": 1.3,
+   "outsideFocus": [
+    -119.9678,
+    44.639
+   ]
   },
   {
    "date": "2026-09-13",
@@ -176,7 +200,13 @@
    "meanOutsideDb": 0.27,
    "optical": "2026-09-13_optical.jpg",
    "cloudPct": 99,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-09-13_outside.png",
+   "lossOutsideKm2": 1.4,
+   "outsideFocus": [
+    -120.0708,
+    44.4621
+   ]
   },
   {
    "date": "2026-09-25",
@@ -197,7 +227,13 @@
    "meanOutsideDb": 0.09,
    "optical": "2026-09-25_optical.jpg",
    "cloudPct": 60,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-09-25_outside.png",
+   "lossOutsideKm2": 0.4,
+   "outsideFocus": [
+    -119.9678,
+    44.639
+   ]
   },
   {
    "date": "2026-10-07",
@@ -218,7 +254,13 @@
    "meanOutsideDb": 0.03,
    "optical": "2026-10-07_optical.jpg",
    "cloudPct": 0,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-10-07_outside.png",
+   "lossOutsideKm2": 2.6,
+   "outsideFocus": [
+    -119.9678,
+    44.639
+   ]
   },
   {
    "date": "2026-10-19",
@@ -239,7 +281,13 @@
    "meanOutsideDb": 0.01,
    "optical": "2026-10-19_optical.jpg",
    "cloudPct": 100,
-   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
+   "outside": "2026-10-19_outside.png",
+   "lossOutsideKm2": 3.8,
+   "outsideFocus": [
+    -120.0003,
+    44.6174
+   ]
   }
  ],
  "analysis": {

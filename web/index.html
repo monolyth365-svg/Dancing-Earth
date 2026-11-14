@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794666705" rel="stylesheet">
+<link href="style.css?v=1794667530" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -74,6 +74,7 @@
       </div>
     </div>
     <div class="legend" id="legend"></div>
+    <div id="quiz" class="intro quizcard" role="dialog" aria-label="Quiz" hidden></div>
     <div id="intro" class="intro" role="dialog" aria-labelledby="intro-h" hidden>
       <h2 id="intro-h">Welcome to Dancing Earth</h2>
       <p>Radar on the NISAR satellite sees Earth's surface through cloud, smoke and darkness. Here you can watch the surface change, and hear it.</p>
@@ -160,13 +161,23 @@
         <button id="share">Copy link to this view</button>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div id="point-info" class="pointinfo" role="status"></div>
+      <h2 class="mini">Explore it yourself</h2>
+      <div class="tools" id="toolbar">
+        <button id="t-area" title="Outline a field, a forest or a bay and get the changed area in hectares">Measure an area</button>
+        <button id="t-trace" title="Drag along a river or a shore and hear where the change is biggest">Trace a line and listen</button>
+        <button id="t-quiz" title="Two images, one question: what changed?">Quiz: what changed?</button>
+        <button id="t-outside" hidden></button>
+        <button id="t-ghost" hidden>Put this water over another place</button>
+      </div>
+      <div id="tool-out" class="toolout" role="status" aria-live="polite"></div>
     </section>
 
     <article id="story" class="story"></article>
 
     <footer class="credits">
       Data: NASA-ISRO NISAR L2 GCOV via <a href="https://search.asf.alaska.edu/">ASF DAAC</a>.
-      Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>. Satellite orbits: <a href="https://celestrak.org/">CelesTrak</a>. Hurricanes: <a href="https://www.nhc.noaa.gov/">NOAA NHC</a>.
+      Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>. Satellite orbits: <a href="https://celestrak.org/">CelesTrak</a>. Hurricanes: <a href="https://www.nhc.noaa.gov/">NOAA NHC</a>. Place names: NASA GIBS reference labels, © OpenStreetMap contributors.
       Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>. Heat detections: <a href="https://www.earthdata.nasa.gov/data/tools/firms">NASA FIRMS</a>.
       Optical photos: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> VIIRS.
       Basemap: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> Blue Marble.
@@ -176,17 +187,18 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794666705"></script>
-<script src="stories.js?v=1794666705"></script>
-<script src="sound.js?v=1794666705"></script>
-<script src="satellite.min.js?v=1794666705"></script>
-<script src="sats.js?v=1794666705"></script>
-<script src="globe3d.js?v=1794666705"></script>
-<script src="globe.js?v=1794666705"></script>
-<script src="storm.js?v=1794666705"></script>
-<script src="fire.js?v=1794666705"></script>
-<script src="sim.js?v=1794666705"></script>
-<script src="live.js?v=1794666705"></script>
-<script src="app.js?v=1794666705"></script>
+<script src="catalog.js?v=1794667530"></script>
+<script src="stories.js?v=1794667530"></script>
+<script src="sound.js?v=1794667530"></script>
+<script src="satellite.min.js?v=1794667530"></script>
+<script src="sats.js?v=1794667530"></script>
+<script src="globe3d.js?v=1794667530"></script>
+<script src="globe.js?v=1794667530"></script>
+<script src="storm.js?v=1794667530"></script>
+<script src="fire.js?v=1794667530"></script>
+<script src="sim.js?v=1794667530"></script>
+<script src="live.js?v=1794667530"></script>
+<script src="app.js?v=1794667530"></script>
+<script src="tools.js?v=1794667530"></script>
 </body>
 </html>

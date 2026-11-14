@@ -12,6 +12,13 @@ Built for the NASA Space Apps Challenge 2026, challenge **"Dancing with the SARs
 Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, and watch, compare and listen. For every phenomenon the app keeps apart what is *seen* on the image and what is *known about the cause*.
 
 - **Compare any image with any other** – choose any pass as the reference image; the Change layer, the Before / after slider and the time-lapse then compare every other date with it, computed in the browser. The map stays where you put it.
+- **Explore it yourself** – tools that work on the radar change itself:
+  - click a spot by a lake to see on which passes it was open water and when it was dry;
+  - outline a field, forest or bay and get the hectares where radar saw a change;
+  - drag along a river or shore and hear the change under your finger; the place with the biggest change lights up;
+  - a quiz: two radar images, guess what changed, then reveal the Change layer;
+  - for the Shingle Fire, show the 4 % of detected loss that lies outside the official fire line, with before / after;
+  - place a lake's water change over any other town at the same scale.
 - **Fire seen two ways** – radar shows the burned area; a Heat layer shows where satellites (VIIRS) detected fire on each day. A day slider replays the spread; click a point for the time of detection, satellite, radiated power and source.
 - **Hurricane at its real size** – centre, track and the reach of three wind strengths in each quarter of the storm (so its asymmetry is visible), category, wind, pressure, reach of high waves, and the satellite photo of that day.
 - **"What if…" simulation** – change wind direction and speed and see how a simple fire-spread model changes from the same ignition point, next to the real-wind result and the real detections. Clearly labelled as a simulation.
@@ -127,6 +134,7 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - Open-Meteo historical weather API (ERA5 reanalysis), real wind for the what-if simulation – https://open-meteo.com/
 - CesiumJS 1.123 (Apache-2.0), 3D globe engine – https://cesium.com/platform/cesiumjs/
 - Canadian Forest Fire Behaviour Prediction System (Forestry Canada 1992), length-to-breadth and wind relations used in the what-if model – https://cwfis.cfs.nrcan.gc.ca/background/summary/fbp
+- Place-name labels for the "over another place" tool: NASA GIBS Reference Labels, © OpenStreetMap contributors – https://www.openstreetmap.org/copyright
 - CelesTrak, orbital elements (TLE) of the satellites shown in Live world – https://celestrak.org/
 - satellite.js 5.0.0 (MIT), SGP4 orbit propagation in the browser – https://github.com/shashwatak/satellite-js
 - MapLibre GL JS 4.7.1 (BSD-3-Clause) – https://maplibre.org/
