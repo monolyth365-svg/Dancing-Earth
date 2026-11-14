@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794667530" rel="stylesheet">
+<link href="style.css?v=1794667996" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -64,6 +64,7 @@
         <button data-layer="change" aria-pressed="false" title="Coloured map of what changed">Change</button>
         <button data-layer="optical" aria-pressed="false" title="Photo from a camera satellite on the same day: often just cloud" hidden>Optical</button>
         <button id="compare" aria-pressed="false">Before / after</button>
+        <button id="fv" aria-pressed="false" title="Possible water standing under trees, shrubs or rice (HH much brighter than before)" hidden>Under plants</button>
         <button id="heat" aria-pressed="true" title="Places where satellites detected the heat of the fire" hidden>Heat</button>
         <button id="perim" aria-pressed="true" hidden>Fire perimeter</button>
         <label class="op">Opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.9"></label>
@@ -161,6 +162,7 @@
         <button id="share">Copy link to this view</button>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p id="fv-note" class="hint fvnote" role="status"></p>
       <div id="point-info" class="pointinfo" role="status"></div>
       <h2 class="mini">Explore it yourself</h2>
       <div class="tools" id="toolbar">
@@ -187,18 +189,18 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794667530"></script>
-<script src="stories.js?v=1794667530"></script>
-<script src="sound.js?v=1794667530"></script>
-<script src="satellite.min.js?v=1794667530"></script>
-<script src="sats.js?v=1794667530"></script>
-<script src="globe3d.js?v=1794667530"></script>
-<script src="globe.js?v=1794667530"></script>
-<script src="storm.js?v=1794667530"></script>
-<script src="fire.js?v=1794667530"></script>
-<script src="sim.js?v=1794667530"></script>
-<script src="live.js?v=1794667530"></script>
-<script src="app.js?v=1794667530"></script>
-<script src="tools.js?v=1794667530"></script>
+<script src="catalog.js?v=1794667996"></script>
+<script src="stories.js?v=1794667996"></script>
+<script src="sound.js?v=1794667996"></script>
+<script src="satellite.min.js?v=1794667996"></script>
+<script src="sats.js?v=1794667996"></script>
+<script src="globe3d.js?v=1794667996"></script>
+<script src="globe.js?v=1794667996"></script>
+<script src="storm.js?v=1794667996"></script>
+<script src="fire.js?v=1794667996"></script>
+<script src="sim.js?v=1794667996"></script>
+<script src="live.js?v=1794667996"></script>
+<script src="app.js?v=1794667996"></script>
+<script src="tools.js?v=1794667996"></script>
 </body>
 </html>

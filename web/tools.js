@@ -210,6 +210,52 @@
     setMode(null); out("");
   }
 
+  // --- 7) Možná voda pod porostem ---------------------------------------------------------------------------------
+  // Když voda zaplaví stromy, keře nebo rýži, radarový paprsek se odrazí od hladiny a pak od kmenů zpět k družici
+  // („dvojitý odraz“). Kanál HH tím výrazně zesílí, kanál HV skoro ne. Hledáme tedy místa, kde HH proti výchozímu
+  // snímku stouplo o víc než 3 dB a aspoň o 2 dB víc než HV, a kde zároveň není volná hladina.
+  const fvCache = new Map();
+  let fvOn = false;
+  async function fvCompute(i, b) {
+    const d = state.data, key = `${state.site}|${i}|${b}`;
+    if (fvCache.has(key)) return fvCache.get(key);
+    if (![i, b].every((k) => d.frames[k].hh && d.frames[k].hv)) return null;
+    const N = 512, read = async (k, pol) => {
+      const [lo, hi] = pol === "hh" ? [-25, 0] : [-32, -8], c = Object.assign(document.createElement("canvas"), { width: N, height: N }), x = c.getContext("2d", { willReadFrequently: true });
+      x.drawImage(await img(path(k, pol)), 0, 0, N, N);
+      const px = x.getImageData(0, 0, N, N).data, v = new Float32Array(N * N), ok = new Uint8Array(N * N);
+      for (let n = 0; n < N * N; n++) { v[n] = lo + (px[n * 4] / 255) * (hi - lo); ok[n] = px[n * 4 + 3] >= 128 ? 1 : 0; }
+      return { v: boxBlur(v, ok, N, 5), ok };
+    };
+    const [h1, v1, h0, v0] = await Promise.all([read(i, "hh"), read(i, "hv"), read(b, "hh"), read(b, "hv")]);
+    const cv = Object.assign(document.createElement("canvas"), { width: N, height: N }), cx = cv.getContext("2d"), im = cx.createImageData(N, N), o = im.data, wdb = d.analysis.waterDb;
+    let n = 0;
+    for (let k = 0; k < N * N; k++) {
+      if (!(h1.ok[k] && h0.ok[k]) || isNaN(h1.v[k]) || isNaN(h0.v[k]) || isNaN(v1.v[k]) || isNaN(v0.v[k])) continue;
+      const dh = h1.v[k] - h0.v[k], dv = v1.v[k] - v0.v[k];
+      if (dh > 3 && dh - dv > 2 && v1.v[k] > wdb + 2) { o[k * 4] = 110; o[k * 4 + 1] = 255; o[k * 4 + 2] = 120; o[k * 4 + 3] = 215; n++; }
+    }
+    cx.putImageData(im, 0, 0);
+    const res = { cv, km2: (n * d.extentKm[0] * d.extentKm[1]) / (N * N) };
+    fvCache.set(key, res);
+    if (fvCache.size > 40) fvCache.delete(fvCache.keys().next().value);
+    return res;
+  }
+  async function fvShow() {
+    const d = state.data, site = state.site, i = state.i, b = state.base, note = q("#fv-note");
+    if (!fvOn || !d || d.kind !== "water") { if (map.getLayer("t-fv")) map.removeLayer("t-fv"); if (map.getSource("t-fv")) map.removeSource("t-fv"); note.textContent = ""; return; }
+    const r = i === b ? { cv: Object.assign(document.createElement("canvas"), { width: 2, height: 2 }), km2: 0 } : await fvCompute(i, b);
+    if (site !== state.site || i !== state.i || !fvOn) return;
+    if (!r) { note.textContent = "One of these two passes has no HV image, so this cannot be worked out. Pick another date."; return; }
+    const url = r.cv.toDataURL("image/png");
+    if (map.getSource("t-fv")) map.getSource("t-fv").updateImage({ url, coordinates: d.corners });
+    else { map.addSource("t-fv", { type: "image", url, coordinates: d.corners }); map.addLayer({ id: "t-fv", type: "raster", source: "t-fv", paint: { "raster-fade-duration": 0 } }); }
+    note.innerHTML = i === b
+      ? `<b>Possible water under plants.</b> ${d.frames[b].date} is the reference image itself. Move the timeline or press Play to see where it appears.`
+      : `<b>Green: ${r.km2 < 10 ? r.km2.toFixed(1) : Math.round(r.km2)} km² of possible water under plants</b> on ${d.frames[i].date}, compared with ${d.frames[b].date}. There the HH signal rose by more than 3 dB and much more than HV, which is what happens when water stands under trees, shrubs or rice and the radar pulse bounces between the water and the stems. It is a hint, not proof: no one checked it on the ground, and wet or ploughed fields can look similar. Open water (dark) is counted separately.`;
+  }
+  function fvToggle() { fvOn = !fvOn; q("#fv").setAttribute("aria-pressed", fvOn); fvShow(); }
+
   // --- napojení -------------------------------------------------------------------------------------------------
   map.on("click", (e) => {
     if (mode === "area") { pts.push(e.lngLat); areaDraw(); }
@@ -235,10 +281,13 @@
     out(""); q("#point-info").innerHTML = "";
     const d = state.data, last = d.frames.at(-1);
     q("#t-ghost").hidden = d.kind !== "water";
+    q("#fv").hidden = d.kind !== "water"; fvCache.clear();
+    if (map.getLayer("t-fv")) map.removeLayer("t-fv"); if (map.getSource("t-fv")) map.removeSource("t-fv");
     q("#t-outside").hidden = !(last.outside && last.lossOutsideKm2 > 0);
     q("#t-outside").setAttribute("aria-pressed", "false");
     if (!q("#t-outside").hidden) q("#t-outside").textContent = `Show the other ${Math.max(1, Math.round((last.lossOutsideKm2 / last.lossKm2) * 100))}%: loss outside the fire line`;
   });
-  document.addEventListener("de:show", pointInfo);
+  document.addEventListener("de:show", () => { pointInfo(); fvShow(); });
+  q("#fv").onclick = fvToggle;
   if (state.data) document.dispatchEvent(new Event("de:site"));
 })();

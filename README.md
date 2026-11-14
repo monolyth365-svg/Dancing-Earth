@@ -14,6 +14,7 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
 - **Compare any image with any other** – choose any pass as the reference image; the Change layer, the Before / after slider and the time-lapse then compare every other date with it, computed in the browser. The map stays where you put it.
 - **Explore it yourself** – tools that work on the radar change itself:
   - click a spot by a lake to see on which passes it was open water and when it was dry;
+  - turn on **Under plants** at a lake to see possible water standing under trees, shrubs or rice (HH rises by more than 3 dB and much more than HV: the double-bounce signature). At Tonlé Sap it grows from 17 km² in mid-August to about 90 km² in September, in belts along the shore;
   - outline a field, forest or bay and get the hectares where radar saw a change;
   - drag along a river or shore and hear the change under your finger; the place with the biggest change lights up;
   - a quiz: two radar images, guess what changed, then reveal the Change layer;
@@ -86,6 +87,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - The what-if fire simulation is a teaching model (ellipse on flat ground, uniform fuel, steady wind), calibrated only to the first day's reach; it is not a forecast.
 - Heat detections are single 375 m pixels at the moment of a satellite overpass; cloud and thick smoke can hide a fire, and they are not a temperature map.
 - Hurricane wind reach is the largest distance in each quarter, every 6 hours, from preliminary best-track data.
+- "Under plants" is a hint, not a validated flood map: wet or ploughed fields can give the same signature, and nothing was checked on the ground.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally

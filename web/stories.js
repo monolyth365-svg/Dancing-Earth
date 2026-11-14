@@ -8,7 +8,7 @@ window.STORIES = {
       "Every monsoon the Mekong swells so much that it pushes water backwards up the Tonlé Sap river. The lake grows several times over and floods the surrounding forest and rice fields, then drains again in the dry season.",
       "Open water acts like a mirror for radar: the pulse bounces away from the satellite, so calm water looks almost black. When water rises under trees, the opposite happens — the signal bounces between water and trunks and comes back brighter (double bounce)."
     ],
-    why: "Calm water is dark in both channels. But wind roughens the lake and makes it bright in HH — on 18 August 2026 most of the lake would vanish from an HH water map. HV stays dark over water whatever the wind, so open water is mapped from HV here. Clouds during the monsoon make optical satellites nearly useless; L-band radar sees through them.",
+    why: "Water standing under trees, shrubs or rice does the opposite of open water: the pulse bounces off the water and then off the stems, straight back to the satellite, so HH gets much brighter. The Under plants layer marks where that happened; it peaks while the flood is rising. Calm water is dark in both channels. But wind roughens the lake and makes it bright in HH — on 18 August 2026 most of the lake would vanish from an HH water map. HV stays dark over water whatever the wind, so open water is mapped from HV here. Clouds during the monsoon make optical satellites nearly useless; L-band radar sees through them.",
     use: [
       ["Flood and water managers", "follow how fast open water spreads between passes, even under monsoon cloud."],
       ["Scientists", "download the CSV and compare the flood curve with river gauges or rainfall."],
