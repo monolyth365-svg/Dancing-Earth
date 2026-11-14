@@ -1,7 +1,7 @@
 // Družice na živé mapě: kde právě jsou, kam letí, jakou dráhu mají za sebou a před sebou,
 // a u NISARu pruh, kam míří radar. Polohy se počítají v prohlížeči z dráhových údajů (TLE, model SGP4).
 window.Sats = (() => {
-  const RE = 6371, D2R = Math.PI / 180, STEP = 30, SPAN = 50 * 60; // krok dráhy 30 s, 50 minut dozadu i dopředu
+  const RE = 6371, D2R = Math.PI / 180, STEP = 15, SPAN = 50 * 60; // krok dráhy 30 s, 50 minut dozadu i dopředu
   const el = (s) => document.querySelector(s);
   let map, sats = [], meta = null, on = false, tick = null, lastTracks = 0, loading = null;
 
@@ -102,7 +102,7 @@ window.Sats = (() => {
   function draw() {
     if (!on) return;
     const t = new Date();
-    if (+t - lastTracks > 20000) {
+    if (+t - lastTracks > 2000) {
       const g = tracks(t);
       map.getSource("sat-lines")?.setData(g.lines);
       map.getSource("sat-swath")?.setData(g.swath);
