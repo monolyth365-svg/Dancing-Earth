@@ -366,7 +366,7 @@ async function dynChange(i, b) {
   for (let q = 0; q < N * N; q++) diff[q] -= bias;
   const px = (d.extentKm[0] * d.extentKm[1]) / (N * N), res = { cv: cv2, lossKm2: loss * px, gainKm2: gain * px, diff, ok: okAll, pxKm2: px };
   dyn.set(key, res);
-  if (dyn.size > 60) dyn.delete(dyn.keys().next().value);
+  if (dyn.size > 20) dyn.delete(dyn.keys().next().value); // každý záznam má kolem 2 MB; tablety mají málo paměti
   return res;
 }
 function setBase(j, custom = true) {
