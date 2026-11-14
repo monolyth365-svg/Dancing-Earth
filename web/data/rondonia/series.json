@@ -139,6 +139,12 @@
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   }
  ],
+ "extentKm": [
+  19.93,
+  20.06
+ ],
+ "validKm2": 399.8,
+ "unstableKm2": null,
  "analysis": {
   "pol": "HV",
   "scaleDb": 6,
@@ -157,12 +163,14 @@
    "gain": "#ff9628"
   }
  },
- "extentKm": [
-  19.93,
-  20.06
- ],
- "validKm2": 399.8,
- "unstableKm2": null,
+ "optical": {
+  "source": "NASA GIBS, Corrected Reflectance (True Color)",
+  "sensors": [
+   "VIIRS NOAA20"
+  ],
+  "pixelM": 250,
+  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
+ },
  "cube": {
   "file": "cube.bin",
   "size": 128,
@@ -172,13 +180,5 @@
   ],
   "scale": 100,
   "nodata": -32768
- },
- "optical": {
-  "source": "NASA GIBS, Corrected Reflectance (True Color)",
-  "sensors": [
-   "VIIRS NOAA20"
-  ],
-  "pixelM": 250,
-  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
  }
 }
