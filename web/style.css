@@ -251,3 +251,13 @@ body.storm #head, body.storm > main .side > .insight, body.storm > main .side > 
 #sites [data-theme][aria-pressed="true"] { background: var(--text); color: var(--bg); }
 #sites [data-theme][aria-expanded="true"] { border-color: var(--accent); }
 .heatleg + .warn { margin-top: 6px; }
+
+/* Big 3D Earth */
+.g3d { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; background: #000; }
+#g3d-view { position: absolute; inset: 0; }
+.g3d-card { position: absolute; top: 12px; left: 12px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; background: rgba(14,17,21,.9); border: 1px solid #3a414c; border-radius: 6px; padding: 12px 14px 14px; }
+.g3d-card .tools { margin-top: 8px; gap: 6px; }
+.g3d-card .tools button { font-size: 12px; padding: 5px 9px; }
+.g3d-card .hint b { color: var(--text); font-weight: 600; }
+.g3d .cesium-viewer-bottom { font-size: 10px; }
+@media (max-width: 700px) { .g3d-card { top: auto; bottom: 12px; max-height: 46%; } .g3d-card .hint { display: none; } }

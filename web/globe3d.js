@@ -1,0 +1,160 @@
+// Velká 3D zeměkoule (knihovna CesiumJS, načítá se až na vyžádání).
+// Povrch se dočítá po dlaždicích podle toho, kam a jak zblízka se uživatel dívá: zdálky NASA Blue Marble,
+// zblízka mozaika Landsat (30 m). Kamerou jde otáčet, přibližovat až k zemi a naklonit ji vzhůru k družici.
+// Polohy družic se počítají stejně jako na mapě (TLE + SGP4). Model družice je zjednodušený náčrt, mnohonásobně zvětšený.
+window.Globe3D = (() => {
+  const BASE = "https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/", SCALE = 4000, el = (s) => document.querySelector(s);
+  const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/";
+  let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, swath = null;
+
+  const loadLib = () => (loading ??= new Promise((ok, bad) => {
+    window.CESIUM_BASE_URL = BASE;
+    document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: BASE + "Widgets/widgets.css" }));
+    const s = Object.assign(document.createElement("script"), { src: BASE + "Cesium.js" });
+    s.onload = ok; s.onerror = () => { loading = null; bad(new Error("3D engine could not be loaded")); };
+    document.head.append(s);
+  }));
+
+  const now = () => C.JulianDate.toDate(viewer.clock.currentTime);
+  const cart = (lng, lat, km = 0) => C.Cartesian3.fromDegrees(lng, lat, km * 1000);
+
+  // Stav družice v čase: poloha a místní osy (dopředu = směr letu, vlevo, nahoru). Počítá se jednou na snímek.
+  function st(s) {
+    const t = +now();
+    if (s._t === t) return s._s;
+    const p = Sats.at(s, new Date(t)), q = Sats.at(s, new Date(t + 1000));
+    if (!p || !q) return s._s;
+    const pos = cart(p.lng, p.lat, p.alt), up = C.Cartesian3.normalize(pos, new C.Cartesian3());
+    let fwd = C.Cartesian3.normalize(C.Cartesian3.subtract(cart(q.lng, q.lat, q.alt), pos, new C.Cartesian3()), new C.Cartesian3());
+    const left = C.Cartesian3.normalize(C.Cartesian3.cross(up, fwd, new C.Cartesian3()), new C.Cartesian3());
+    fwd = C.Cartesian3.cross(left, up, new C.Cartesian3());
+    const rot = new C.Matrix3(fwd.x, left.x, up.x, fwd.y, left.y, up.y, fwd.z, left.z, up.z);
+    s._t = t; s._s = { p, pos, fwd, left, up, quat: C.Quaternion.fromRotationMatrix(rot) };
+    return s._s;
+  }
+  const offset = (S, f, l, u) => new C.Cartesian3(S.pos.x + (S.fwd.x * f + S.left.x * l + S.up.x * u) * SCALE, S.pos.y + (S.fwd.y * f + S.left.y * l + S.up.y * u) * SCALE, S.pos.z + (S.fwd.z * f + S.left.z * l + S.up.z * u) * SCALE);
+  const posProp = (fn) => (C.CallbackPositionProperty ? new C.CallbackPositionProperty(fn, false) : new C.CallbackProperty(fn, false));
+
+  function build() {
+    viewer = new C.Viewer("g3d-view", {
+      baseLayer: new C.ImageryLayer(new C.UrlTemplateImageryProvider({ url: GIBS + "BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg", maximumLevel: 8, credit: "NASA GIBS Blue Marble" })),
+      baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false, infoBox: false, selectionIndicator: false,
+    });
+    // Ostrý detail zblízka: mozaika Landsat 30 m; černá (= bez dat, moře) se zprůhlední, aby byl vidět Blue Marble
+    const detail = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: GIBS + "Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpg", minimumLevel: 7, maximumLevel: 12, credit: "NASA Landsat WELD mosaic" }));
+    detail.colorToAlpha = C.Color.BLACK; detail.colorToAlphaThreshold = 0.02;
+    viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 1; viewer.clock.currentTime = C.JulianDate.now();
+    viewer.scene.globe.enableLighting = false;
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
+
+    sats = Sats.all();
+    for (const s of sats) {
+      const col = C.Color.fromCssColorString(s.color), nisar = s.id === "nisar";
+      viewer.entities.add({ // zdálky obrázek se šipkou směru letu a popisek
+        position: posProp(() => st(s)?.pos),
+        billboard: { image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(Sats.icon(s, 96)), width: nisar ? 46 : 38, height: nisar ? 46 : 38, alignedAxis: new C.CallbackProperty(() => st(s)?.fwd, false), distanceDisplayCondition: new C.DistanceDisplayCondition(2.2e6, Number.MAX_VALUE) },
+        label: { text: s.name, font: '500 13px "JetBrains Mono", monospace', pixelOffset: new C.Cartesian2(28, 0), horizontalOrigin: C.HorizontalOrigin.LEFT, fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 4, style: C.LabelStyle.FILL_AND_OUTLINE },
+      });
+      // zblízka prostorový náčrt: tělo, solární panely, u NISARu rameno a velká anténa na levé straně
+      const gold = C.Color.fromCssColorString("#dcae3f"), blue = C.Color.fromCssColorString("#2b4fa8");
+      const part = (f, l, u, shape) => viewer.entities.add({ position: posProp(() => { const S = st(s); return S && offset(S, f, l, u); }), orientation: new C.CallbackProperty(() => st(s)?.quat, false), ...shape });
+      const box = (x, y, z, material) => ({ box: { dimensions: new C.Cartesian3(x * SCALE, y * SCALE, z * SCALE), material, outline: true, outlineColor: C.Color.BLACK.withAlpha(0.6) } });
+      part(0, 0, 0, box(2.6, 1.8, 1.8, gold));
+      if (nisar) {
+        part(4.2, 0, 0, box(5, 2.4, 0.12, blue)); part(-4.2, 0, 0, box(5, 2.4, 0.12, blue));
+        part(0, 5, 0.4, box(0.3, 8.5, 0.3, C.Color.LIGHTGRAY));
+        part(0, 11, -0.6, { ellipsoid: { radii: new C.Cartesian3(6 * SCALE, 6 * SCALE, 0.9 * SCALE), material: C.Color.fromCssColorString("#e8c766").withAlpha(0.95) } });
+      } else { part(0, 4.6, 0, box(2.2, 6, 0.12, blue)); part(0, -4.6, 0, box(2.2, 6, 0.12, blue)); }
+      // šipka směru letu u prostorového modelu
+      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(s); return S ? [offset(S, 2, 0, 0), offset(S, 14, 0, 0)] : []; }, false), width: 10, arcType: C.ArcType.NONE, material: new C.PolylineArrowMaterialProperty(col) } });
+      // dráha: plná = posledních 50 minut, čárkovaná = dalších 50
+      s._past = []; s._future = [];
+      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => s._past, false), width: nisar ? 2.5 : 1.6, arcType: C.ArcType.NONE, material: col.withAlpha(0.8) } });
+      viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => s._future, false), width: nisar ? 2 : 1.3, arcType: C.ArcType.NONE, material: new C.PolylineDashMaterialProperty({ color: col.withAlpha(0.6), dashLength: 14 }) } });
+    }
+    // Paprsek radaru NISAR: vějíř paprsků od družice k pruhu na zemi + jasná čára, kde paprsek dopadá
+    const n = sats[0], RAYS = 9, ground = (S, k) => { const e = S.p.edges, a = k / (RAYS - 1); return cart(e[0][0] + (e[1][0] - e[0][0]) * a, e[0][1] + (e[1][1] - e[0][1]) * a); };
+    for (let k = 0; k < RAYS; k++) viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(n); return S ? [S.pos, ground(S, k)] : []; }, false), width: k === 0 || k === RAYS - 1 ? 3 : 1.5, arcType: C.ArcType.NONE, material: new C.PolylineGlowMaterialProperty({ color: C.Color.fromCssColorString("#ffe9a8").withAlpha(k === 0 || k === RAYS - 1 ? 0.9 : 0.45), glowPower: 0.25 }) } });
+    viewer.entities.add({ polyline: { positions: new C.CallbackProperty(() => { const S = st(n); return S ? [ground(S, 0), ground(S, RAYS - 1)] : []; }, false), width: 6, clampToGround: false, material: C.Color.fromCssColorString("#fff3c0") } });
+    swath = viewer.entities.add({ polygon: { hierarchy: new C.PolygonHierarchy([]), material: C.Color.fromCssColorString("#e9b949").withAlpha(0.35), height: 0 } });
+
+    viewer.clock.onTick.addEventListener(() => {
+      const real = performance.now();
+      if (real - lastSlow < (viewer.clock.multiplier > 1 ? 400 : 3000)) return;
+      lastSlow = real;
+      const t = +now();
+      for (const s of sats) {
+        const past = [], future = [];
+        for (let dt = -3000; dt <= 3000; dt += 60) { const p = Sats.at(s, new Date(t + dt * 1000)); if (p) (dt <= 0 ? past : future).push(cart(p.lng, p.lat, p.alt)); if (p && dt === 0) future.push(cart(p.lng, p.lat, p.alt)); }
+        s._past = past; s._future = future;
+      }
+      const nearE = [], farE = [];
+      for (let dt = -12 * 60; dt <= 0; dt += 30) { const p = Sats.at(n, new Date(t + dt * 1000)); if (p?.edges) { nearE.push(cart(p.edges[0][0], p.edges[0][1])); farE.push(cart(p.edges[1][0], p.edges[1][1])); } }
+      swath.polygon.hierarchy = new C.PolygonHierarchy(nearE.concat(farE.reverse()));
+      el("#g3d-text").innerHTML = Globe.describeAt(new Date(t), viewer.clock.multiplier > 1 ? viewer.clock.multiplier : 0);
+    });
+    whole(0);
+  }
+
+  // Tři pohledy kamery
+  function free() { viewer.trackedEntity = undefined; viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); }
+  function whole(sec = 1.5) {
+    free();
+    const S = st(sats[0]); if (!S) return;
+    // kamera na straně, kam se dívá radar, aby byl paprsek vidět z boku
+    const c = C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.up, 0.55, new C.Cartesian3()), C.Cartesian3.multiplyByScalar(S.left, 0.83, new C.Cartesian3()), new C.Cartesian3());
+    viewer.camera.flyTo({ destination: C.Cartesian3.multiplyByScalar(C.Cartesian3.normalize(c, c), 2.6e7, new C.Cartesian3()), duration: sec });
+  }
+  function beside() { // zblízka z boku: družice, paprsek a země pod ní
+    free();
+    const S = st(sats[0]); if (!S) return;
+    const dest = C.Cartesian3.add(S.pos, C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.fwd, -1.1e6, new C.Cartesian3()), C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.left, -5e5, new C.Cartesian3()), C.Cartesian3.multiplyByScalar(S.up, 2.5e5, new C.Cartesian3()), new C.Cartesian3()), new C.Cartesian3()), new C.Cartesian3());
+    const target = C.Cartesian3.add(S.pos, C.Cartesian3.multiplyByScalar(S.up, -3.5e5, new C.Cartesian3()), new C.Cartesian3());
+    aim(dest, target, S.up, 1.5);
+  }
+  function below() { // ze země pod paprskem: pohled vzhůru na družici
+    free();
+    const S = st(sats[0]); if (!S) return;
+    const e = S.p.edges, dest = cart((e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2, 6);
+    aim(dest, S.pos, C.Cartesian3.normalize(dest, new C.Cartesian3()), 2);
+  }
+  function aim(dest, target, upHint, sec) {
+    const dir = C.Cartesian3.normalize(C.Cartesian3.subtract(target, dest, new C.Cartesian3()), new C.Cartesian3());
+    const right = C.Cartesian3.normalize(C.Cartesian3.cross(dir, upHint, new C.Cartesian3()), new C.Cartesian3()), up = C.Cartesian3.cross(right, dir, new C.Cartesian3());
+    viewer.camera.flyTo({ destination: dest, orientation: { direction: dir, up }, duration: sec });
+  }
+
+  async function show() {
+    const box = el("#g3d");
+    box.hidden = false; open = true;
+    box.style.top = el(".top").offsetHeight + "px";
+    el("#globe-btn").setAttribute("aria-expanded", "true");
+    if (!viewer) {
+      el("#g3d-text").textContent = "Loading the 3D Earth…";
+      try { await loadLib(); await Sats.load(); C = window.Cesium; build(); }
+      catch (e) { box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); throw e; }
+    } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; whole(0); }
+    el("#g3d-fast").setAttribute("aria-pressed", "false"); el("#g3d-fast").textContent = "Speed up time ×300";
+    el("#g3d-close").focus();
+  }
+  function hide() {
+    open = false; el("#g3d").hidden = true; el("#globe-btn").setAttribute("aria-expanded", "false");
+    if (viewer) viewer.useDefaultRenderLoop = false; // nekreslit, když není vidět
+  }
+  const toggle = () => (open ? (hide(), Promise.resolve()) : show());
+
+  function bind() {
+    el("#g3d-close").onclick = hide;
+    el("#g3d-whole").onclick = () => whole();
+    el("#g3d-beside").onclick = beside;
+    el("#g3d-below").onclick = below;
+    el("#g3d-light").onclick = (e) => { const v = !viewer.scene.globe.enableLighting; viewer.scene.globe.enableLighting = v; e.target.setAttribute("aria-pressed", v); };
+    el("#g3d-fast").onclick = (e) => {
+      const fast = viewer.clock.multiplier === 1;
+      viewer.clock.multiplier = fast ? 300 : 1; if (!fast) viewer.clock.currentTime = C.JulianDate.now();
+      e.target.setAttribute("aria-pressed", fast); e.target.textContent = fast ? "Back to live" : "Speed up time ×300"; lastSlow = 0;
+    };
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && open) hide(); });
+  }
+  return { toggle, bind, get open() { return open; }, _viewer: () => viewer };
+})();
