@@ -106,6 +106,7 @@ async function init() {
 function setTab(t) {
   $("#panel").dataset.tab = t;
   document.querySelectorAll("[data-tabbtn]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tabbtn === t));
+  if (t === "charts") window.Charts?.render(); // grafy se kreslí až při otevření záložky
 }
 document.querySelector(".tabs").onclick = (e) => { const b = e.target.closest("[data-tabbtn]"); if (b) setTab(b.dataset.tabbtn); };
 
@@ -258,7 +259,7 @@ async function loadSite(id, opts = {}) {
     if (isFinite(lng) && isFinite(lat)) setPoint({ lng, lat });
   }
   $("#insight").textContent = insight(d) + cloudNote(d);
-  Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); });
+  Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); document.dispatchEvent(new Event("de:fire")); });
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";

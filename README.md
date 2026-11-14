@@ -36,7 +36,12 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
   - one button compares two passes of the same track, colours what changed and plays it as music;
   - satellites overhead right now (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A) with their direction, their path for the last and next 50 minutes, and the strip NISAR's radar is looking at. The strip was checked against real NISAR images.
 - **Live globe** – the small globe in the top right corner opens a 3D view of Earth with the satellites at their true height, their orbits, and NISAR's radar beam reaching the ground, all drawn to scale and updated live. It says whether the radar is looking at day or night (it works in both), and time can be sped up ×300.
-- **Three tabs** keep the side panel short: *Explore* (what happened, numbers, timeline, chart), *Tools* (measure, trace, quiz, compare dates, simulation, export) and *About* (story, method, sources).
+- **Four tabs** keep the side panel short: *Explore* (what happened, numbers, timeline, chart), *Tools* (measure, trace, quiz, compare dates, simulation, export), *Charts* and *About* (story, method, sources).
+- **Charts** – a few charts for the open place, each with one sentence that says what it shows. Click a chart to jump to that date on the map; every chart can be saved as an image for a report or a lesson. They use only data that is already in the app:
+  - lakes: both lakes in one chart (one fills while the other empties), and how much the water area depends on the radar threshold (strict against 2 dB looser);
+  - fires: heat detections per day (VIIRS) against the vegetation loss the radar mapped, and how much of it lies inside the official fire line. A pass where the whole scene was brighter or darker than usual is drawn as a hollow point and called out as unreliable;
+  - forest and fields: the area that became darker and brighter since the first pass;
+  - everywhere: how cloudy a camera satellite's photo was on each radar pass day.
 - **Loading indicator** – a small dancing Earth with a progress line: real progress where the size is known (radar image downloads, loading a place), a running line while waiting for NASA's archive to answer.
 - **Start here** – a short welcome card explains the app in four steps on the first visit (the "?" button reopens it).
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
@@ -92,6 +97,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Heat detections are single 375 m pixels at the moment of a satellite overpass; cloud and thick smoke can hide a fire, and they are not a temperature map.
 - Hurricane wind reach is the largest distance in each quarter, every 6 hours, from preliminary best-track data.
 - "Under plants" is a hint, not a validated flood map: wet or ploughed fields can give the same signature, and nothing was checked on the ground.
+- In the fire chart a pass counts as unusual when the median change of the whole scene is larger than half the detection threshold. The app shows that it happened; it does not check the weather to say why.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
