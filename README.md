@@ -13,6 +13,19 @@ https://monolyth365-svg.github.io/Dancing-Earth/video/dancing-earth-30s.mp4
 
 Every picture in it is a real screenshot of the app. The video was assembled with code in `video/` (written with AI assistance): `capture.py` takes the screenshots, `compose.html` + `render.py` add titles and cuts, `score.py` synthesizes the music (no recordings and no music model; the piano line follows the open-water area and the mapped burn scar pass by pass, and in the "Hear the change" scene the app's own sound code plays the two radar images). The fire time-lapse leaves out the pass of 13 September 2026, which the app itself marks as unreliable.
 
+## Five-minute walkthrough video
+
+https://monolyth365-svg.github.io/Dancing-Earth/video/dancing-earth-walkthrough.mp4
+
+A real-time screen recording of the app being used (4:59), in ten chapters: start, the lake, the wildfire, charts, tools, honest limits, fields and hurricanes, Live world, 3D Earth, end.
+
+- A real Chrome is driven with real mouse moves and clicks by `video/walk.py`; what is clicked and what the captions say is in `video/walk_script.py`. For the recording only, three things are added to the page: a visible pointer with a ring on every click, a caption band under the app, and a recorder of the app's sound. The app itself is not changed.
+- The sound you hear from the app (the music of the radar passes, the tone while tracing a line, the comparison in Live world) is the app's real sound, recorded during the take. Under it runs quiet background music synthesized in code (`video/walk_music.py`, no recordings and no music model); it steps back whenever the app plays.
+- The first five seconds are a motion intro built from real screenshots of the app (`video/intro.html`).
+- The take is played 6 % faster to fit under five minutes (the app's sound keeps its pitch). It was recorded in two continuous takes, joined between the Charts and Tools chapters.
+- The quiz picks its place at random; in this take it showed Tonlé Sap and the pointer chose the right answer for it.
+- The recording, captions, intro and music were made with AI assistance, as the small note in the corner of the video says.
+
 ## What it does
 
 Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, and watch, compare and listen. For every phenomenon the app keeps apart what is *seen* on the image and what is *known about the cause*.

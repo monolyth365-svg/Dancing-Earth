@@ -1,0 +1,128 @@
+<!doctype html>
+<!-- Five-second motion intro for the walkthrough. render(t) draws the frame for time t (seconds);
+     video/walk_intro.py screenshots every frame. Pictures are real screenshots of the app (video/shots). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #000; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #07090c; font-family: "Instrument Sans", system-ui, sans-serif; color: #f2f3f5; }
+  #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  #cam img { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #over { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #shade, #ui, #flash, #black { position: absolute; inset: 0; }
+  #shade { background: #07090c; } #flash { background: #fff; } #black { background: #07090c; }
+  .abs { position: absolute; }
+  .k { font: 500 24px/1 "JetBrains Mono", monospace; letter-spacing: .2em; text-transform: uppercase; color: #e9b949; }
+  .title { font-weight: 700; font-size: 212px; line-height: .98; letter-spacing: -.045em; white-space: nowrap; }
+  .mask { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .04em .12em 0; }
+  .mask > span { display: inline-block; }
+  .sub { font-weight: 500; font-size: 46px; letter-spacing: -.01em; color: #dfe3e8; }
+  .word { font-weight: 700; font-size: 250px; line-height: .9; letter-spacing: -.05em; }
+  .tag { display: inline-block; background: rgba(7,9,12,.92); padding: 10px 34px 26px; }
+  .cap { display: inline-block; font-weight: 600; font-size: 40px; color: #07090c; background: #e9b949; padding: 9px 20px 11px; letter-spacing: -.01em; }
+  .num { font: 700 26px/1 "JetBrains Mono", monospace; color: #e9b949; letter-spacing: .1em; }
+  .gold { color: #e9b949; }
+  #mark { position: absolute; right: 34px; bottom: 22px; font: 400 14px/1 "JetBrains Mono", monospace; color: rgba(210,215,222,.5); letter-spacing: .03em; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="cam"><img id="A" alt=""><img id="B" alt=""><svg id="over" viewBox="0 0 1920 1080"></svg></div>
+  <div id="shade"></div>
+  <div id="ui"></div>
+  <div id="flash"></div>
+  <div id="black"></div>
+  <div id="mark">Intro built from real screenshots of the app · edited with AI (SI) assistance</div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
+const out3 = (k) => 1 - Math.pow(1 - clamp(k), 3), out5 = (k) => 1 - Math.pow(1 - clamp(k), 5), io = (k) => { k = clamp(k); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const shot = (n) => `shots/${n}.jpg`, pad = (i) => String(i).padStart(2, "0");
+const TOTAL = 5, CUTS = [1.7, 2.3, 2.9, 3.5];
+const QUAD = [[322, 107], [1230, 142], [1193, 1050], [290, 1016]]; // corners of the fire radar image on screen: TL, TR, BR, BL
+
+async function setImg(el, src, opacity = 1) {
+  el.style.opacity = opacity;
+  if (el.dataset.src !== src) { el.dataset.src = src; el.src = src; }
+  if (opacity > 0) try { await el.decode(); } catch { /* shown as soon as it loads */ }
+}
+const cam = (fx, fy, s) => { $("#cam").style.transform = `translate(${(960 - fx * s).toFixed(2)}px, ${(540 - fy * s).toFixed(2)}px) scale(${s.toFixed(4)})`; };
+// a word that rises out of a mask (kinetic type)
+const rise = (text, t, at, d = 0.5) => `<span class="mask"><span style="transform:translateY(${((1 - out5((t - at) / d)) * 108).toFixed(1)}%)">${text}</span></span>`;
+// a big word with a caption, slammed in at the start of a cut
+function slam(t, at, n, word, cap) {
+  const l = t - at, i = out5(l / 0.26), s = lerp(1.22, 1, i);
+  return `<div class="abs" style="left:84px;bottom:96px;opacity:${clamp(l / 0.07).toFixed(2)};transform-origin:0 100%;transform:scale(${s.toFixed(3)})">
+    <div class="num" style="margin:0 0 14px 6px">0${n} / 03</div><div><span class="tag word">${word}</span></div>
+    <div style="margin-top:14px;opacity:${clamp((l - 0.12) / 0.12).toFixed(2)};transform:translateX(${((1 - out3((l - 0.1) / 0.3)) * -30).toFixed(1)}px)"><span class="cap">${cap}</span></div></div>`;
+}
+
+async function render(t) {
+  const ui = [], over = [];
+  let shade = 0;
+  $("#B").style.opacity = 0;
+  const since = Math.min(...CUTS.map((c) => (t >= c ? t - c : 9))), punch = 1 + 0.06 * (1 - out3(since / 0.35));
+
+  if (t < 1.7) { // 1) the spinning Earth, the title rises word by word
+    await setImg($("#A"), shot(`globe_${pad(Math.min(89, Math.floor(t * 30)))}`));
+    cam(lerp(800, 756, out3(t / 1.7)), 556, lerp(1.9, 1.34, out5(t / 1.5)));
+    shade = lerp(0.1, 0.42, clamp(t / 0.6));
+    const c = "left:0;width:1920px;text-align:center";
+    ui.push(`<div class="abs k" style="${c};top:318px;opacity:${clamp((t - 0.12) / 0.3).toFixed(2)};letter-spacing:${lerp(0.5, 0.2, out3((t - 0.12) / 0.6)).toFixed(3)}em">NISAR radar · NASA Space Apps 2026</div>`);
+    ui.push(`<div class="abs title" style="${c};top:372px">${rise("Dancing", t, 0.22)} ${rise('<span class="gold">Earth</span>', t, 0.38)}</div>`);
+    const w = out5((t - 0.7) / 0.5) * 420;
+    ui.push(`<div class="abs" style="left:${(960 - w / 2).toFixed(1)}px;top:626px;width:${w.toFixed(1)}px;height:6px;background:#e9b949"></div>`);
+    ui.push(`<div class="abs sub" style="${c};top:668px;opacity:${clamp((t - 0.95) / 0.3).toFixed(2)};transform:translateY(${((1 - out3((t - 0.95) / 0.4)) * 18).toFixed(1)}px)">See and hear how Earth's surface changes</div>`);
+  } else if (t < 2.3) { // 2a) SEE: the flood grows
+    const l = t - 1.7, f = Math.min(3, Math.floor(l / 0.15));
+    await setImg($("#A"), shot(`water_${pad([2, 5, 8, 10][f])}`));
+    cam(lerp(745, 760, l / 0.6), 578, lerp(1.3, 1.36, l / 0.6) * punch);
+    ui.push(slam(t, 1.7, 1, "See", "floods, fires and fields, through clouds"));
+  } else if (t < 2.9) { // 2b) HEAR: the image is played strip by strip
+    const l = t - 2.3, act = Math.min(15, Math.floor((l / 0.56) * 16));
+    await setImg($("#A"), shot("fire_09"));
+    cam(lerp(745, 760, l / 0.6), 578, lerp(1.3, 1.36, l / 0.6) * punch);
+    const pt = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u)];
+    for (let b = 0; b < 16; b++) {
+      const p = [pt(QUAD[0], QUAD[1], b / 16), pt(QUAD[0], QUAD[1], (b + 1) / 16), pt(QUAD[3], QUAD[2], (b + 1) / 16), pt(QUAD[3], QUAD[2], b / 16)].map((c) => c.map((v) => v.toFixed(1)).join(",")).join(" ");
+      const glow = b === act ? 1 : b === act - 1 ? 0.5 : b === act - 2 ? 0.2 : 0;
+      over.push(`<polygon points="${p}" fill="#e9b949" fill-opacity="${(glow * 0.5).toFixed(3)}" stroke="#e9b949" stroke-opacity="${b <= act ? 0.6 : 0.2}" stroke-width="1.5"/>`);
+    }
+    ui.push(slam(t, 2.3, 2, "Hear", "every radar image plays as music"));
+  } else if (t < 3.5) { // 2c) EXPLORE: the newest NISAR image of any place
+    const l = t - 2.9;
+    await setImg($("#A"), shot("live_done"));
+    cam(lerp(745, 760, l / 0.6), 560, lerp(1.3, 1.36, l / 0.6) * punch);
+    ui.push(slam(t, 2.9, 3, "Explore", "the newest NISAR image of any place"));
+  } else { // 3) what comes next
+    const l = t - 3.5;
+    await setImg($("#A"), shot(`globe_${pad(Math.min(89, 52 + Math.floor(l * 24)))}`));
+    cam(756, 556, lerp(1.3, 1.42, io(l / 1.5)) * punch * (1 + 0.5 * Math.pow(clamp((l - 1.22) / 0.28), 2)));
+    shade = 0.72;
+    const c = "left:0;width:1920px;text-align:center";
+    ui.push(`<div class="abs k" style="${c};top:398px;opacity:${clamp((l - 0.05) / 0.2).toFixed(2)}">The next five minutes</div>`);
+    ui.push(`<div class="abs title" style="${c};top:446px;font-size:128px;letter-spacing:-.035em">${rise("A tour of", t, 3.58, 0.4)} ${rise('the <span class="gold">real app</span>', t, 3.7, 0.4)}</div>`);
+    const w = clamp((l - 0.2) / 1.0) * 760;
+    ui.push(`<div class="abs" style="left:580px;top:622px;width:760px;height:4px;background:rgba(233,185,73,.22)"></div><div class="abs" style="left:580px;top:622px;width:${w.toFixed(1)}px;height:4px;background:#e9b949"></div>`);
+    ui.push(`<div class="abs sub" style="${c};top:652px;font-size:36px;opacity:${clamp((l - 0.4) / 0.25).toFixed(2)}">Every click you see is recorded live</div>`);
+  }
+
+  $("#over").innerHTML = over.join("");
+  $("#ui").innerHTML = ui.join("");
+  $("#shade").style.opacity = shade;
+  $("#flash").style.opacity = (0.28 * (1 - clamp(since / 0.13))).toFixed(3);
+  $("#black").style.opacity = Math.max(1 - clamp(t / 0.25), clamp((t - (TOTAL - 0.22)) / 0.2)).toFixed(3); // in from black, out to black
+  await new Promise((r) => requestAnimationFrame(() => r()));
+}
+
+window.ready = (async () => {
+  await document.fonts.ready;
+  await Promise.all(["700 212px 'Instrument Sans'", "500 24px 'JetBrains Mono'", "600 40px 'Instrument Sans'", "500 46px 'Instrument Sans'", "700 26px 'JetBrains Mono'"].map((f) => document.fonts.load(f)));
+  return true;
+})();
+</script>
+</body>
+</html>
