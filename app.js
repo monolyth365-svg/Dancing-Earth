@@ -115,10 +115,18 @@ function menu(n) {
   m.style.top = $(".top").offsetHeight + "px";
   m.innerHTML = `<h2>${CATALOG[n].theme}: choose what to explore</h2><div class="menu-grid">${CATALOG[n].items.map((it) => `<section>
     <h3>${it.name}</h3>
-    ${it.entries.map((e) => `<button data-go="${e.go}" class="${e.go === state.go ? "cur" : ""}"><b>${e.label}</b><small>${e.period}</small>${e.open ? `<em>no prepared analysis · explore the images yourself</em>` : ""}</button>`).join("")}
+    ${it.entries.map((e) => `<button data-go="${e.go}" class="${e.go === state.go ? "cur" : ""}"><b>${e.label}</b><small>${period(e)}</small>${e.open ? `<em>no prepared analysis · explore the images yourself</em>` : ""}</button>`).join("")}
     <p><b>Seen:</b> ${it.seen}</p><p><b>Cause:</b> ${it.cause}</p>
   </section>`).join("")}</div>`;
   m.querySelector("[data-go]")?.focus();
+}
+// Řádek pod jménem místa: u připravených míst se bere z dat (první a nejnovější přelet, počet přeletů),
+// takže se sám změní, jakmile přibude nový přelet
+function period(e) {
+  const s = e.go.startsWith("site:") && state.sites.find((x) => x.id === e.go.slice(5));
+  if (!s || !s.last) return e.period;
+  const fresh = (Date.now() - Date.parse(s.last)) / 864e5 <= 14;
+  return `${s.first} → ${s.last} · ${s.passes} radar passes${e.period ? ` · ${e.period}` : ""}${fresh ? ` · <span class="fresh">new pass</span>` : ""}`;
 }
 function go2(go) {
   const [kind, id] = go.split(":");
@@ -159,7 +167,8 @@ async function loadSite(id, opts = {}) {
   Storm.exit();
   Sim.close();
   state.site = id;
-  const d = state.data = await (await fetch(`data/${id}/series.json`)).json();
+  const loaded = Loader.show("Loading radar images…");
+  const d = state.data = await (await fetch(`data/${id}/series.json`)).json().catch((e) => { loaded(); throw e; });
   markNav(`site:${id}`);
   const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter, cat = CATALOG.find(`site:${id}`);
   $("#head").innerHTML = `<div class="kind">${st.label}</div><h1>${st.title}</h1>
@@ -225,6 +234,7 @@ async function loadSite(id, opts = {}) {
   $("#insight").textContent = insight(d) + cloudNote(d);
   Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); });
   document.dispatchEvent(new Event("de:site"));
+  img(path(state.i, "hh")).then(loaded, loaded); // ukazatel zmizí, až je první snímek opravdu načtený
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";

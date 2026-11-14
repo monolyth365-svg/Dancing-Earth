@@ -332,3 +332,19 @@ body.live #panel .credits[data-in], body.storm #panel .credits[data-in] { displa
 #simwrap .sim { border-top: 0; padding-top: 0; margin-top: 0; }
 #simwrap #sim-open:not([hidden]) + .sim:not([hidden]) { margin-top: 10px; }
 .head { padding-bottom: 14px; border-bottom: 0; }
+
+/* Dancing Earth loading indicator */
+.loader { position: fixed; z-index: 60; left: calc((100vw - 400px) / 2); bottom: 26px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 10px; background: rgba(14,17,21,.94); border: 1px solid #3a414c; border-radius: 40px; box-shadow: 0 10px 30px rgba(0,0,0,.6); pointer-events: none; max-width: calc(100vw - 24px); }
+.loader .ld-text { font-size: 14px; color: var(--text); }
+.ld-body { transform-origin: 35px 66px; animation: ld-sway .9s ease-in-out infinite alternate; }
+.ld-l { transform-origin: 29px 55px; animation: ld-kick .9s ease-in-out infinite alternate; }
+.ld-r { transform-origin: 41px 55px; animation: ld-kick .9s ease-in-out infinite alternate-reverse; }
+.ld-al { transform-origin: 17px 38px; animation: ld-wave .45s ease-in-out infinite alternate; }
+.ld-ar { transform-origin: 53px 38px; animation: ld-wave .45s ease-in-out infinite alternate-reverse; }
+.ld-waves { animation: ld-pulse .9s ease-in-out infinite; transform-origin: 46px 26px; }
+@keyframes ld-sway { from { transform: rotate(-11deg) translateY(0); } 50% { transform: rotate(0deg) translateY(-5px); } to { transform: rotate(11deg) translateY(0); } }
+@keyframes ld-kick { from { transform: rotate(-16deg); } to { transform: rotate(10deg); } }
+@keyframes ld-wave { from { transform: rotate(-24deg); } to { transform: rotate(22deg); } }
+@keyframes ld-pulse { 0% { opacity: .15; transform: scale(.7); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: .15; transform: scale(1.1); } }
+@media (max-width: 860px) { .loader { left: 50%; } }
+.menu .fresh { color: #7bd88f; font-weight: 600; }

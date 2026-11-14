@@ -34,7 +34,7 @@ window.Storm = (() => {
     map = m; on = true;
     document.body.classList.add("storm");
     el("#stormbox").innerHTML = `<p class="status">Loading the storm track…</p>`;
-    try { data = await (await fetch(`data/storms/${id}.json`)).json(); } catch { el("#stormbox").innerHTML = `<p class="status">This storm's data could not be loaded.</p>`; return; }
+    try { data = await Loader.during("Loading the storm track…", fetch(`data/storms/${id}.json`).then((r) => r.json())); } catch { el("#stormbox").innerHTML = `<p class="status">This storm's data could not be loaded.</p>`; return; }
     if (!on) return;
     const P = data.points, peak = P.reduce((a, b) => (b.kt > a.kt ? b : a)), firstHU = P.find((p) => p.type === "HU"), last = P.at(-1);
     const r = peak.r34, qmax = r ? r.indexOf(Math.max(...r)) : 0, qmin = r ? r.indexOf(Math.min(...r)) : 0;

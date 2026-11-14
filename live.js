@@ -40,6 +40,7 @@ window.Live = (() => {
 
   async function loadEvents() {
     el("#live-status").textContent = "Loading current events from NASA EONET…";
+    const got = Loader.show("Reading today's events from NASA…");
     try {
       if (!events) {
         const raw = (await (await fetch(EONET)).json()).events;
@@ -49,6 +50,7 @@ window.Live = (() => {
         }).filter((e) => isFinite(e.lng) && isFinite(e.lat)).sort((a, b) => b.date.localeCompare(a.date));
       }
     } catch { events = null; el("#live-status").textContent = "NASA EONET did not answer. You can still click anywhere on the map."; }
+    got();
     if (!on) return;
     const list = events || [];
     if (!map.getSource("events")) {
@@ -73,10 +75,12 @@ window.Live = (() => {
     el("#live-detail").innerHTML = head + `<p class="status" role="status">Asking NASA's archive (ASF) for NISAR passes over this spot…</p>`;
     el("#live-detail").scrollIntoView({ block: "nearest" });
     let res;
+    const asked = Loader.show("Asking NASA's archive for radar passes…");
     try {
       const q = new URLSearchParams({ platform: "NISAR", processingLevel: "GCOV", output: "jsonlite", maxResults: "60", intersectsWith: `POINT(${ll.lng.toFixed(4)} ${ll.lat.toFixed(4)})` });
       res = (await (await fetch(`${ASF}?${q}`)).json()).results || [];
     } catch { res = null; }
+    asked();
     if (id !== reqId) return;
     if (!res) { el("#live-detail").innerHTML = head + `<p class="status">The archive did not answer. Try again in a moment.</p>`; return; }
     const seen = new Set();
@@ -162,7 +166,7 @@ window.Live = (() => {
     el("#live-diff-status").textContent = "";
     st.textContent = `Loading radar image of ${p.startTime.slice(0, 10)} from NASA…`;
     try {
-      const A = await loadPass(p);
+      const A = await Loader.during(`Loading the radar image of ${p.startTime.slice(0, 10)} from NASA…`, loadPass(p));
       if (id !== reqId) return;
       const k = Math.min(1, 1200 / Math.max(A.bmp.width, A.bmp.height)), cv = canvas(Math.round(A.bmp.width * k), Math.round(A.bmp.height * k));
       const cx = cv.getContext("2d");
@@ -188,7 +192,7 @@ window.Live = (() => {
     Sonify.resume();
     st.textContent = `Comparing ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}…`;
     try {
-      const [A, B] = await Promise.all([loadPass(a), loadPass(b)]);
+      const [A, B] = await Loader.during("Comparing two radar images…", Promise.all([loadPass(a), loadPass(b)]));
       if (id !== reqId) return;
       const N = 600, grab = (I) => {
         const cv = canvas(N, N), cx = cv.getContext("2d");
