@@ -17,6 +17,11 @@ SATS = [
     dict(id="swot", name="SWOT", catnr=54754, color="#3c8cff", role="NASA-CNES mission that measures water height"),
     dict(id="landsat9", name="Landsat 9", catnr=49260, color="#7bd88f", role="NASA-USGS optical land imager"),
     dict(id="sentinel1a", name="Sentinel-1A", catnr=39634, color="#b07cff", role="ESA C-band radar, NISAR's European cousin"),
+    # extra=True: jen na 3D zeměkouli (na ploché mapě by už bylo družic moc)
+    dict(id="iss", name="ISS", catnr=25544, color="#ffffff", role="International Space Station, with a crew on board", extra=True),
+    dict(id="snpp", name="Suomi NPP", catnr=37849, color="#ff8a1f", role="NASA-NOAA satellite; its VIIRS sensor supplies part of our fire heat detections", extra=True),
+    dict(id="terra", name="Terra", catnr=25994, color="#f06292", role="NASA Earth-observing satellite launched in 1999", extra=True),
+    dict(id="sentinel6", name="Sentinel-6 MF", catnr=46984, color="#4dd0e1", role="NASA-ESA mission that measures sea level", extra=True),
 ]
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794664210" rel="stylesheet">
+<link href="style.css?v=1794666489" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -26,6 +26,8 @@
   <div id="g3d-view"></div>
   <div class="g3d-card">
     <div class="orbit-head"><h2>Earth and its satellites, right now</h2><button id="g3d-close" aria-label="Close">✕</button></div>
+    <div class="g3d-pick">Follow a satellite</div>
+    <div id="g3d-sats" class="g3d-sats" role="group" aria-label="Satellite to follow"></div>
     <p id="g3d-text" class="orbit-text" role="status" aria-live="off"></p>
     <div class="tools">
       <button id="g3d-whole">Whole Earth</button>
@@ -34,7 +36,7 @@
       <button id="g3d-fast" aria-pressed="false">Speed up time ×300</button>
       <button id="g3d-light" aria-pressed="false">Day and night</button>
     </div>
-    <p class="hint"><b>Drag</b> to turn the Earth, <b>scroll</b> to zoom right down to the ground, <b>Ctrl + drag</b> (or two fingers) to tilt the view. The surface sharpens as you zoom in: only the part you look at is loaded. Earth, orbits, heights and the radar beam are to scale; the satellite models are simple sketches enlarged about 4,000 times. Imagery: NASA Blue Marble and Landsat mosaic. Orbits: CelesTrak.</p>
+    <p class="hint">Pick a satellite and the camera flies with it: <b>drag</b> to circle around it, <b>scroll</b> to come closer. In <b>Whole Earth</b>, drag to turn the Earth and scroll to zoom right down to the ground, <b>Ctrl + drag</b> (or two fingers) to tilt the view. The surface sharpens as you zoom in: only the part you look at is loaded. Earth, orbits, heights and the radar beam are to scale; the satellite models are simple sketches enlarged about 4,000 times. Imagery: NASA Blue Marble and Landsat mosaic. Orbits: CelesTrak.</p>
   </div>
 </section>
 
@@ -174,17 +176,17 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="catalog.js?v=1794664210"></script>
-<script src="stories.js?v=1794664210"></script>
-<script src="sound.js?v=1794664210"></script>
-<script src="satellite.min.js?v=1794664210"></script>
-<script src="sats.js?v=1794664210"></script>
-<script src="globe3d.js?v=1794664210"></script>
-<script src="globe.js?v=1794664210"></script>
-<script src="storm.js?v=1794664210"></script>
-<script src="fire.js?v=1794664210"></script>
-<script src="sim.js?v=1794664210"></script>
-<script src="live.js?v=1794664210"></script>
-<script src="app.js?v=1794664210"></script>
+<script src="catalog.js?v=1794666489"></script>
+<script src="stories.js?v=1794666489"></script>
+<script src="sound.js?v=1794666489"></script>
+<script src="satellite.min.js?v=1794666489"></script>
+<script src="sats.js?v=1794666489"></script>
+<script src="globe3d.js?v=1794666489"></script>
+<script src="globe.js?v=1794666489"></script>
+<script src="storm.js?v=1794666489"></script>
+<script src="fire.js?v=1794666489"></script>
+<script src="sim.js?v=1794666489"></script>
+<script src="live.js?v=1794666489"></script>
+<script src="app.js?v=1794666489"></script>
 </body>
 </html>
