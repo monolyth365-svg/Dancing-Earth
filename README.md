@@ -7,6 +7,12 @@ Built for the NASA Space Apps Challenge 2026, challenge **"Dancing with the SARs
 
 **Source code:** https://github.com/monolyth365-svg/Dancing-Earth
 
+## 30-second demo video
+
+https://monolyth365-svg.github.io/Dancing-Earth/video/dancing-earth-30s.mp4
+
+Every picture in it is a real screenshot of the app. The video was assembled with code in `video/` (written with AI assistance): `capture.py` takes the screenshots, `compose.html` + `render.py` add titles and cuts, `score.py` synthesizes the music (no recordings and no music model; the piano line follows the open-water area and the mapped burn scar pass by pass, and in the "Hear the change" scene the app's own sound code plays the two radar images). The fire time-lapse leaves out the pass of 13 September 2026, which the app itself marks as unreliable.
+
 ## What it does
 
 Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, and watch, compare and listen. For every phenomenon the app keeps apart what is *seen* on the image and what is *known about the cause*.

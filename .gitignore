@@ -10,3 +10,7 @@ ODEVZDANI.md
 ZADANI.md
 assets/
 FORMULAR.md
+# demo video: captured stills and rendered frames are large and can be rebuilt with video/*.py
+video/shots/
+video/out/
+video/*.mp4

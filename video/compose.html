@@ -1,0 +1,214 @@
+<!doctype html>
+<!-- Demo video compositor. render(t) draws the frame for time t (seconds); video/render.py screenshots every frame.
+     All pictures are real screenshots of the app (video/shots). Titles, camera moves and cuts are added here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #000; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #07090c; font-family: "Instrument Sans", system-ui, sans-serif; color: #f2f3f5; }
+  #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; will-change: transform; }
+  #cam img { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #over { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #col { position: absolute; right: 0; top: 0; width: 700px; height: 1080px; background: linear-gradient(to right, rgba(7,9,12,0) 0, rgba(7,9,12,.93) 105px, #07090c 190px); }
+  #edge { position: absolute; left: 0; top: 0; width: 190px; height: 1080px; background: linear-gradient(to left, rgba(7,9,12,0) 0, rgba(7,9,12,.9) 150px, #07090c 190px); }
+  #shade { position: absolute; inset: 0; background: #07090c; }
+  #ui, #flash { position: absolute; inset: 0; }
+  #flash { background: #fff; }
+  .k { font: 500 21px/1.3 "JetBrains Mono", monospace; letter-spacing: .13em; text-transform: uppercase; color: #e9b949; }
+  .big { font-weight: 700; font-size: 84px; line-height: 1.02; letter-spacing: -.025em; }
+  .num { font-weight: 700; font-size: 118px; line-height: 1; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .unit { font-weight: 600; font-size: 46px; letter-spacing: -.01em; color: #c9ced6; }
+  .lab { font-weight: 500; font-size: 32px; line-height: 1.2; color: #c9ced6; }
+  .hit { font-weight: 700; font-size: 44px; line-height: 1.1; color: #e9b949; letter-spacing: -.015em; }
+  .small { font: 400 17px/1.4 "JetBrains Mono", monospace; color: #8b939e; }
+  .word { font-weight: 700; font-size: 150px; line-height: 1; letter-spacing: -.04em; }
+  .gold { color: #e9b949; } .blue { color: #5aa2ff; } .red { color: #ff5a44; }
+  .abs { position: absolute; }
+  .tag { display: inline-block; background: rgba(7,9,12,.9); padding: 14px 26px 18px; }
+  #mark { position: absolute; right: 34px; bottom: 22px; font: 400 14px/1 "JetBrains Mono", monospace; color: rgba(210,215,222,.55); letter-spacing: .03em; }
+</style>
+<script src="out/scans.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div id="cam"><img id="A" alt=""><img id="B" alt=""><svg id="over" viewBox="0 0 1920 1080"></svg></div>
+  <div id="shade"></div>
+  <div id="col"></div>
+  <div id="edge"></div>
+  <div id="ui"></div>
+  <div id="flash"></div>
+  <div id="mark">Real app footage · music synthesized in code, melody follows the NISAR data · edited with SI assistance</div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s), S = TL.scenes;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
+const out3 = (k) => 1 - Math.pow(1 - clamp(k), 3), io = (k) => { k = clamp(k); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const n0 = (v) => Math.round(v).toLocaleString("en-US");
+const shot = (n) => `shots/${n}.jpg`, pad = (i) => String(i).padStart(2, "0");
+const META = {}; // per-pass numbers saved next to the screenshots
+const QUAD = { lake: [[291, 111], [1226, 107], [1229, 1046], [296, 1050]], fire: [[322, 107], [1230, 142], [1193, 1050], [290, 1016]] }; // radar image corners on screen: TL, TR, BR, BL
+const ETNA = [809, 467];
+
+async function setImg(el, src, opacity = 1, clip = "") {
+  el.style.opacity = opacity; el.style.clipPath = clip;
+  if (el.dataset.src !== src) { el.dataset.src = src; el.src = src; }
+  if (opacity > 0) try { await el.decode(); } catch { /* shown as soon as it loads */ }
+}
+// Camera: look at point (fx, fy) of the screenshot with zoom s
+const cam = (fx, fy, s) => { $("#cam").style.transform = `translate(${(960 - fx * s).toFixed(2)}px, ${(540 - fy * s).toFixed(2)}px) scale(${s.toFixed(4)})`; };
+// Text block that slides up and fades in at time a and leaves before b
+function tx(t, a, b, html, style, d = 22) {
+  const i = out3((t - a) / 0.4), o = 1 - clamp((t - (b - 0.22)) / 0.22);
+  if (t < a || t >= b) return "";
+  return `<div class="abs" style="${style};opacity:${Math.min(i, o).toFixed(3)};transform:translateY(${((1 - i) * d).toFixed(1)}px)">${html}</div>`;
+}
+// A sequence of screenshots with short cross-fades; returns the index (fractional) of the frame on screen
+async function seq(names, k, fade = 0.5) {
+  const n = names.length, x = clamp(k, 0, 0.9999) * n, i = Math.floor(x), f = x - i, j = Math.min(n - 1, i + 1);
+  const o = i === j ? 0 : clamp((f - (1 - fade)) / fade);
+  await setImg($("#A"), shot(names[i])); await setImg($("#B"), shot(names[j]), o);
+  return i + o;
+}
+// Time-lapse pacing: n passes in equal quick steps, the last one stays on screen for `hold` seconds
+const stepK = (l, d, hold, n) => Math.min(l / ((d - hold) / (n - 1)), n - 0.001) / n;
+const col = (on) => { $("#col").style.display = $("#edge").style.display = on ? "" : "none"; };
+const X = 1335; // left edge of the text column
+
+// Beat: the music runs at 120 BPM, so the picture gets a tiny "bump" on every beat and passes change exactly on it
+const BEAT = TL.beat, bump = () => 1; // (version 2 bumped the picture on every beat; the cinematic cut moves smoothly)
+const pop = () => 1;
+
+async function render(t) {
+  const ui = [], over = [];
+  let shade = 0;
+  $("#B").style.opacity = 0; col(true);
+  const inS = (name) => t >= S[name][0] && t < S[name][1], L = (name) => t - S[name][0], D = (name) => S[name][1] - S[name][0], A = (name, off = 0) => S[name][0] + off, E = (name) => S[name][1];
+  const sinceCut = Math.min(...TL.cuts.map((c) => (t >= c ? t - c : 9)));
+  const punch = (1 + 0.03 * (1 - out3(sinceCut / 0.7))) * bump(t, t >= 1 && t < S.end[0] && !inS("music") ? 1 : 0); // zoom "kick" on every cut + beat bump
+
+  if (inS("globe")) {
+    const l = L("globe"), k = l / D("globe");
+    await setImg($("#A"), shot(`globe_${pad(Math.min(89, Math.floor(l * 30)))}`));
+    cam(lerp(930, 910, k), 556, lerp(1.22, 1.31, io(k)) * punch);
+    ui.push(tx(t, 0.15, E("globe"), `<div class="k">NISAR · NASA-ISRO radar satellite</div>`, `left:${X}px;top:330px`));
+    ui.push(tx(t, 0.4, E("globe"), `<div class="big">Earth<br>never stops<br><span class="gold">changing.</span></div>`, `left:${X}px;top:380px`));
+    ui.push(tx(t, 1.0, E("globe"), `<div class="small">live orbits · positions computed in the app</div>`, `left:${X}px;top:680px`));
+  }
+
+  if (inS("clouds")) {
+    const l = L("clouds"), w = io((l - 1.0) / 0.9), x = lerp(250, 1270, w);
+    await setImg($("#A"), shot("opt_photo")); await setImg($("#B"), shot("opt_radar"), w > 0 ? 1 : 0, `inset(0 ${(1920 - x).toFixed(1)}px 0 0)`);
+    cam(960, 578, lerp(1.17, 1.22, l / 3) * punch);
+    if (w > 0 && w < 1) over.push(`<line x1="${x}" x2="${x}" y1="60" y2="1080" stroke="#e9b949" stroke-width="5"/>`);
+    ui.push(tx(t, A("clouds", 0.1), E("clouds"), `<div class="k">Tonlé Sap, Cambodia · 23 Sep 2026</div>`, `left:${X}px;top:330px`));
+    ui.push(tx(t, A("clouds", 0.15), A("clouds", 1.45), `<div class="big">A camera<br>sees <span style="color:#c9ced6">clouds.</span></div>`, `left:${X}px;top:380px`));
+    ui.push(tx(t, A("clouds", 1.5), E("clouds"), `<div class="big">Radar<br>sees the<br><span class="gold">ground.</span></div>`, `left:${X}px;top:380px`));
+    ui.push(tx(t, A("clouds", 2.0), E("clouds"), `<div class="small">same place, same day · NISAR L-band</div>`, `left:${X}px;top:680px`));
+  }
+
+  if (inS("water")) {
+    const l = L("water"), k = l / D("water"), P = TL.waterPasses, m = META.water, lastAt = (P.length - 1) * BEAT;
+    await seq(P.map((i) => `water_${pad(i)}`), stepK(l, D("water"), TL.waterHold, P.length)); const gi = Math.min(P.length - 1, l / BEAT), g0 = Math.floor(gi), g1 = Math.min(P.length - 1, g0 + 1), cur = { waterKm2: lerp(m[P[g0]].waterKm2, m[P[g1]].waterKm2, io(gi - g0)), date: m[P[Math.round(gi)]].date };
+    cam(960, 578, lerp(1.17, 1.23, k) * punch);
+    ui.push(tx(t, A("water", 0.05), E("water"), `<div class="k">Flood pulse · Tonlé Sap, Cambodia</div>`, `left:${X}px;top:300px`));
+    ui.push(tx(t, A("water", 0.1), E("water"), `<div class="num blue" style="transform-origin:0 70%;transform:scale(${(l < lastAt + BEAT ? pop(l) : 1).toFixed(3)})">${n0(cur.waterKm2)}<span class="unit"> km²</span></div><div class="lab" style="margin-top:10px">of open water</div>`, `left:${X}px;top:352px`));
+    ui.push(tx(t, A("water", 0.2), E("water"), `<div class="small" style="font-size:22px;color:#c9ced6">radar pass ${cur.date}</div>`, `left:${X}px;top:560px`));
+    ui.push(tx(t, A("water", lastAt), E("water"), `<div class="hit">+43% in four months</div>`, `left:${X}px;top:625px`));
+    ui.push(tx(t, A("water", 0.5), E("water"), `<div class="small">blue = new open water since June</div>`, `left:${X}px;top:${l >= lastAt ? 700 : 625}px`, 0));
+  }
+
+  if (inS("fire")) {
+    const l = L("fire"), k = l / D("fire"), P = TL.firePasses, m = META.fire, lastAt = (P.length - 1) * BEAT, last = m[P.at(-1)];
+    await seq(P.map((i) => `fire_${pad(i)}`), stepK(l, D("fire"), TL.fireHold, P.length)); const gi = Math.min(P.length - 1, l / BEAT), g0 = Math.floor(gi), g1 = Math.min(P.length - 1, g0 + 1), cur = { lossKm2: lerp(m[P[g0]].lossKm2, m[P[g1]].lossKm2, io(gi - g0)), date: m[P[Math.round(gi)]].date };
+    cam(960, 578, lerp(1.17, 1.23, k) * punch);
+    ui.push(tx(t, A("fire", 0.05), E("fire"), `<div class="k">Wildfire · Shingle Fire, Oregon</div>`, `left:${X}px;top:300px`));
+    ui.push(tx(t, A("fire", 0.1), E("fire"), `<div class="num red" style="transform-origin:0 70%;transform:scale(${(l < lastAt + BEAT ? pop(l) : 1).toFixed(3)})">${n0(cur.lossKm2)}<span class="unit"> km²</span></div><div class="lab" style="margin-top:10px">of burn scar seen by radar</div>`, `left:${X}px;top:352px`));
+    ui.push(tx(t, A("fire", 0.2), E("fire"), `<div class="small" style="font-size:22px;color:#c9ced6">radar pass ${cur.date}</div>`, `left:${X}px;top:560px`));
+    ui.push(tx(t, A("fire", lastAt), E("fire"), `<div class="hit">${Math.round((last.lossInsideKm2 / last.lossKm2) * 100)}% inside the<br>official fire line</div>`, `left:${X}px;top:625px`));
+    ui.push(tx(t, A("fire", 0.5), E("fire"), `<div class="small">dots = heat detections (VIIRS)<br>red shading = change seen by radar</div>`, `left:${X}px;top:${l >= lastAt ? 745 : 625}px`, 0));
+  }
+
+  if (inS("music")) {
+    const l = L("music"), half = D("music") / 2, second = l >= half, ll = second ? l - half : l, key = second ? "fire" : "lake";
+    await setImg($("#A"), shot(second ? `fire_${pad(TL.firePasses.at(-1))}` : `water_${pad(TL.waterPasses.at(-1))}`));
+    cam(960, 578, lerp(1.17, 1.21, ll / half) * punch);
+    const q = QUAD[key], sc = SCANS[key], act = Math.min(15, Math.floor((ll / half) * 16)); // the strip that is sounding now (one sixteenth note each)
+    const pt = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u)];
+    for (let b = 0; b < 16; b++) {
+      const p = [pt(q[0], q[1], b / 16), pt(q[0], q[1], (b + 1) / 16), pt(q[3], q[2], (b + 1) / 16), pt(q[3], q[2], b / 16)].map((c) => c.map((v) => v.toFixed(1)).join(",")).join(" ");
+      const glow = b === act ? 1 : b === act - 1 ? 0.45 : b === act - 2 ? 0.18 : 0;
+      over.push(`<polygon points="${p}" fill="#e9b949" fill-opacity="${(glow * 0.42).toFixed(3)}" stroke="#e9b949" stroke-opacity="${b <= act ? 0.55 : 0.22}" stroke-width="1.5"/>`);
+    }
+    ui.push(tx(t, A("music", 0.05), E("music"), `<div class="k">Music from the image</div>`, `left:${X}px;top:270px`));
+    ui.push(tx(t, A("music", 0.1), E("music"), `<div class="big">Hear the<br><span class="gold">change.</span></div>`, `left:${X}px;top:320px`));
+    // 16 bars: height = brightness of the strip (pitch), colour strength = change (loudness)
+    const lv = sc.filter(Boolean).map((c) => c.level), lo = Math.min(...lv), hi = Math.max(...lv);
+    const bars = sc.map((c, b) => { const h = c ? 26 + ((c.level - lo) / (hi - lo || 1)) * 110 : 4, on = b <= act;
+      return `<div style="width:22px;height:${h.toFixed(0)}px;background:${b === act ? "#fff" : "#e9b949"};opacity:${on ? (b === act ? 1 : 0.35 + Math.min(1, Math.abs(c ? c.delta : 0) / 3) * 0.65) : 0.16}"></div>`; }).join("");
+    ui.push(tx(t, A("music", 0.25), E("music"), `<div style="display:flex;gap:9px;align-items:flex-end;height:140px">${bars}</div>`, `left:${X}px;top:540px`, 0));
+    ui.push(tx(t, A("music", 0.5), E("music"), `<div class="lab" style="font-size:27px">brightness → pitch<br>change → loudness<br>west to east → left to right</div>`, `left:${X}px;top:712px`));
+  }
+
+  if (inS("live")) {
+    const l = L("live");
+    if (l < 1.5) {
+      const k = io(l / 1.5);
+      await setImg($("#A"), shot("live_world")); cam(lerp(960, 900, k), lerp(578, 500, k), lerp(1.17, 1.75, k) * punch);
+      const r = clamp((l - 0.5) / 0.7);
+      if (l > 0.5) over.push(`<circle cx="${ETNA[0]}" cy="${ETNA[1]}" r="${(6 + r * 46).toFixed(1)}" fill="none" stroke="#fff" stroke-width="3" stroke-opacity="${(1 - r).toFixed(2)}"/>`, `<circle cx="${ETNA[0]}" cy="${ETNA[1]}" r="6" fill="#e9b949" stroke="#07090c" stroke-width="2"/>`);
+    } else if (l < 2) {
+      await setImg($("#A"), shot("live_01")); cam(880, lerp(705, 735, (l - 1.5) / 0.5), 1.55 * punch);
+    } else {
+      await setImg($("#A"), shot("live_done")); cam(960, 578, lerp(1.17, 1.24, (l - 2) / 2.5) * punch);
+    }
+    ui.push(tx(t, A("live", 0.05), E("live"), `<div class="k"><span style="color:#ff5a44">●</span> Live world</div>`, `left:${X}px;top:300px`));
+    ui.push(tx(t, A("live", 0.1), A("live", 1.95), `<div class="big">Click<br>anywhere<br>on Earth.</div>`, `left:${X}px;top:350px`));
+    ui.push(tx(t, A("live", 2), E("live"), `<div class="big" style="font-size:70px">The newest<br><span class="gold">NISAR image,</span><br>straight from<br>NASA's archive.</div>`, `left:${X}px;top:350px`));
+    ui.push(tx(t, A("live", 2.5), E("live"), `<div class="small">Mount Etna, Sicily · pass of 27 Oct 2026</div>`, `left:${X}px;top:690px`));
+  }
+
+  if (inS("montage")) {
+    const l = L("montage"), step = D("montage") / 4, n = Math.min(3, Math.floor(l / step)), ll = l - n * step, k = ll / step;
+    const words = ["Compare.", "Chart.", "Measure.", "Track storms."];
+    col(false);
+    if (n === 0) { await seq(Array.from({ length: 25 }, (_, i) => `cmp_${pad(i)}`), k, 1); cam(lerp(800, 815, k), 578, 1.2 * punch); }
+    if (n === 1) { await setImg($("#A"), shot("charts_shingle")); cam(1400, lerp(500, 525, k), 1.75 * punch); }
+    if (n === 2) { await setImg($("#A"), shot("extra_measure")); cam(lerp(1105, 1120, k), 578, 1.2 * punch); }
+    if (n === 3) { await setImg($("#A"), shot("extra_storm")); cam(lerp(800, 815, k), 578, 1.2 * punch); }
+    const i = out3(ll / 0.18);
+    ui.push(`<div class="abs" style="left:80px;bottom:90px;opacity:${i.toFixed(2)};transform:translateY(${((1 - i) * 30).toFixed(1)}px)"><span class="tag word">${words[n]}</span></div>`);
+  }
+
+  if (inS("end")) {
+    const l = L("end");
+    col(false);
+    await setImg($("#A"), shot("globe_89")); cam(lerp(770, 760, l / 3.5), 556, lerp(1.5, 1.62, l / 3.5) * punch);
+    shade = 0.74;
+    const c = "left:0;width:1920px;text-align:center";
+    ui.push(tx(t, A("end", 0.05), 31, `<div class="word" style="font-size:176px">Dancing Earth</div>`, `${c};top:300px`, 34));
+    ui.push(tx(t, A("end", 0.5), 31, `<div class="lab" style="font-size:46px;color:#f2f3f5">See and <span class="gold">hear</span> Earth change with NISAR radar.</div>`, `${c};top:508px`));
+    ui.push(tx(t, A("end", 1.0), 31, `<div class="k" style="font-size:26px">monolyth365-svg.github.io/Dancing-Earth</div>`, `${c};top:622px`));
+    ui.push(tx(t, A("end", 1.25), 31, `<div class="small" style="font-size:21px;color:#c9ced6">Team AlgoryX · NASA Space Apps Challenge 2026 · Dancing with the SARs</div>`, `${c};top:690px`));
+    ui.push(tx(t, A("end", 1.5), 31, `<div class="small">Data: NISAR L2 GCOV (NASA-ISRO, ASF DAAC) · VIIRS (NASA GIBS, FIRMS) · NIFC fire perimeters</div>`, `${c};top:760px`));
+  }
+
+  $("#over").innerHTML = over.join("");
+  $("#ui").innerHTML = ui.join("");
+  $("#shade").style.opacity = shade;
+  $("#flash").style.opacity = (0.12 * (1 - clamp(sinceCut / 0.2))).toFixed(3);
+  const fadeIn = clamp(t / 0.35), fadeOut = clamp((TL.total - t) / 0.4); // open from black, close to black
+  $("#stage").style.opacity = Math.min(fadeIn, fadeOut).toFixed(3);
+  await new Promise((r) => requestAnimationFrame(() => r()));
+}
+
+window.ready = (async () => {
+  for (const k of ["water", "fire"]) META[k] = await (await fetch(`shots/${k}.json`)).json();
+  await document.fonts.ready;
+  await Promise.all(["700 84px 'Instrument Sans'", "500 21px 'JetBrains Mono'", "400 17px 'JetBrains Mono'", "600 46px 'Instrument Sans'", "500 32px 'Instrument Sans'"].map((f) => document.fonts.load(f)));
+  return true;
+})();
+</script>
+</body>
+</html>
