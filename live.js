@@ -11,7 +11,8 @@ window.Live = (() => {
   const cat = (id) => CATS[id] || ["Other", "#9aa2ad"];
   const el = (s) => document.querySelector(s);
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let map, events = null, passes = [], reqId = 0, on = false;
+  let map, events = null, passes = [], reqId = 0, on = false, cur = 0;
+  const cache = new Map(); // stažené náhledy (jeden má kolem 4 MB), ať se při přepínání nestahují znovu
   const marker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 
   async function enter(m, at) {
@@ -21,8 +22,9 @@ window.Live = (() => {
     for (const s of ["perim", "sar"]) if (map.getSource(s)) map.removeSource(s);
     document.querySelectorAll("#sites button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.site === "live"));
     history.replaceState(null, "", "#live" + (at ? "=" + at : ""));
-    if (!at) map.flyTo({ center: [0, 20], zoom: 1.4, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 });
+    if (!at) { map.resize(); map.fitBounds([[-150, -50], [160, 68]], { padding: 4, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 }); }
     el("#live-detail").innerHTML = "";
+    Sats.show(map);
     await loadEvents();
     if (at) { const [lng, lat] = at.split(",").map(Number); if (isFinite(lng) && isFinite(lat)) pick({ lng, lat }, "Shared location"); }
   }
@@ -30,6 +32,7 @@ window.Live = (() => {
   function exit() {
     if (!on) return;
     on = false; reqId++;
+    Sats.hide();
     document.body.classList.remove("live");
     marker.remove();
     for (const l of ["live-img", "events"]) if (map.getLayer(l)) map.removeLayer(l);
@@ -91,40 +94,127 @@ window.Live = (() => {
       <p>${res.length >= 60 ? "60 or more" : res.length} NISAR radar products cover this spot. Newest: <b>${passes[0].startTime.slice(0, 10)}</b>. Next pass expected around <b>${new Date(next).toISOString().slice(0, 10)}</b> (estimate from the 12-day repeat).</p>
       <div class="passes" role="group" aria-label="Radar passes, newest first">${passes.map((p, i) => `<button data-pass="${i}" aria-pressed="false">${p.startTime.slice(0, 10)}</button>`).join("")}</div>
       <p class="status" id="live-img-status" role="status"></p>
+      <button id="live-diff" class="primary">♪ What changed since the pass before? Show and play it</button>
+      <p class="status" id="live-diff-status" role="status"></p>
       <p class="hint">Click the dates to flip between passes and spot what changed. Colours are NASA's quick-look composite of the HH and HV channels: brighter means a stronger radar echo; water and smooth ground are dark.</p>`;
     showPass(0);
   }
 
-  // Náhledový snímek čteme přímo z NASA; černé okolí zprůhledníme, ať je vidět mapa
+  // Náhledový snímek a jeho zeměpisné rohy čteme přímo z NASA
+  function loadPass(p) {
+    if (cache.has(p.granuleName)) return cache.get(p.granuleName);
+    const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml"));
+    const job = !png || !kml ? Promise.reject(new Error("no browse")) : Promise.all([
+      fetch(kml).then((r) => r.text()),
+      fetch(png).then((r) => r.blob()).then((b) => createImageBitmap(new Blob([b], { type: "image/png" }))),
+    ]).then(([txt, bmp]) => {
+      const c = txt.match(/<coordinates>([^<]+)</)[1].trim().split(/\s+/).map((x) => x.split(",").map(Number)); // LL, LR, UR, UL
+      const lons = c.map((x) => x[0]), lats = c.map((x) => x[1]);
+      return { bmp, coords: [c[3], c[2], c[1], c[0]], w: Math.min(...lons), e: Math.max(...lons), s: Math.min(...lats), n: Math.max(...lats) };
+    });
+    job.catch(() => cache.delete(p.granuleName));
+    cache.set(p.granuleName, job);
+    if (cache.size > 6) cache.delete(cache.keys().next().value);
+    return job;
+  }
+  function put(cv, coords) {
+    const url = cv.toDataURL("image/png");
+    if (map.getSource("live-img")) map.getSource("live-img").updateImage({ url, coordinates: coords });
+    else {
+      map.addSource("live-img", { type: "image", url, coordinates: coords });
+      map.addLayer({ id: "live-img", type: "raster", source: "live-img", paint: { "raster-opacity": 0.92, "raster-fade-duration": 0 } }, map.getLayer("sat-swath") ? "sat-swath" : map.getLayer("events") ? "events" : undefined);
+    }
+  }
+  const canvas = (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h });
+
+  // Černé okolí snímku zprůhledníme, ať je vidět mapa
   async function showPass(i) {
     const id = ++reqId, p = passes[i];
+    cur = i;
     document.querySelectorAll("[data-pass]").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.pass === i));
     const st = el("#live-img-status");
+    el("#live-diff-status").textContent = "";
     st.textContent = `Loading radar image of ${p.startTime.slice(0, 10)} from NASA…`;
     try {
-      const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml"));
-      if (!png || !kml) throw new Error("no browse");
-      const [txt, bmp] = await Promise.all([fetch(kml).then((r) => r.text()), fetch(png).then((r) => r.blob()).then((b) => createImageBitmap(new Blob([b], { type: "image/png" })))]);
+      const A = await loadPass(p);
       if (id !== reqId) return;
-      const c = txt.match(/<coordinates>([^<]+)</)[1].trim().split(/\s+/).map((s) => s.split(",").map(Number)); // LL, LR, UR, UL
-      const k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height)), cv = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) });
+      const k = Math.min(1, 1200 / Math.max(A.bmp.width, A.bmp.height)), cv = canvas(Math.round(A.bmp.width * k), Math.round(A.bmp.height * k));
       const cx = cv.getContext("2d");
-      cx.drawImage(bmp, 0, 0, cv.width, cv.height);
+      cx.drawImage(A.bmp, 0, 0, cv.width, cv.height);
       const im = cx.getImageData(0, 0, cv.width, cv.height), a = im.data;
       for (let j = 0; j < a.length; j += 4) if (a[j] + a[j + 1] + a[j + 2] < 10) a[j + 3] = 0;
       cx.putImageData(im, 0, 0);
-      const coords = [c[3], c[2], c[1], c[0]], url = cv.toDataURL("image/png");
-      if (map.getSource("live-img")) map.getSource("live-img").updateImage({ url, coordinates: coords });
-      else {
-        map.addSource("live-img", { type: "image", url, coordinates: coords });
-        map.addLayer({ id: "live-img", type: "raster", source: "live-img", paint: { "raster-opacity": 0.92, "raster-fade-duration": 0 } }, map.getLayer("events") ? "events" : undefined);
-      }
-      const lons = c.map((x) => x[0]), lats = c.map((x) => x[1]);
-      if (i === 0 || !map.getBounds().contains(marker.getLngLat())) map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
+      put(cv, A.coords);
+      if (i === 0 || !map.getBounds().contains(marker.getLngLat())) map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
       st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC`;
     } catch (e) {
       if (id === reqId) st.textContent = "This radar image could not be loaded. Try another date.";
     }
+  }
+
+  // Co se změnilo mezi dvěma přelety stejné dráhy: rozdíl jasu obou náhledů, spočítaný v prohlížeči, a přehraný jako hudba
+  async function diff() {
+    const a = passes[cur], st = el("#live-diff-status");
+    const j = passes.findIndex((p, k) => k > cur && p.path === a.path && p.frame === a.frame && p.flightDirection === a.flightDirection);
+    if (j < 0) { st.textContent = "There is no earlier pass on the same track in this list to compare with. Try a newer date."; return; }
+    const id = ++reqId, b = passes[j];
+    Sonify.resume();
+    st.textContent = `Comparing ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}…`;
+    try {
+      const [A, B] = await Promise.all([loadPass(a), loadPass(b)]);
+      if (id !== reqId) return;
+      const N = 600, grab = (I) => {
+        const cv = canvas(N, N), cx = cv.getContext("2d");
+        cx.imageSmoothingQuality = "high";
+        // starší snímek se posadí do mřížky novějšího podle zeměpisných rohů
+        cx.drawImage(I.bmp, ((I.w - A.w) / (A.e - A.w)) * N, ((A.n - I.n) / (A.n - A.s)) * N, ((I.e - I.w) / (A.e - A.w)) * N, ((I.n - I.s) / (A.n - A.s)) * N);
+        const d = cx.getImageData(0, 0, N, N).data, lum = new Float32Array(N * N), ok = new Uint8Array(N * N);
+        for (let q = 0; q < N * N; q++) { const v = d[q * 4] + d[q * 4 + 1] + d[q * 4 + 2]; lum[q] = v / 3; ok[q] = v >= 10 ? 1 : 0; }
+        return { lum: blur(lum, ok, N), ok };
+      };
+      const X = grab(A), Y = grab(B), d = new Float32Array(N * N);
+      let sum = 0, n = 0;
+      for (let q = 0; q < N * N; q++) if (X.ok[q] && Y.ok[q]) { d[q] = X.lum[q] - Y.lum[q]; sum += d[q]; n++; }
+      if (n < N * N * 0.05) { st.textContent = "These two images barely overlap, so there is nothing to compare."; return; }
+      const bias = sum / n, T = 30; // posun celé scény (např. po dešti) se odečte; práh 30 z 255
+      const out = canvas(N, N), ox = out.getContext("2d"), im = ox.createImageData(N, N), o = im.data;
+      const cols = Array.from({ length: 16 }, () => ({ lum: 0, n: 0, up: 0, down: 0 }));
+      let changed = 0;
+      for (let q = 0; q < N * N; q++) {
+        if (!X.ok[q]) continue;
+        const g = X.lum[q] * 0.6, both = Y.ok[q], v = both ? d[q] - bias : 0, c = cols[Math.min(15, Math.floor(((q % N) / N) * 16))];
+        let r = g, gg = g, bl = g;
+        if (Math.abs(v) > T) {
+          const k = Math.min(1, (Math.abs(v) - T) / 50) * 0.8 + 0.2, [cr, cg, cb] = v < 0 ? [60, 140, 255] : [255, 150, 40];
+          r = g * (1 - k) + cr * k; gg = g * (1 - k) + cg * k; bl = g * (1 - k) + cb * k;
+          changed++; v < 0 ? c.down++ : c.up++;
+        }
+        if (both) { c.lum += X.lum[q]; c.n++; }
+        o[q * 4] = r; o[q * 4 + 1] = gg; o[q * 4 + 2] = bl; o[q * 4 + 3] = 255;
+      }
+      ox.putImageData(im, 0, 0);
+      put(out, A.coords);
+      const share = (changed / n) * 100;
+      st.textContent = `Compared ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}, same track. About ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the image changed noticeably. Blue: darker now, for example new water or lost vegetation. Orange: brighter now. You are hearing it west to east: louder notes mean more change. This is a rough comparison of NASA's quick-look images, not a calibrated measurement.`;
+      // stejné pravidlo jako u připravených míst: jas = výška tónu, změna = hlasitost
+      Sonify.playScan("water", cols.map((c) => (c.n ? { level: (c.lum / c.n / 255) * 25 - 25, delta: (c.down > c.up ? -1 : 1) * ((c.up + c.down) / c.n) * 30 } : null)), 2.6);
+    } catch (e) {
+      if (id === reqId) st.textContent = "The comparison could not be made. Try another date.";
+    }
+  }
+  // Průměr z okolí 5×5 potlačí radarový šum (speckle)
+  function blur(a, ok, N) {
+    const out = new Float32Array(N * N), R = 2;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let s2 = 0, c = 0;
+      for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= N || yy >= N || !ok[yy * N + xx]) continue;
+        s2 += a[yy * N + xx]; c++;
+      }
+      out[y * N + x] = c ? s2 / c : 0;
+    }
+    return out;
   }
 
   function bind(m) {
@@ -137,7 +227,12 @@ window.Live = (() => {
     });
     map.on("mousemove", (e) => { if (on && map.getLayer("events")) map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers: ["events"] }).length ? "pointer" : ""; });
     el("#live-list").onclick = (e) => { const b = e.target.closest("[data-ev]"); if (b) { const ev = events[+b.dataset.ev]; pick({ lng: ev.lng, lat: ev.lat }, ev.title, ev); } };
-    el("#live-detail").onclick = (e) => { const b = e.target.closest("[data-pass]"); if (b) showPass(+b.dataset.pass); };
+    Sats.bind();
+    el("#live-detail").onclick = (e) => {
+      const b = e.target.closest("[data-pass]");
+      if (b) showPass(+b.dataset.pass);
+      else if (e.target.closest("#live-diff")) diff();
+    };
   }
 
   return { enter, exit, bind, get on() { return on; } };

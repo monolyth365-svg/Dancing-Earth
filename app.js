@@ -31,6 +31,7 @@ const map = new maplibregl.Map({
 });
 // Při rychlém přehrávání se starý snímek zahodí dřív, než se načte – to není chyba
 map.on("error", (e) => { if (e.error?.name !== "AbortError") console.error(e.error); });
+map.dragRotate.disable(); map.touchZoomRotate.disableRotation(); // sever je vždy nahoře
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
 // Odkaz ke sdílení: stav aplikace je v adrese za znakem #
@@ -52,13 +53,34 @@ async function init() {
     return;
   }
   $("#sites").innerHTML = state.sites.map((s) => `<button data-site="${s.id}" aria-pressed="false">${s.name.split(",")[0]}</button>`).join("")
-    + `<button data-site="live" aria-pressed="false" class="livebtn">● Live world</button>`;
+    + `<button data-site="live" aria-pressed="false" class="livebtn">● Live world</button><button id="help" aria-label="How to use this app" title="How to use this app">?</button>`;
+  $("#help").onclick = () => intro(true);
   $("#sites").onclick = (e) => { const s = e.target.dataset.site; if (s === "live") goLive(); else if (s) loadSite(s); };
   Live.bind(map);
   const h = readHash(), first = state.sites.some((s) => s.id === h.site) ? h.site : state.sites[0].id;
   const go = () => ("live" in h ? goLive(h.live) : loadSite(first, h));
+  // Úvod se ukáže jen při první návštěvě bez odkazu na konkrétní pohled
+  let seen = false;
+  try { seen = localStorage.getItem("de-intro") === "1"; } catch { /* soukromé okno */ }
+  if (!seen && !location.hash) intro(true);
   map.loaded() ? go() : map.once("load", go);
 }
+
+// Krátký úvod pro nového návštěvníka
+function intro(open) {
+  $("#intro").hidden = !open;
+  if (open) $("#intro-play").focus();
+  else try { localStorage.setItem("de-intro", "1"); } catch { /* nevadí */ }
+}
+$("#intro-close").onclick = () => intro(false);
+$("#intro-live").onclick = () => { intro(false); goLive(); };
+$("#intro-play").onclick = async () => {
+  intro(false);
+  if (Live.on || state.site !== state.sites[0].id) await loadSite(state.sites[0].id);
+  $("[data-layer=change]").click(); // barevná mapa změn, ať je záplava hned vidět
+  if (!state.timer) $("#play").click();
+};
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#intro").hidden) intro(false); });
 
 // Živý režim: mapa světa s událostmi a snímky čtenými přímo z NASA (viz live.js)
 function goLive(at) {
@@ -73,7 +95,7 @@ async function loadSite(id, opts = {}) {
   state.site = id;
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json();
   document.querySelectorAll("#sites button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.site === id));
-  const st = STORIES[d.kind], a = d.analysis, per = d.perimeter;
+  const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter;
   $("#head").innerHTML = `<div class="kind">${st.label}</div><h1>${st.title}</h1>
     <p class="mono meta">${d.name} · ${d.frames.length} NISAR passes · ${d.frames[0].date} → ${d.frames.at(-1).date}</p>`;
   $("#story").innerHTML = `<h2>The story</h2>${st.body.map((p) => `<p>${p}</p>`).join("")}
@@ -83,7 +105,7 @@ async function loadSite(id, opts = {}) {
     <details><summary>Method and limits</summary>
       <p>Data: NISAR L2 GCOV (geocoded backscatter), track ${d.track[0]}, frame ${d.track[1]}, ${d.track[2].toLowerCase()} orbit, about ${a.pixelM} m per pixel after averaging, ${fmt(d.validKm2, "km²")} mapped.</p>
       <p>Change layer: ${a.pol} compared with ${a.baselineDates.length > 1 ? `the mean of ${a.baselineDates.length} passes before the event (${a.baselineDates.join(", ")})` : `the first pass (${a.baselineDates[0]})`}, smoothed over ${a.smoothingPx}×${a.smoothingPx} pixels to reduce speckle. Colour starts at ±${a.showDb} dB; area numbers count pixels beyond ±${a.thresholdDb} dB.${a.sceneShiftRemoved ? " The median change of the whole scene is subtracted first." : ""}${d.unstableKm2 != null ? ` Pixels that already varied by more than ${a.thresholdDb} dB between the passes before the event (${fmt(d.unstableKm2, "km²")}) are left out.` : ""}</p>
-      ${d.kind === "water" ? `<p>Open water: smoothed ${a.waterPol} below ${a.waterDb} dB.</p>` : ""}
+      ${d.kind === "water" ? `<p>Open water: smoothed ${a.waterPol} below ${a.waterDb} dB. This threshold sits just above the radar's noise level over calm water. How sensitive is the result? With a threshold 2 dB higher (${a.waterDb + 2} dB), which also counts lake edges with floating plants or wet mud, the first pass would show ${fmt(d.frames[0].waterHiKm2, "km²")} instead of ${fmt(d.frames[0].waterKm2, "km²")} and the latest ${fmt(d.frames.at(-1).waterHiKm2, "km²")} instead of ${fmt(d.frames.at(-1).waterKm2, "km²")}. Read the numbers as estimates and trust the trend more than the absolute area.</p>` : ""}
       ${d.optical ? `<p>Optical layer: ${d.optical.source}, ${d.optical.sensors.join(" / ")}, about ${d.optical.pixelM} m per pixel, taken on the same calendar day as the radar pass (not the same hour). Cloud cover is a rough estimate: the share of ${d.optical.cloudRule}. Smoke, haze and bright ground can confuse it.</p>` : ""}
       ${per ? `<p>Fire perimeter: ${per.source}, mapped ${per.mapped}; fire discovered ${per.discovered}, contained ${per.contained ?? "not yet"}; ${fmt(per.totalKm2, "km²")} in total.</p>` : ""}
       <p>${st.limits}</p>
@@ -143,8 +165,8 @@ function insight(d) {
   if (d.kind === "water") {
     const hi = f.reduce((m, x) => (x.waterKm2 > m.waterKm2 ? x : m)), lo = f.reduce((m, x) => (x.waterKm2 < m.waterKm2 ? x : m));
     const grew = hi.date > lo.date, times = lo.waterKm2 > 0 ? hi.waterKm2 / lo.waterKm2 : null;
-    const prev = f.at(-2), trend = !prev ? "" : last.waterKm2 > prev.waterKm2 * 1.05 ? " and still rising" : last.waterKm2 < prev.waterKm2 * 0.95 ? " and now falling" : " and holding steady";
-    return `Open water ${grew ? "grew" : "shrank"} from ${fmt(grew ? lo.waterKm2 : hi.waterKm2, "km²")} on ${grew ? lo.date : hi.date} to ${fmt(grew ? hi.waterKm2 : lo.waterKm2, "km²")} on ${grew ? hi.date : lo.date}${times && times >= 1.5 ? ` — about ${times >= 10 ? Math.round(times) : times.toFixed(1)} times ${grew ? "more" : "less"}` : ""}. On the latest pass (${last.date}) water covers ${fmt(last.waterKm2, "km²")}, ${Math.round((last.waterKm2 / d.validKm2) * 100)}% of the mapped area${trend}.`;
+    const prev = f.at(-2), trend = !prev ? "" : last.waterKm2 > prev.waterKm2 * 1.05 ? ", up from the pass before" : last.waterKm2 < prev.waterKm2 * 0.95 ? ", down from the pass before" : ", about the same as the pass before";
+    return `Open water ${grew ? "grew" : "shrank"} from ${fmt(grew ? lo.waterKm2 : hi.waterKm2, "km²")} on ${grew ? lo.date : hi.date} to ${fmt(grew ? hi.waterKm2 : lo.waterKm2, "km²")} on ${grew ? hi.date : lo.date}${times && times >= 1.5 ? ` — about ${times >= 10 ? Math.round(times) : times.toFixed(1)} times ${grew ? "more" : "less"}` : ""}. On the latest pass (${last.date}) water covers ${fmt(last.waterKm2, "km²")}, ${Math.round((last.waterKm2 / d.validKm2) * 100)}% of the mapped area${trend}. The exact area depends on the radar threshold; the direction and timing of the change do not.`;
   }
   if (d.kind === "fire") {
     const per = d.perimeter;
@@ -181,7 +203,7 @@ function kpis(i) {
   const prevF = d.frames.slice(0, i).reverse().find((x) => x[k] != null), delta = cur != null && prevF ? cur - prevF[k] : null;
   const out = [[label.split(" (")[0], fmt(cur, unit)],
     ["Since previous pass", delta == null ? "—" : `${delta > 0 ? "▲ +" : delta < 0 ? "▼ −" : ""}${fmt(Math.abs(delta), unit)}`]];
-  if (d.kind === "water") out.push(["Share of mapped area", cur == null ? "—" : `${Math.round((cur / d.validKm2) * 100)}%`]);
+  if (d.kind === "water") out.push([`With a looser threshold (${d.analysis.waterDb + 2} dB)`, fmt(f.waterHiKm2, "km²")]);
   else if (d.perimeter) out.push(["Loss inside perimeter", f.lossKm2 ? `${Math.round((f.lossInsideKm2 / f.lossKm2) * 100)}%` : "—"]);
   else out.push([`Area where ${d.analysis.pol} rose`, fmt(f.gainKm2, "km²")]);
   $("#kpis").innerHTML = out.map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join("");
@@ -333,7 +355,7 @@ function legend() {
     hh: ["HH backscatter", "linear-gradient(90deg,#000,#fff)", "−25 dB · smooth / water", "0 dB · rough / urban"],
     hv: ["HV backscatter (vegetation volume)", "linear-gradient(90deg,#000,#fff)", "−32 dB · bare", "−8 dB · dense canopy"],
     change: [`${a.pol} change compared with ${base}`, `linear-gradient(90deg,${a.colors.loss},transparent,${a.colors.gain})`,
-      `−${a.scaleDb} dB · ${d.kind === "fire" ? "vegetation lost" : d.kind === "water" ? "new open water" : "darker"}`, `+${a.scaleDb} dB · brighter`],
+      `−${a.scaleDb} dB · ${d.kind === "fire" ? "vegetation lost" : d.kind === "water" ? "new open water" : "darker"}`, `+${a.scaleDb} dB · ${d.kind === "water" ? "water gone / brighter" : "brighter"}`],
     optical: [`Optical photo, same day${f.cloudPct != null ? ` · about ${f.cloudPct}% cloud` : ""}`, "linear-gradient(90deg,#1d3b2a,#8a7a5a,#fff)", "what a camera sees", "white = cloud"],
   }[state.layer];
   const missing = state.layer !== "hh" && !f[state.layer] ? `<div class="warn">${{ hv: "This pass recorded HH only, so the HH image is shown.", optical: "No optical photo for this day, so the radar image is shown." }[state.layer] || "No change map for this pass."}</div>` : "";
@@ -344,7 +366,7 @@ function legend() {
 function csv() {
   const d = state.data, pt = state.point ? series() : null;
   const cols = [["date", (f) => f.date], ["granule", (f) => f.granule], ["mode", (f) => f.mode], ["mean_hh_db", (f) => f.meanHH], ["mean_hv_db", (f) => f.meanHV],
-    ["open_water_km2", (f) => f.waterKm2], ["loss_km2", (f) => f.lossKm2], ["gain_km2", (f) => f.gainKm2], ["optical_cloud_percent_estimate", (f) => f.cloudPct]];
+    ["open_water_km2", (f) => f.waterKm2], ["open_water_looser_threshold_km2", (f) => f.waterHiKm2], ["loss_km2", (f) => f.lossKm2], ["gain_km2", (f) => f.gainKm2], ["optical_cloud_percent_estimate", (f) => f.cloudPct]];
   if (d.perimeter) cols.push(["loss_inside_perimeter_km2", (f) => f.lossInsideKm2], ["mean_change_inside_db", (f) => f.meanInsideDb], ["mean_change_outside_db", (f) => f.meanOutsideDb]);
   if (d.analysis.sceneShiftRemoved) cols.push(["scene_shift_removed_db", (f) => f.sceneShiftDb]);
   if (pt) cols.push([`point_${pt.label.slice(0, 2).toLowerCase()}_db_at_${state.point.lng.toFixed(4)}_${state.point.lat.toFixed(4)}`, (f, j) => pt.vals[j]]);
