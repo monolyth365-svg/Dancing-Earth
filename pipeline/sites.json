@@ -1,0 +1,65 @@
+{
+ "tonle-sap": {
+  "name": "Tonlé Sap, Cambodia",
+  "kind": "water",
+  "center": [
+   103.95,
+   13.1
+  ],
+  "sizeKm": 60,
+  "waterDb": -24,
+  "track": "083",
+  "waterPol": "hv"
+ },
+ "shingle": {
+  "name": "Shingle Fire, Oregon",
+  "kind": "fire",
+  "center": [
+   -119.898,
+   44.469
+  ],
+  "sizeKm": 40,
+  "waterDb": -22,
+  "start": "2026-06-01",
+  "event": "2026-07-23",
+  "perimeter": "perimeters/shingle.geojson",
+  "track": "106"
+ },
+ "big-grass": {
+  "name": "Big Grass Fire, Oregon",
+  "kind": "fire",
+  "center": [
+   -116.87,
+   42.48
+  ],
+  "sizeKm": 100,
+  "waterDb": -22,
+  "start": "2026-06-01",
+  "event": "2026-07-23",
+  "perimeter": "perimeters/big-grass.geojson",
+  "track": "077"
+ },
+ "rondonia": {
+  "name": "Rondônia, Brazil",
+  "kind": "forest",
+  "center": [
+   -62.9,
+   -9.9
+  ],
+  "sizeKm": 20,
+  "waterDb": -20,
+  "dualPolOnly": true,
+  "track": "068"
+ },
+ "central-valley": {
+  "name": "Central Valley, California",
+  "kind": "crops",
+  "center": [
+   -119.8,
+   36.6
+  ],
+  "sizeKm": 15,
+  "waterDb": -20,
+  "track": "042"
+ }
+}

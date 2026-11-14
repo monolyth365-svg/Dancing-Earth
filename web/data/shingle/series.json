@@ -1,0 +1,261 @@
+{
+ "name": "Shingle Fire, Oregon",
+ "kind": "fire",
+ "center": [
+  -119.898,
+  44.469
+ ],
+ "sizeKm": 40,
+ "event": "2026-07-23",
+ "track": [
+  "106",
+  "24",
+  "ASCENDING"
+ ],
+ "corners": [
+  [
+   -120.14002299372514,
+   44.65494787117172
+  ],
+  [
+   -119.63733776598723,
+   44.64124011182772
+  ],
+  [
+   -119.6578922349279,
+   44.28246524244549
+  ],
+  [
+   -120.15751578549379,
+   44.296003470159235
+  ]
+ ],
+ "frames": [
+  {
+   "date": "2026-06-21",
+   "granule": "NISAR_L2_PR_GCOV_023_106_A_024_4005_DHDH_A_20260621T130256_20260621T130331_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-06-21_hh.png",
+   "hv": "2026-06-21_hv.png",
+   "meanHH": -8.58,
+   "meanHV": -14.46,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.15,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2026-06-21_change.png",
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": 0.04,
+   "meanOutsideDb": -0.02
+  },
+  {
+   "date": "2026-07-03",
+   "granule": "NISAR_L2_PR_GCOV_024_106_A_024_4005_DHDH_A_20260703T130255_20260703T130330_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-03_hh.png",
+   "hv": "2026-07-03_hv.png",
+   "meanHH": -8.22,
+   "meanHV": -14.17,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.11,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2026-07-03_change.png",
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": 0.03,
+   "meanOutsideDb": -0.01
+  },
+  {
+   "date": "2026-07-15",
+   "granule": "NISAR_L2_PR_GCOV_025_106_A_024_4005_DHDH_A_20260715T130255_20260715T130330_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-15_hh.png",
+   "hv": "2026-07-15_hv.png",
+   "meanHH": -8.25,
+   "meanHV": -14.27,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.02,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2026-07-15_change.png",
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": -0.06,
+   "meanOutsideDb": 0.03
+  },
+  {
+   "date": "2026-07-27",
+   "granule": "NISAR_L2_PR_GCOV_026_106_A_024_4005_DHDH_A_20260727T130254_20260727T130329_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-27_hh.png",
+   "hv": "2026-07-27_hv.png",
+   "meanHH": -8.57,
+   "meanHV": -14.47,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.11,
+   "lossKm2": 1.9,
+   "gainKm2": 0.0,
+   "change": "2026-07-27_change.png",
+   "lossInsideKm2": 1.9,
+   "meanInsideDb": -0.29,
+   "meanOutsideDb": 0.01
+  },
+  {
+   "date": "2026-08-20",
+   "granule": "NISAR_L2_PR_GCOV_028_106_A_024_4005_DHDH_A_20260820T130253_20260820T130328_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-20_hh.png",
+   "hv": "2026-08-20_hv.png",
+   "meanHH": -8.29,
+   "meanHV": -14.27,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.1,
+   "lossKm2": 18.1,
+   "gainKm2": 0.0,
+   "change": "2026-08-20_change.png",
+   "lossInsideKm2": 18.0,
+   "meanInsideDb": -0.48,
+   "meanOutsideDb": 0.0
+  },
+  {
+   "date": "2026-09-01",
+   "granule": "NISAR_L2_PR_GCOV_029_106_A_024_4005_DHDH_A_20260901T130252_20260901T130327_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-01_hh.png",
+   "hv": "2026-09-01_hv.png",
+   "meanHH": -8.38,
+   "meanHV": -14.51,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.09,
+   "lossKm2": 38.7,
+   "gainKm2": 0.0,
+   "change": "2026-09-01_change.png",
+   "lossInsideKm2": 37.4,
+   "meanInsideDb": -0.59,
+   "meanOutsideDb": 0.01
+  },
+  {
+   "date": "2026-09-13",
+   "granule": "NISAR_L2_PR_GCOV_030_106_A_024_4005_DHDH_A_20260913T130252_20260913T130327_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-13_hh.png",
+   "hv": "2026-09-13_hv.png",
+   "meanHH": -5.33,
+   "meanHV": -12.37,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 1.95,
+   "lossKm2": 3.9,
+   "gainKm2": 134.1,
+   "change": "2026-09-13_change.png",
+   "lossInsideKm2": 2.5,
+   "meanInsideDb": -0.11,
+   "meanOutsideDb": 0.27
+  },
+  {
+   "date": "2026-09-25",
+   "granule": "NISAR_L2_PR_GCOV_031_106_A_024_4005_DHDH_A_20260925T130252_20260925T130327_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-25_hh.png",
+   "hv": "2026-09-25_hv.png",
+   "meanHH": -7.59,
+   "meanHV": -14.16,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.29,
+   "lossKm2": 80.4,
+   "gainKm2": 1.6,
+   "change": "2026-09-25_change.png",
+   "lossInsideKm2": 80.0,
+   "meanInsideDb": -1.0,
+   "meanOutsideDb": 0.09
+  },
+  {
+   "date": "2026-10-07",
+   "granule": "NISAR_L2_PR_GCOV_032_106_A_024_4005_DHDH_A_20261007T130252_20261007T130327_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-07_hh.png",
+   "hv": "2026-10-07_hv.png",
+   "meanHH": -8.24,
+   "meanHV": -14.5,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.04,
+   "lossKm2": 93.5,
+   "gainKm2": 0.0,
+   "change": "2026-10-07_change.png",
+   "lossInsideKm2": 90.8,
+   "meanInsideDb": -1.12,
+   "meanOutsideDb": 0.03
+  },
+  {
+   "date": "2026-10-19",
+   "granule": "NISAR_L2_PR_GCOV_033_106_A_024_4005_DHDH_A_20261019T130252_20261019T130327_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-19_hh.png",
+   "hv": "2026-10-19_hv.png",
+   "meanHH": -8.5,
+   "meanHV": -14.85,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.32,
+   "lossKm2": 103.7,
+   "gainKm2": 0.0,
+   "change": "2026-10-19_change.png",
+   "lossInsideKm2": 100.0,
+   "meanInsideDb": -1.23,
+   "meanOutsideDb": 0.01
+  }
+ ],
+ "analysis": {
+  "pol": "HV",
+  "scaleDb": 3,
+  "showDb": 1.0,
+  "thresholdDb": 1.5,
+  "smoothingPx": 7,
+  "pixelM": 78,
+  "sceneShiftRemoved": true,
+  "baselineDates": [
+   "2026-06-21",
+   "2026-07-03",
+   "2026-07-15"
+  ],
+  "waterDb": -22,
+  "waterPol": "HH",
+  "colors": {
+   "loss": "#ff4632",
+   "gain": "#3cc8be"
+  }
+ },
+ "perimeter": {
+  "file": "perimeter.geojson",
+  "name": "Shingle",
+  "source": "NIFC WFIGS Interagency Fire Perimeters (year to date)",
+  "totalKm2": 296.2,
+  "inWindowKm2": 298.4,
+  "discovered": "2026-07-23",
+  "contained": "2026-09-29",
+  "mapped": "2026-08-24"
+ },
+ "extentKm": [
+  39.84,
+  39.98
+ ],
+ "validKm2": 1592.8,
+ "cube": {
+  "file": "cube.bin",
+  "size": 128,
+  "pols": [
+   "hh",
+   "hv"
+  ],
+  "scale": 100,
+  "nodata": -32768
+ },
+ "unstableKm2": 59.0
+}

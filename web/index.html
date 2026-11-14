@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dancing Earth</title>
+<meta name="description" content="Hear and see how Earth's surface moves, using NISAR L-band radar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+<a class="skip" href="#panel">Skip to data panel</a>
+<header class="top">
+  <div class="brand">Dancing Earth <span class="sub">Surface change seen and heard with NISAR radar</span></div>
+  <nav id="sites" class="sites" aria-label="Study areas"></nav>
+</header>
+
+<main class="layout">
+  <section class="mapwrap" aria-label="Map">
+    <div id="map" role="application" aria-label="Map with radar imagery. Use the controls below the map to change layer and date."></div>
+    <div class="mapui">
+      <div class="layers" role="group" aria-label="Map layer">
+        <button data-layer="hh" aria-pressed="true" title="HH radar image: surface roughness and water">HH</button>
+        <button data-layer="hv" aria-pressed="false" title="HV radar image: vegetation volume">HV</button>
+        <button data-layer="change" aria-pressed="false" title="Coloured map of what changed">Change</button>
+        <button id="compare" aria-pressed="false">Before / after</button>
+        <button id="perim" aria-pressed="true" hidden>Fire perimeter</button>
+        <label class="op">Opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.9"></label>
+      </div>
+      <div class="cmp" id="cmp" hidden>
+        <span class="mono" id="compare-note"></span>
+        <input id="split" type="range" min="0.02" max="0.98" step="0.01" value="0.5" aria-label="Before and after divider">
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <aside class="side" id="panel" tabindex="-1" aria-label="Data panel">
+    <header id="head" class="story head"></header>
+
+    <section class="insight" aria-labelledby="ins-h">
+      <h2 id="ins-h">What happened</h2>
+      <p id="insight"></p>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section class="timeline" aria-label="Timeline">
+      <div class="tl-head">
+        <button id="play" class="play">Play</button>
+        <label class="sound"><input id="sound" type="checkbox" checked> Sound</label>
+        <span id="date" class="mono date">—</span>
+      </div>
+      <input id="frame" type="range" min="0" max="0" value="0" aria-label="Satellite pass (date)">
+      <label class="pick">Chart <select id="metric"></select></label>
+      <svg id="chart" class="chart" viewBox="0 0 400 140" role="img" aria-label="Time series"></svg>
+      <div class="metrics mono" id="metrics"></div>
+      <p class="hint" id="point-hint">Click anywhere on the radar image to chart and hear that exact spot.</p>
+      <button id="clear-point" hidden>Back to whole area</button>
+      <div class="tools">
+        <button id="csv">Download CSV</button>
+        <button id="share">Copy link to this view</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <article id="story" class="story"></article>
+
+    <footer class="credits">
+      Data: NASA-ISRO NISAR L2 GCOV via <a href="https://search.asf.alaska.edu/">ASF DAAC</a>.
+      Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>.
+      Basemap: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> Blue Marble.
+      Built with AI assistance (Claude) — see README.
+    </footer>
+  </aside>
+</main>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="stories.js"></script>
+<script src="sound.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

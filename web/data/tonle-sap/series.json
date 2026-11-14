@@ -1,0 +1,233 @@
+{
+ "name": "Tonl\u00e9 Sap, Cambodia",
+ "kind": "water",
+ "center": [
+  103.95,
+  13.1
+ ],
+ "sizeKm": 60,
+ "track": [
+  "083",
+  "8",
+  "ASCENDING"
+ ],
+ "corners": [
+  [
+   103.6720535959704,
+   13.36928936487389
+  ],
+  [
+   104.2253468988338,
+   13.37158823438839
+  ],
+  [
+   104.22703902939372,
+   12.829802598882537
+  ],
+  [
+   103.67495364192203,
+   12.827600006503857
+  ]
+ ],
+ "frames": [
+  {
+   "date": "2026-06-19",
+   "granule": "NISAR_L2_PR_GCOV_023_083_A_008_2005_DHDH_M_20260619T223637_20260619T223711_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-06-19_hh.png",
+   "hv": "2026-06-19_hv.png",
+   "meanHH": -9.86,
+   "meanHV": -15.71,
+   "waterKm2": 1043.4,
+   "sceneShiftDb": null,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2026-06-19_change.png"
+  },
+  {
+   "date": "2026-07-01",
+   "granule": "NISAR_L2_PR_GCOV_024_083_A_008_2005_DHDH_M_20260701T223636_20260701T223711_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-01_hh.png",
+   "hv": "2026-07-01_hv.png",
+   "meanHH": -9.52,
+   "meanHV": -15.38,
+   "waterKm2": 1116.2,
+   "sceneShiftDb": null,
+   "lossKm2": 1.0,
+   "gainKm2": 8.6,
+   "change": "2026-07-01_change.png"
+  },
+  {
+   "date": "2026-07-13",
+   "granule": "NISAR_L2_PR_GCOV_025_083_A_008_2005_DHDH_M_20260713T223636_20260713T223710_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-13_hh.png",
+   "hv": "2026-07-13_hv.png",
+   "meanHH": -9.94,
+   "meanHV": -15.79,
+   "waterKm2": 1050.9,
+   "sceneShiftDb": null,
+   "lossKm2": 5.7,
+   "gainKm2": 2.4,
+   "change": "2026-07-13_change.png"
+  },
+  {
+   "date": "2026-07-25",
+   "granule": "NISAR_L2_PR_GCOV_026_083_A_008_2005_DHDH_M_20260725T223635_20260725T223709_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-25_hh.png",
+   "hv": "2026-07-25_hv.png",
+   "meanHH": -9.28,
+   "meanHV": -15.21,
+   "waterKm2": 1058.6,
+   "sceneShiftDb": null,
+   "lossKm2": 116.0,
+   "gainKm2": 16.5,
+   "change": "2026-07-25_change.png"
+  },
+  {
+   "date": "2026-08-18",
+   "granule": "NISAR_L2_PR_GCOV_028_083_A_008_2005_DHDH_M_20260818T223634_20260818T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-18_hh.png",
+   "hv": "2026-08-18_hv.png",
+   "meanHH": -9.21,
+   "meanHV": -16.12,
+   "waterKm2": 1103.1,
+   "sceneShiftDb": null,
+   "lossKm2": 367.4,
+   "gainKm2": 23.6,
+   "change": "2026-08-18_change.png"
+  },
+  {
+   "date": "2026-08-30",
+   "granule": "NISAR_L2_PR_GCOV_029_083_A_008_2005_DHDH_M_20260830T223633_20260830T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-30_hh.png",
+   "hv": "2026-08-30_hv.png",
+   "meanHH": -9.14,
+   "meanHV": -16.29,
+   "waterKm2": 1382.2,
+   "sceneShiftDb": null,
+   "lossKm2": 578.6,
+   "gainKm2": 47.7,
+   "change": "2026-08-30_change.png"
+  },
+  {
+   "date": "2026-09-11",
+   "granule": "NISAR_L2_PR_GCOV_030_083_A_008_2005_DHDH_M_20260911T223633_20260911T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-11_hh.png",
+   "hv": "2026-09-11_hv.png",
+   "meanHH": -9.46,
+   "meanHV": -16.79,
+   "waterKm2": 1480.1,
+   "sceneShiftDb": null,
+   "lossKm2": 717.0,
+   "gainKm2": 15.3,
+   "change": "2026-09-11_change.png"
+  },
+  {
+   "date": "2026-09-23",
+   "granule": "NISAR_L2_PR_GCOV_031_083_A_008_2005_DHDH_M_20260923T223633_20260923T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-23_hh.png",
+   "hv": "2026-09-23_hv.png",
+   "meanHH": -9.97,
+   "meanHV": -17.53,
+   "waterKm2": 1502.4,
+   "sceneShiftDb": null,
+   "lossKm2": 926.3,
+   "gainKm2": 13.3,
+   "change": "2026-09-23_change.png"
+  },
+  {
+   "date": "2026-10-05",
+   "granule": "NISAR_L2_PR_GCOV_032_083_A_008_2005_DHDH_M_20261005T223633_20261005T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-05_hh.png",
+   "hv": "2026-10-05_hv.png",
+   "meanHH": -10.29,
+   "meanHV": -17.8,
+   "waterKm2": 1554.9,
+   "sceneShiftDb": null,
+   "lossKm2": 1030.4,
+   "gainKm2": 50.0,
+   "change": "2026-10-05_change.png"
+  },
+  {
+   "date": "2026-10-17",
+   "granule": "NISAR_L2_PR_GCOV_033_083_A_008_2005_DHDH_M_20261017T223633_20261017T223708_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-17_hh.png",
+   "hv": "2026-10-17_hv.png",
+   "meanHH": -10.2,
+   "meanHV": -17.77,
+   "waterKm2": 1571.6,
+   "sceneShiftDb": null,
+   "lossKm2": 1026.8,
+   "gainKm2": 100.4,
+   "change": "2026-10-17_change.png"
+  },
+  {
+   "date": "2026-10-29",
+   "granule": "NISAR_L2_PR_GCOV_034_083_A_008_2005_DHDH_M_20261029T223634_20261029T223708_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-29_hh.png",
+   "hv": "2026-10-29_hv.png",
+   "meanHH": -10.06,
+   "meanHV": -17.15,
+   "waterKm2": 1496.5,
+   "sceneShiftDb": null,
+   "lossKm2": 814.1,
+   "gainKm2": 177.0,
+   "change": "2026-10-29_change.png"
+  }
+ ],
+ "analysis": {
+  "pol": "HV",
+  "scaleDb": 8,
+  "showDb": 2.0,
+  "thresholdDb": 3.0,
+  "smoothingPx": 5,
+  "pixelM": 117,
+  "sceneShiftRemoved": false,
+  "baselineDates": [
+   "2026-06-19"
+  ],
+  "waterDb": -24,
+  "waterPol": "HV",
+  "colors": {
+   "loss": "#3c8cff",
+   "gain": "#ff9628"
+  }
+ },
+ "extentKm": [
+  59.92,
+  60.3
+ ],
+ "validKm2": 3613.2,
+ "cube": {
+  "file": "cube.bin",
+  "size": 128,
+  "pols": [
+   "hh",
+   "hv"
+  ],
+  "scale": 100,
+  "nodata": -32768
+ },
+ "unstableKm2": null
+}

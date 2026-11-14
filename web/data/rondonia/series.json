@@ -1,0 +1,158 @@
+{
+ "name": "Rond\u00f4nia, Brazil",
+ "kind": "forest",
+ "center": [
+  -62.9,
+  -9.9
+ ],
+ "sizeKm": 20,
+ "track": [
+  "068",
+  "93",
+  "DESCENDING"
+ ],
+ "corners": [
+  [
+   -62.990880797495535,
+   -9.809587973362866
+  ],
+  [
+   -62.80922664774337,
+   -9.809534427057233
+  ],
+  [
+   -62.80912260546596,
+   -9.989702421078292
+  ],
+  [
+   -62.99087582410911,
+   -9.989756970104239
+  ]
+ ],
+ "frames": [
+  {
+   "date": "2025-11-14",
+   "granule": "NISAR_L2_PR_GCOV_005_068_D_093_2005_DHDH_A_20251114T222631_20251114T222705_X05009_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2025-11-14_hh.png",
+   "hv": "2025-11-14_hv.png",
+   "meanHH": -7.21,
+   "meanHV": -14.01,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.0,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "change": "2025-11-14_change.png"
+  },
+  {
+   "date": "2026-06-18",
+   "granule": "NISAR_L2_PR_GCOV_023_068_D_093_2005_DHDH_A_20260618T222633_20260618T222707_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-06-18_hh.png",
+   "hv": "2026-06-18_hv.png",
+   "meanHH": -7.77,
+   "meanHV": -13.66,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.14,
+   "lossKm2": 3.4,
+   "gainKm2": 5.9,
+   "change": "2026-06-18_change.png"
+  },
+  {
+   "date": "2026-07-12",
+   "granule": "NISAR_L2_PR_GCOV_025_068_D_093_2005_DHDH_A_20260712T222631_20260712T222706_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-12_hh.png",
+   "hv": "2026-07-12_hv.png",
+   "meanHH": -7.44,
+   "meanHV": -13.33,
+   "waterKm2": 0.0,
+   "sceneShiftDb": 0.58,
+   "lossKm2": 1.8,
+   "gainKm2": 6.2,
+   "change": "2026-07-12_change.png"
+  },
+  {
+   "date": "2026-08-29",
+   "granule": "NISAR_L2_PR_GCOV_029_068_D_093_2005_DHDH_A_20260829T222629_20260829T222704_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-29_hh.png",
+   "hv": "2026-08-29_hv.png",
+   "meanHH": -7.84,
+   "meanHV": -13.99,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.26,
+   "lossKm2": 16.8,
+   "gainKm2": 3.8,
+   "change": "2026-08-29_change.png"
+  },
+  {
+   "date": "2026-09-22",
+   "granule": "NISAR_L2_PR_GCOV_031_068_D_093_2005_DHDH_A_20260922T222629_20260922T222704_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-22_hh.png",
+   "hv": "2026-09-22_hv.png",
+   "meanHH": -7.91,
+   "meanHV": -14.13,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.41,
+   "lossKm2": 12.2,
+   "gainKm2": 0.8,
+   "change": "2026-09-22_change.png"
+  },
+  {
+   "date": "2026-10-16",
+   "granule": "NISAR_L2_PR_GCOV_033_068_D_093_2005_DHDH_A_20261016T222629_20261016T222704_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-16_hh.png",
+   "hv": "2026-10-16_hv.png",
+   "meanHH": -7.93,
+   "meanHV": -14.02,
+   "waterKm2": 0.0,
+   "sceneShiftDb": -0.3,
+   "lossKm2": 9.3,
+   "gainKm2": 0.2,
+   "change": "2026-10-16_change.png"
+  }
+ ],
+ "analysis": {
+  "pol": "HV",
+  "scaleDb": 6,
+  "showDb": 1.5,
+  "thresholdDb": 3.0,
+  "smoothingPx": 5,
+  "pixelM": 39,
+  "sceneShiftRemoved": true,
+  "baselineDates": [
+   "2025-11-14"
+  ],
+  "waterDb": -20,
+  "waterPol": "HH",
+  "colors": {
+   "loss": "#3c8cff",
+   "gain": "#ff9628"
+  }
+ },
+ "extentKm": [
+  19.93,
+  20.06
+ ],
+ "validKm2": 399.8,
+ "unstableKm2": null,
+ "cube": {
+  "file": "cube.bin",
+  "size": 128,
+  "pols": [
+   "hh",
+   "hv"
+  ],
+  "scale": 100,
+  "nodata": -32768
+ }
+}

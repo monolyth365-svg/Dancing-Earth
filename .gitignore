@@ -1,0 +1,11 @@
+.venv/
+.env
+*.npy
+__pycache__/
+.DS_Store
+.claude/worktrees/
+# working notes in Czech (not part of the submission)
+PLAN.md
+ODEVZDANI.md
+ZADANI.md
+assets/
