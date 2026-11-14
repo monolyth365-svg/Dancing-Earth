@@ -3,3 +3,4 @@ h5py
 requests
 pyproj
 pillow
+mapbox-vector-tile

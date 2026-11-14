@@ -36,7 +36,8 @@ def update(site_id):
     if d.exists():
         shutil.copytree(d, backup)
     try:
-        for script in ("fetch_nisar.py", "fetch_optical.py", "make_cube.py"):
+        scripts = ["fetch_nisar.py", "fetch_optical.py", "make_cube.py"] + (["fetch_hotspots.py"] if site["kind"] == "fire" else [])
+        for script in scripts:
             subprocess.run([PY, str(HERE / script), site_id], check=True)
         after = dates(site_id)
         if len(after) < len(have) or not set(have) <= set(after):

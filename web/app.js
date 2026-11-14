@@ -40,6 +40,8 @@ function writeHash() {
   if (!state.data) return;
   const p = new URLSearchParams({ site: state.site, date: state.data.frames[state.i].date, layer: state.layer });
   if (state.compare) p.set("compare", "1");
+  if (state.customBase) p.set("ref", state.data.frames[state.base].date);
+  if (Fire.day()) p.set("day", Fire.day());
   if (state.point) p.set("pt", `${state.point.lng.toFixed(4)},${state.point.lat.toFixed(4)}`);
   history.replaceState(null, "", "#" + p);
 }
@@ -52,14 +54,25 @@ async function init() {
     $("#head").innerHTML = `<div class="empty">No processed NISAR data yet. Run <code class="mono">pipeline/fetch_nisar.py</code>.</div>`;
     return;
   }
-  $("#sites").innerHTML = state.sites.map((s) => `<button data-site="${s.id}" aria-pressed="false">${s.name.split(",")[0]}</button>`).join("")
+  // Horní nabídka: dvě témata, živý svět a nápověda; konkrétní místa jsou v rozbalovací nabídce (viz catalog.js)
+  $("#sites").innerHTML = CATALOG.map((t, n) => `<button data-theme="${n}" aria-expanded="false" aria-haspopup="true">${t.theme} ▾</button>`).join("")
     + `<button data-site="live" aria-pressed="false" class="livebtn">● Live world</button><button id="help" aria-label="How to use this app" title="How to use this app">?</button>`;
   $("#help").onclick = () => intro(true);
-  $("#sites").onclick = (e) => { const s = e.target.dataset.site; if (s === "live") goLive(); else if (s) loadSite(s); };
+  $("#sites").onclick = (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.site === "live") { menu(-1); goLive(); }
+    else if (b.dataset.theme) menu(+b.dataset.theme === state.menu ? -1 : +b.dataset.theme);
+  };
+  $("#menu").onclick = (e) => { const b = e.target.closest("[data-go]"); if (b) { menu(-1); go2(b.dataset.go); } };
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && state.menu >= 0) menu(-1); });
+  document.addEventListener("click", (e) => { if (state.menu >= 0 && !e.target.closest("#menu, #sites")) menu(-1); });
   Live.bind(map);
+  Fire.bind();
+  document.addEventListener("fire-legend", () => state.data && legend());
+  Storm.bind(map);
   Globe.init();
   const h = readHash(), first = state.sites.some((s) => s.id === h.site) ? h.site : state.sites[0].id;
-  const go = () => ("live" in h ? goLive(h.live) : loadSite(first, h));
+  const go = () => ("live" in h ? goLive(h.live) : h.storm ? goStorm(h.storm, h.t) : loadSite(first, h));
   // Úvod se ukáže jen při první návštěvě bez odkazu na konkrétní pohled
   let seen = false;
   try { seen = localStorage.getItem("de-intro") === "1"; } catch { /* soukromé okno */ }
@@ -84,23 +97,67 @@ $("#intro-play").onclick = async () => {
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#intro").hidden) intro(false); });
 
 // Živý režim: mapa světa s událostmi a snímky čtenými přímo z NASA (viz live.js)
+// Rozbalovací nabídka jednoho tématu: jevy, u každého co je vidět a co víme o příčině, a konkrétní místa
+function menu(n) {
+  state.menu = n;
+  document.querySelectorAll("#sites [data-theme]").forEach((b) => b.setAttribute("aria-expanded", +b.dataset.theme === n));
+  const m = $("#menu");
+  m.hidden = n < 0;
+  if (n < 0) return;
+  m.style.top = $(".top").offsetHeight + "px";
+  m.innerHTML = `<h2>${CATALOG[n].theme}: choose what to explore</h2><div class="menu-grid">${CATALOG[n].items.map((it) => `<section>
+    <h3>${it.name}</h3>
+    ${it.entries.map((e) => `<button data-go="${e.go}" class="${e.go === state.go ? "cur" : ""}"><b>${e.label}</b><small>${e.period}</small>${e.open ? `<em>no prepared analysis · explore the images yourself</em>` : ""}</button>`).join("")}
+    <p><b>Seen:</b> ${it.seen}</p><p><b>Cause:</b> ${it.cause}</p>
+  </section>`).join("")}</div>`;
+  m.querySelector("[data-go]")?.focus();
+}
+function go2(go) {
+  const [kind, id] = go.split(":");
+  if (kind === "site") loadSite(id); else if (kind === "storm") goStorm(id); else goLive(id);
+}
+// Zvýrazní v horní liště téma, do kterého patří právě otevřené místo, a napíše k němu jeho jméno
+function markNav(go) {
+  state.go = go;
+  const hit = CATALOG.find(go);
+  document.querySelectorAll("#sites [data-theme]").forEach((b) => {
+    const t = CATALOG[+b.dataset.theme], mine = hit && hit.theme === t.theme;
+    b.setAttribute("aria-pressed", !!mine);
+    b.textContent = mine ? `${t.theme}: ${hit.entry.label.split(",")[0]} ▾` : `${t.theme} ▾`;
+  });
+  document.querySelector('#sites [data-site="live"]')?.setAttribute("aria-pressed", go.startsWith("live"));
+}
+
+// Hurikán: vlastní režim s dráhou a dosahem větru (viz storm.js)
+function goStorm(id, at) {
+  stop();
+  Live.exit();
+  state.point = null; pointMarker.remove();
+  Storm.enter(map, id, at);
+  markNav(`storm:${id}`);
+}
+
 function goLive(at) {
   stop();
+  Storm.exit();
   state.point = null; pointMarker.remove();
   Live.enter(map, at);
+  markNav(at && CATALOG.find(`live:${at}`) ? `live:${at}` : "live");
 }
 
 async function loadSite(id, opts = {}) {
   stop();
   Live.exit();
+  Storm.exit();
   state.site = id;
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json();
-  document.querySelectorAll("#sites button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.site === id));
-  const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter;
+  markNav(`site:${id}`);
+  const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter, cat = CATALOG.find(`site:${id}`);
   $("#head").innerHTML = `<div class="kind">${st.label}</div><h1>${st.title}</h1>
     <p class="mono meta">${d.name} · ${d.frames.length} NISAR passes · ${d.frames[0].date} → ${d.frames.at(-1).date}</p>`;
   $("#story").innerHTML = `<h2>The story</h2>${st.body.map((p) => `<p>${p}</p>`).join("")}
     <h2>What the radar shows</h2><p>${st.why}</p>
+    ${cat ? `<h2>Seen on the image, and what we know about the cause</h2><p><b>Seen:</b> ${cat.item.seen}</p><p><b>Cause:</b> ${cat.item.cause}</p>` : ""}
     <h2>Who can use this</h2><ul>${st.use.map(([w, t]) => `<li><b>${w}</b> ${t}</li>`).join("")}</ul>
     <h2>Sound</h2><p>${st.instrument}. Louder notes mean a bigger change since the previous pass; left and right follow west and east.</p>
     <details><summary>Method and limits</summary>
@@ -115,7 +172,12 @@ async function loadSite(id, opts = {}) {
   for (const s of ["perim", "sar"]) if (map.getSource(s)) map.removeSource(s);
   imgs.clear();
   const pre = d.event ? d.frames.findLastIndex((f) => f.date < d.event) : 0;
-  state.base = Math.max(0, pre);
+  state.defBase = state.base = Math.max(0, pre);
+  state.customBase = false; dyn.clear();
+  $("#ref").innerHTML = d.frames.map((f, j) => `<option value="${j}">${f.date}${j === state.defBase ? " (default)" : ""}</option>`).join("");
+  const refAt = d.frames.findIndex((f) => f.date === opts.ref);
+  if (refAt >= 0 && refAt !== state.defBase) { state.base = refAt; state.customBase = true; }
+  $("#ref").value = state.base; $("#ref-reset").hidden = !state.customBase; $("#ref-note").textContent = "";
   ctx.clearRect(0, 0, 512, 512);
   map.addSource("sar", { type: "image", url: cv.toDataURL("image/png"), coordinates: d.corners });
   map.addLayer({ id: "sar", type: "raster", source: "sar", paint: { "raster-opacity": +$("#opacity").value, "raster-fade-duration": 0 } });
@@ -152,6 +214,7 @@ async function loadSite(id, opts = {}) {
     if (isFinite(lng) && isFinite(lat)) setPoint({ lng, lat });
   }
   $("#insight").textContent = insight(d) + cloudNote(d);
+  Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); });
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";
@@ -180,6 +243,7 @@ function insight(d) {
         : " Radar marks where woody vegetation was lost; grassy or lightly burned ground stays unchanged.";
       if (share < 60) s += " Changes outside the perimeter are more likely weather or farming than fire.";
     }
+    if (d.hotspots?.count) s += ` Satellites also detected the heat of the fire ${d.hotspots.count.toLocaleString("en-US")} times between ${d.hotspots.first} and ${d.hotspots.last}: turn on Heat and move the day slider to watch it spread.`;
     return s;
   }
   const ok = f.filter((x) => x.lossKm2 != null), l = ok.at(-1);
@@ -220,7 +284,9 @@ const img = (u) => imgs.get(u) || imgs.set(u, new Promise((ok, bad) => { const i
 let renderId = 0;
 async function render() {
   const id = ++renderId, i = state.i, L = state.layer, site = state.site;
-  const stack = async (k, l = L) => (l === "change" ? [await img(path(k, "hh")), await img(path(k, "change"))] : [await img(path(k, l))]);
+  // Vrstva změn: výchozí je předpočítaná; když si uživatel zvolí vlastní výchozí snímek, spočítá se v prohlížeči
+  const changeOf = async (k) => (state.customBase ? (await dynChange(k, state.base))?.cv : state.data.frames[k].change ? await img(path(k, "change")) : null);
+  const stack = async (k, l = L) => (l === "change" ? [await img(path(k, "hh")), await changeOf(k)].filter(Boolean) : [await img(path(k, l))]);
   // Vrstva Optical s posuvníkem: vlevo fotka z kamery, vpravo radar ze stejného dne
   const optical = L === "optical";
   const R = optical && state.compare ? "change" : L; // co se kreslí vpravo (nebo všude, když posuvník není zapnutý)
@@ -238,6 +304,83 @@ async function render() {
   ctx.filter = "none";
   if (before) { ctx.fillStyle = "#e9b949"; ctx.fillRect(x - 1, 0, 3, 512); }
   map.getSource("sar")?.updateImage({ url: cv.toDataURL("image/png"), coordinates: state.data.corners });
+}
+
+// Porovnání s libovolným výchozím snímkem: rozdíl dvou přeletů spočítaný přímo v prohlížeči.
+// Postup je stejný jako v přípravě dat (vyhlazení, případně odečtení posunu celé scény, stejné prahy a barvy).
+const dyn = new Map();
+function boxBlur(v, ok, N, k) {
+  const r = k >> 1, tmp = new Float32Array(N * N), cnt = new Float32Array(N * N), out = new Float32Array(N * N);
+  for (let y = 0; y < N; y++) { // vodorovně
+    let s = 0, c = 0;
+    for (let x = -r; x < N + r; x++) {
+      const add = x + r, sub = x - r - 1;
+      if (add < N) { const q = y * N + add; if (ok[q]) { s += v[q]; c++; } }
+      if (sub >= 0) { const q = y * N + sub; if (ok[q]) { s -= v[q]; c--; } }
+      if (x >= 0 && x < N) { tmp[y * N + x] = s; cnt[y * N + x] = c; }
+    }
+  }
+  for (let x = 0; x < N; x++) { // svisle
+    let s = 0, c = 0;
+    for (let y = -r; y < N + r; y++) {
+      const add = y + r, sub = y - r - 1;
+      if (add < N) { s += tmp[add * N + x]; c += cnt[add * N + x]; }
+      if (sub >= 0) { s -= tmp[sub * N + x]; c -= cnt[sub * N + x]; }
+      if (y >= 0 && y < N) out[y * N + x] = c > 0 ? s / c : NaN;
+    }
+  }
+  return out;
+}
+async function dynChange(i, b) {
+  const d = state.data, a = d.analysis, pol = a.pol.toLowerCase(), key = `${state.site}|${i}|${b}`;
+  if (dyn.has(key)) return dyn.get(key);
+  if (!d.frames[i][pol] || !d.frames[b][pol]) return null;
+  const N = 512, [lo, hi] = pol === "hh" ? [-25, 0] : [-32, -8];
+  const read = async (k) => {
+    const c = Object.assign(document.createElement("canvas"), { width: N, height: N }), x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(await img(path(k, pol)), 0, 0, N, N);
+    const px = x.getImageData(0, 0, N, N).data, v = new Float32Array(N * N), ok = new Uint8Array(N * N);
+    for (let q = 0; q < N * N; q++) { v[q] = lo + (px[q * 4] / 255) * (hi - lo); ok[q] = px[q * 4 + 3] >= 128 ? 1 : 0; }
+    return { v: boxBlur(v, ok, N, a.smoothingPx), ok };
+  };
+  const [X, Y] = await Promise.all([read(i), read(b)]);
+  const diff = new Float32Array(N * N), okAll = new Uint8Array(N * N);
+  let sum = 0, n = 0;
+  for (let q = 0; q < N * N; q++) if (X.ok[q] && Y.ok[q] && !isNaN(X.v[q]) && !isNaN(Y.v[q])) { diff[q] = X.v[q] - Y.v[q]; okAll[q] = 1; sum += diff[q]; n++; }
+  const bias = a.sceneShiftRemoved && n ? sum / n : 0; // posun celé scény (déšť) – zde průměr místo mediánu
+  const cv2 = Object.assign(document.createElement("canvas"), { width: N, height: N }), c2 = cv2.getContext("2d"), im = c2.createImageData(N, N), o = im.data;
+  const rgb = (h) => [1, 3, 5].map((s) => parseInt(h.slice(s, s + 2), 16)), cl = rgb(a.colors.loss), cg = rgb(a.colors.gain), a0 = a.showDb / a.scaleDb;
+  let loss = 0, gain = 0;
+  for (let q = 0; q < N * N; q++) {
+    if (!okAll[q]) continue;
+    const dv = diff[q] - bias, v = Math.max(-1, Math.min(1, dv / a.scaleDb));
+    if (dv < -a.thresholdDb) loss++; else if (dv > a.thresholdDb) gain++;
+    if (Math.abs(v) <= a0) continue;
+    const c = v < 0 ? cl : cg;
+    o[q * 4] = c[0]; o[q * 4 + 1] = c[1]; o[q * 4 + 2] = c[2]; o[q * 4 + 3] = Math.min(1, (Math.abs(v) - a0) / (1 - a0)) * 200 + 40;
+  }
+  c2.putImageData(im, 0, 0);
+  const px = (d.extentKm[0] * d.extentKm[1]) / (N * N), res = { cv: cv2, lossKm2: loss * px, gainKm2: gain * px };
+  dyn.set(key, res);
+  if (dyn.size > 60) dyn.delete(dyn.keys().next().value);
+  return res;
+}
+function setBase(j, custom = true) {
+  state.base = j; state.customBase = custom && j !== state.defBase;
+  $("#ref").value = j; $("#ref-reset").hidden = !state.customBase;
+  if (state.data) $("#compare-note").textContent = compareNote();
+  show(state.i, false);
+}
+// Věta pod výběrem výchozího snímku: co se oproti němu změnilo na právě zobrazeném snímku
+async function refNote() {
+  const d = state.data, i = state.i, b = state.base, site = state.site, a = d.analysis;
+  if (!state.customBase) { $("#ref-note").textContent = ""; return; }
+  if (i === b) { $("#ref-note").textContent = `${d.frames[b].date} is your reference image. Move the timeline or press Play to compare other dates with it.`; return; }
+  const r = await dynChange(i, b);
+  if (site !== state.site || i !== state.i || b !== state.base) return;
+  $("#ref-note").textContent = r
+    ? `${d.frames[i].date} compared with your reference ${d.frames[b].date}: ${a.pol} is more than ${a.thresholdDb} dB darker on ${fmt(r.lossKm2, "km²")} and brighter on ${fmt(r.gainKm2, "km²")}. Open the Change layer or Before / after to see where. Computed in your browser from the two images.`
+    : `One of these two passes has no ${a.pol} image, so they cannot be compared in the Change layer. Before / after still works.`;
 }
 
 // Hudba z obrazu: snímek se rozdělí na 16 svislých pruhů; jas pruhu = výška tónu, velikost změny = hlasitost
@@ -293,7 +436,9 @@ function show(i, sound = true) {
   const cur = s.vals[i];
   $("#metrics").innerHTML = `<div>${state.point ? "At point" : "Charted value"}<b>${fmt(cur, s.unit)}</b></div><div>Mean HH<b>${fmt(f.meanHH, "dB")}</b></div><div>Mean HV<b>${f.meanHV == null ? "not acquired" : fmt(f.meanHV, "dB")}</b></div>`;
   kpis(i);
+  refNote();
   drawChart(s, lo, hi);
+  Fire.sync(f.date);
   legend();
   writeHash();
   if (!state.timer) say(`${f.date}: ${s.label} ${fmt(cur, s.unit)}`);
@@ -345,13 +490,13 @@ function setPoint(ll) {
   $("#point-hint").hidden = true; $("#clear-point").hidden = false; $(".pick").hidden = true;
   return true;
 }
-map.on("click", (e) => { if (!Live.on && state.cube && setPoint(e.lngLat)) show(state.i); });
+map.on("click", (e) => { if (!Live.on && !Storm.on && Fire.hit(e)) return; if (!Live.on && !Storm.on && state.cube && setPoint(e.lngLat)) show(state.i); });
 const pointMarker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 $("#clear-point").onclick = () => { state.point = null; pointMarker.remove(); $("#point-hint").hidden = false; $("#clear-point").hidden = true; $(".pick").hidden = false; show(state.i, false); };
 
 function legend() {
   const d = state.data, a = d.analysis, f = d.frames[state.i];
-  const base = a.baselineDates.length > 1 ? "before the fire" : a.baselineDates[0];
+  const base = state.customBase ? `${d.frames[state.base].date} (your reference)` : a.baselineDates.length > 1 ? "before the fire" : a.baselineDates[0];
   const L = {
     hh: ["HH backscatter", "linear-gradient(90deg,#000,#fff)", "−25 dB · smooth / water", "0 dB · rough / urban"],
     hv: ["HV backscatter (vegetation volume)", "linear-gradient(90deg,#000,#fff)", "−32 dB · bare", "−8 dB · dense canopy"],
@@ -360,7 +505,7 @@ function legend() {
     optical: [`Optical photo, same day${f.cloudPct != null ? ` · about ${f.cloudPct}% cloud` : ""}`, "linear-gradient(90deg,#1d3b2a,#8a7a5a,#fff)", "what a camera sees", "white = cloud"],
   }[state.layer];
   const missing = state.layer !== "hh" && !f[state.layer] ? `<div class="warn">${{ hv: "This pass recorded HH only, so the HH image is shown.", optical: "No optical photo for this day, so the radar image is shown." }[state.layer] || "No change map for this pass."}</div>` : "";
-  $("#legend").innerHTML = `${L[0]}<div class="bar" style="background:${L[1]}"></div><div class="ends"><span>${L[2]}</span><span>${L[3]}</span></div>${d.perimeter && state.perim ? `<div class="ends"><span>- - -  official fire perimeter (NIFC)</span></div>` : ""}${missing}`;
+  $("#legend").innerHTML = `${L[0]}<div class="bar" style="background:${L[1]}"></div><div class="ends"><span>${L[2]}</span><span>${L[3]}</span></div>${d.perimeter && state.perim ? `<div class="ends"><span>- - -  official fire perimeter (NIFC)</span></div>` : ""}${Fire.legend()}${missing}`;
 }
 
 // Export časové řady do CSV (pro tabulkový procesor nebo další analýzu)
@@ -389,6 +534,7 @@ $("#play").onclick = () => {
   if (state.timer) return stop();
   Sonify.resume();
   $("#play").textContent = "Pause";
+  if (Fire.playable()) { state.timer = Fire.play(stop); return; } // požár: den po dni podle detekcí žáru
   if (state.i === state.data.frames.length - 1) show(0);
   state.timer = setInterval(() => show((state.i + 1) % state.data.frames.length), 900);
 };
@@ -402,6 +548,9 @@ function setCompare(on) {
   if (state.data) $("#compare-note").textContent = compareNote();
 }
 $("#compare").onclick = () => { setCompare(!state.compare); render(); writeHash(); };
+$("#ref").onchange = (e) => setBase(+e.target.value);
+$("#ref-set").onclick = () => setBase(state.i);
+$("#ref-reset").onclick = () => setBase(state.defBase, false);
 $("#perim").onclick = () => {
   state.perim = !state.perim;
   $("#perim").setAttribute("aria-pressed", state.perim);
@@ -420,7 +569,7 @@ document.querySelector(".layers").onclick = (e) => {
   show(state.i, false);
 };
 document.addEventListener("keydown", (e) => {
-  if (!state.data || Live.on || e.target.closest("input, button, select, a, summary, .maplibregl-map")) return;
+  if (!state.data || Live.on || Storm.on || e.target.closest("input, button, select, a, summary, .maplibregl-map")) return;
   if (e.key === "ArrowRight") { stop(); show(Math.min(state.i + 1, state.data.frames.length - 1)); }
   if (e.key === "ArrowLeft") { stop(); show(Math.max(state.i - 1, 0)); }
   if (e.key === " ") { e.preventDefault(); $("#play").click(); }
@@ -431,8 +580,9 @@ new ResizeObserver(() => map.resize()).observe($("#map"));
 addEventListener("hashchange", () => {
   const h = readHash(), d = state.data;
   if ("live" in h) { if (!Live.on) goLive(h.live); return; }
+  if (h.storm) { if (!Storm.on) goStorm(h.storm, h.t); return; }
   if (!state.sites.some((s) => s.id === h.site)) return;
-  if (!d || Live.on) { loadSite(h.site, h); return; } // z živého režimu na konkrétní místo
+  if (!d || Live.on || Storm.on) { loadSite(h.site, h); return; } // z živého režimu na konkrétní místo
   const same = h.site === state.site && h.date === d.frames[state.i].date && (h.layer || state.layer) === state.layer && (h.compare === "1") === state.compare;
   if (!same) loadSite(h.site, h);
 });

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794662844" rel="stylesheet">
+<link href="style.css?v=1794663493" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
@@ -19,6 +19,8 @@
   </button>
   <nav id="sites" class="sites" aria-label="Study areas"></nav>
 </header>
+
+<div id="menu" class="menu" hidden></div>
 
 <section id="orbit" class="orbit" aria-label="Satellites around Earth right now" hidden>
   <div class="orbit-head"><h2>Satellites around Earth right now</h2><button id="orbit-close" aria-label="Close">✕</button></div>
@@ -44,6 +46,7 @@
         <button data-layer="change" aria-pressed="false" title="Coloured map of what changed">Change</button>
         <button data-layer="optical" aria-pressed="false" title="Photo from a camera satellite on the same day: often just cloud" hidden>Optical</button>
         <button id="compare" aria-pressed="false">Before / after</button>
+        <button id="heat" aria-pressed="true" title="Places where satellites detected the heat of the fire" hidden>Heat</button>
         <button id="perim" aria-pressed="true" hidden>Fire perimeter</button>
         <label class="op">Opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.9"></label>
       </div>
@@ -57,7 +60,7 @@
       <h2 id="intro-h">Welcome to Dancing Earth</h2>
       <p>Radar on the NISAR satellite sees Earth's surface through cloud, smoke and darkness. Here you can watch the surface change, and hear it.</p>
       <ol>
-        <li><b>Pick a place</b> at the top: a lake, a wildfire, a forest or farmland.</li>
+        <li><b>Pick a topic</b> at the top: <b>Nature</b> (floods, fires, hurricanes) or <b>Human activity</b> (forest clearing, farming), then a place.</li>
         <li><b>Press Play</b> to step through every satellite pass and hear the change as music.</li>
         <li><b>Try Optical</b> to see what a camera saw the same day, often just cloud, and drag the slider.</li>
         <li><b>Open Live world</b> for today's events, satellites overhead, and a radar image of any place on land.</li>
@@ -85,6 +88,8 @@
       <ul id="live-list" class="evlist"></ul>
     </section>
 
+    <section id="stormbox" class="stormbox" aria-label="Hurricane"></section>
+
     <header id="head" class="story head"></header>
 
     <section class="insight" aria-labelledby="ins-h">
@@ -100,6 +105,18 @@
         <span id="date" class="mono date">—</span>
       </div>
       <input id="frame" type="range" min="0" max="0" value="0" aria-label="Satellite pass (date)">
+      <div id="fire" class="firebox" hidden>
+        <label class="pick" for="fire-day">Day of the fire <b id="fire-label" class="mono"></b></label>
+        <input id="fire-day" type="range" min="0" max="0" value="0" aria-label="Day of the fire, for the heat detections">
+        <svg id="fire-spark" class="spark" viewBox="0 0 400 36" preserveAspectRatio="none" role="img" aria-label="Number of heat detections on each day; white ticks mark radar passes"></svg>
+        <p class="hint" id="fire-note" role="status"></p>
+      </div>
+      <div class="refrow">
+        <label class="pick">Reference image <select id="ref" title="The 'before' image that every other date is compared with"></select></label>
+        <button id="ref-set" title="Use the date shown now as the reference image">Use shown date</button>
+        <button id="ref-reset" hidden>Reset</button>
+      </div>
+      <p id="ref-note" class="hint refnote" role="status"></p>
       <label class="pick">Chart <select id="metric"></select></label>
       <svg id="chart" class="chart" viewBox="0 0 400 140" role="img" aria-label="Time series"></svg>
       <div class="metrics mono" id="metrics"></div>
@@ -116,8 +133,8 @@
 
     <footer class="credits">
       Data: NASA-ISRO NISAR L2 GCOV via <a href="https://search.asf.alaska.edu/">ASF DAAC</a>.
-      Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>. Satellite orbits: <a href="https://celestrak.org/">CelesTrak</a>.
-      Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>.
+      Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>. Satellite orbits: <a href="https://celestrak.org/">CelesTrak</a>. Hurricanes: <a href="https://www.nhc.noaa.gov/">NOAA NHC</a>.
+      Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>. Heat detections: <a href="https://www.earthdata.nasa.gov/data/tools/firms">NASA FIRMS</a>.
       Optical photos: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> VIIRS.
       Basemap: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> Blue Marble.
       Built with AI assistance (Claude) — see README.
@@ -126,12 +143,15 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="stories.js?v=1794662844"></script>
-<script src="sound.js?v=1794662844"></script>
-<script src="satellite.min.js?v=1794662844"></script>
-<script src="sats.js?v=1794662844"></script>
-<script src="globe.js?v=1794662844"></script>
-<script src="live.js?v=1794662844"></script>
-<script src="app.js?v=1794662844"></script>
+<script src="catalog.js?v=1794663493"></script>
+<script src="stories.js?v=1794663493"></script>
+<script src="sound.js?v=1794663493"></script>
+<script src="satellite.min.js?v=1794663493"></script>
+<script src="sats.js?v=1794663493"></script>
+<script src="globe.js?v=1794663493"></script>
+<script src="storm.js?v=1794663493"></script>
+<script src="fire.js?v=1794663493"></script>
+<script src="live.js?v=1794663493"></script>
+<script src="app.js?v=1794663493"></script>
 </body>
 </html>

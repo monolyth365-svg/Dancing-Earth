@@ -28,6 +28,9 @@ jobs:
       - name: Satellite orbits (no login needed)
         run: python pipeline/fetch_tle.py || echo "Orbit update failed, keeping the old file."
 
+      - name: Hurricane tracks (no login needed)
+        run: python pipeline/fetch_storms.py || echo "Storm update failed, keeping the old files."
+
       - name: New NISAR passes (needs the EARTHDATA_TOKEN secret)
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
