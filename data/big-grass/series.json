@@ -1,0 +1,279 @@
+{
+ "name": "Big Grass Fire, Oregon",
+ "kind": "fire",
+ "center": [
+  -116.87,
+  42.48
+ ],
+ "sizeKm": 100,
+ "event": "2026-07-23",
+ "track": [
+  "077",
+  "23",
+  "ASCENDING"
+ ],
+ "corners": [
+  [
+   -117.48087195886804,
+   42.929337054577694
+  ],
+  [
+   -116.25640642510305,
+   42.92793195442793
+  ],
+  [
+   -116.26698480522955,
+   42.02813585316253
+  ],
+  [
+   -117.474030625344,
+   42.029497623741435
+  ]
+ ],
+ "frames": [
+  {
+   "date": "2026-06-19",
+   "granule": "NISAR_L2_PR_GCOV_023_077_A_023_4005_DHDH_A_20260619T124543_20260619T124618_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-06-19_hh.png",
+   "hv": "2026-06-19_hv.png",
+   "meanHH": -11.7,
+   "meanHV": -17.89,
+   "waterKm2": 311.5,
+   "sceneShiftDb": -0.03,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": -0.02,
+   "meanOutsideDb": 0.0,
+   "change": "2026-06-19_change.png"
+  },
+  {
+   "date": "2026-07-01",
+   "granule": "NISAR_L2_PR_GCOV_024_077_A_023_4005_DHDH_A_20260701T124542_20260701T124617_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-01_hh.png",
+   "hv": "2026-07-01_hv.png",
+   "meanHH": -10.93,
+   "meanHV": -17.67,
+   "waterKm2": 309.9,
+   "sceneShiftDb": 0.16,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": 0.01,
+   "meanOutsideDb": 0.02,
+   "change": "2026-07-01_change.png"
+  },
+  {
+   "date": "2026-07-13",
+   "granule": "NISAR_L2_PR_GCOV_025_077_A_023_4005_DHDH_A_20260713T124542_20260713T124617_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-13_hh.png",
+   "hv": "2026-07-13_hv.png",
+   "meanHH": -11.66,
+   "meanHV": -17.97,
+   "waterKm2": 313.4,
+   "sceneShiftDb": -0.14,
+   "lossKm2": 0.0,
+   "gainKm2": 0.0,
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": 0.0,
+   "meanOutsideDb": -0.03,
+   "change": "2026-07-13_change.png"
+  },
+  {
+   "date": "2026-07-25",
+   "granule": "NISAR_L2_PR_GCOV_026_077_A_023_4005_DHDH_A_20260725T124541_20260725T124616_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-07-25_hh.png",
+   "hv": "2026-07-25_hv.png",
+   "meanHH": -11.4,
+   "meanHV": -17.82,
+   "waterKm2": 313.8,
+   "sceneShiftDb": -0.08,
+   "lossKm2": 7.0,
+   "gainKm2": 6.4,
+   "lossInsideKm2": 0.0,
+   "meanInsideDb": 0.03,
+   "meanOutsideDb": 0.02,
+   "change": "2026-07-25_change.png"
+  },
+  {
+   "date": "2026-08-18",
+   "granule": "NISAR_L2_PR_GCOV_028_077_A_023_4005_DHDH_A_20260818T124540_20260818T124615_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-18_hh.png",
+   "hv": "2026-08-18_hv.png",
+   "meanHH": -11.28,
+   "meanHV": -17.8,
+   "waterKm2": 305.8,
+   "sceneShiftDb": -0.02,
+   "lossKm2": 52.6,
+   "gainKm2": 126.3,
+   "lossInsideKm2": 46.8,
+   "meanInsideDb": -0.2,
+   "meanOutsideDb": 0.08,
+   "change": "2026-08-18_change.png"
+  },
+  {
+   "date": "2026-08-30",
+   "granule": "NISAR_L2_PR_GCOV_029_077_A_023_4005_DHDH_A_20260830T124540_20260830T124615_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-08-30_hh.png",
+   "hv": "2026-08-30_hv.png",
+   "meanHH": -11.61,
+   "meanHV": -18.11,
+   "waterKm2": 312.7,
+   "sceneShiftDb": -0.16,
+   "lossKm2": 98.4,
+   "gainKm2": 188.4,
+   "lossInsideKm2": 82.4,
+   "meanInsideDb": -0.33,
+   "meanOutsideDb": 0.09,
+   "change": "2026-08-30_change.png"
+  },
+  {
+   "date": "2026-09-11",
+   "granule": "NISAR_L2_PR_GCOV_030_077_A_023_4005_DHDH_A_20260911T124539_20260911T124614_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-11_hh.png",
+   "hv": "2026-09-11_hv.png",
+   "meanHH": -11.4,
+   "meanHV": -18.02,
+   "waterKm2": 311.8,
+   "sceneShiftDb": -0.1,
+   "lossKm2": 101.5,
+   "gainKm2": 4.9,
+   "lossInsideKm2": 83.8,
+   "meanInsideDb": -0.36,
+   "meanOutsideDb": 0.03,
+   "change": "2026-09-11_change.png"
+  },
+  {
+   "date": "2026-09-23",
+   "granule": "NISAR_L2_PR_GCOV_031_077_A_023_4005_DHDH_A_20260923T124539_20260923T124614_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-09-23_hh.png",
+   "hv": "2026-09-23_hv.png",
+   "meanHH": -11.62,
+   "meanHV": -18.13,
+   "waterKm2": 312.4,
+   "sceneShiftDb": -0.15,
+   "lossKm2": 116.9,
+   "gainKm2": 3.7,
+   "lossInsideKm2": 100.7,
+   "meanInsideDb": -0.39,
+   "meanOutsideDb": 0.0,
+   "change": "2026-09-23_change.png"
+  },
+  {
+   "date": "2026-10-05",
+   "granule": "NISAR_L2_PR_GCOV_032_077_A_023_4005_DHDH_A_20261005T124540_20261005T124614_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-05_hh.png",
+   "hv": "2026-10-05_hv.png",
+   "meanHH": -11.71,
+   "meanHV": -18.06,
+   "waterKm2": 311.8,
+   "sceneShiftDb": -0.13,
+   "lossKm2": 129.4,
+   "gainKm2": 3.8,
+   "lossInsideKm2": 109.8,
+   "meanInsideDb": -0.39,
+   "meanOutsideDb": 0.01,
+   "change": "2026-10-05_change.png"
+  },
+  {
+   "date": "2026-10-17",
+   "granule": "NISAR_L2_PR_GCOV_033_077_A_023_4005_DHDH_A_20261017T124540_20261017T124615_P05023_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-17_hh.png",
+   "hv": "2026-10-17_hv.png",
+   "meanHH": -11.57,
+   "meanHV": -18.2,
+   "waterKm2": 310.1,
+   "sceneShiftDb": -0.24,
+   "lossKm2": 142.3,
+   "gainKm2": 3.7,
+   "lossInsideKm2": 116.8,
+   "meanInsideDb": -0.36,
+   "meanOutsideDb": -0.01,
+   "change": "2026-10-17_change.png"
+  },
+  {
+   "date": "2026-10-29",
+   "granule": "NISAR_L2_PR_GCOV_034_077_A_023_4005_DHDH_A_20261029T124540_20261029T124615_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-10-29_hh.png",
+   "hv": "2026-10-29_hv.png",
+   "meanHH": -12.07,
+   "meanHV": -19.01,
+   "waterKm2": 312.8,
+   "sceneShiftDb": -0.81,
+   "lossKm2": 561.2,
+   "gainKm2": 7.4,
+   "lossInsideKm2": 223.0,
+   "meanInsideDb": -0.33,
+   "meanOutsideDb": -0.14,
+   "change": "2026-10-29_change.png"
+  }
+ ],
+ "perimeter": {
+  "file": "perimeter.geojson",
+  "name": "Big Grass",
+  "source": "NIFC WFIGS Interagency Fire Perimeters (year to date)",
+  "totalKm2": 2327.6,
+  "inWindowKm2": 2348.4,
+  "discovered": "2026-07-23",
+  "contained": "2026-09-12",
+  "mapped": "2026-09-18"
+ },
+ "analysis": {
+  "pol": "HV",
+  "scaleDb": 3,
+  "showDb": 1.0,
+  "thresholdDb": 1.5,
+  "smoothingPx": 7,
+  "pixelM": 195,
+  "sceneShiftRemoved": true,
+  "baselineDates": [
+   "2026-06-19",
+   "2026-07-01",
+   "2026-07-13"
+  ],
+  "waterDb": -22,
+  "waterPol": "HH",
+  "colors": {
+   "loss": "#ff4632",
+   "gain": "#3cc8be"
+  }
+ },
+ "extentKm": [
+  99.8,
+  100.17
+ ],
+ "validKm2": 9950.7,
+ "cube": {
+  "file": "cube.bin",
+  "size": 128,
+  "pols": [
+   "hh",
+   "hv"
+  ],
+  "scale": 100,
+  "nodata": -32768
+ },
+ "unstableKm2": 355.6
+}
