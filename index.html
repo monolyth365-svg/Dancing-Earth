@@ -39,6 +39,17 @@
   </section>
 
   <aside class="side" id="panel" tabindex="-1" aria-label="Data panel">
+    <section id="live" class="livebox" aria-label="Live events and radar images from NASA">
+      <div class="kind">Live · straight from NASA</div>
+      <h1>What is happening on Earth right now</h1>
+      <p>Dots are natural events that NASA is tracking at this moment. Click a dot, or <b>any place on land</b>, to load the newest NISAR radar image of it directly from NASA's archive.</p>
+      <p id="live-status" class="status" role="status"></p>
+      <div id="live-cats" class="cats"></div>
+      <div id="live-detail" class="detail"></div>
+      <h2>Latest events</h2>
+      <ul id="live-list" class="evlist"></ul>
+    </section>
+
     <header id="head" class="story head"></header>
 
     <section class="insight" aria-labelledby="ins-h">
@@ -70,6 +81,7 @@
 
     <footer class="credits">
       Data: NASA-ISRO NISAR L2 GCOV via <a href="https://search.asf.alaska.edu/">ASF DAAC</a>.
+      Live events: <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a>.
       Fire perimeters: <a href="https://data-nifc.opendata.arcgis.com/">NIFC Open Data</a>.
       Optical photos: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> VIIRS.
       Basemap: <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a> Blue Marble.
@@ -81,6 +93,7 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="stories.js"></script>
 <script src="sound.js"></script>
+<script src="live.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
