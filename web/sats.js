@@ -3,7 +3,7 @@
 window.Sats = (() => {
   const RE = 6371, D2R = Math.PI / 180, STEP = 15, SPAN = 50 * 60; // krok dráhy 30 s, 50 minut dozadu i dopředu
   const el = (s) => document.querySelector(s);
-  let map, sats = [], meta = null, on = false, tick = null, lastTracks = 0, loading = null;
+  let map, sats = [], meta = null, on = false, tick = null, lastTracks = 0, loading = null, listOnly = false;
 
   // Obrázek družice (kreslený, ne fotka): tělo, solární panely a vpředu šipka směru letu. Špička míří nahoru = směr letu.
   // NISAR má místo levého panelu svou velkou síťovou anténu na rameni – radar se dívá vlevo od směru letu.
@@ -101,9 +101,9 @@ window.Sats = (() => {
   }
 
   function draw() {
-    if (!on || window.Globe3D?.open) return;
+    if (!on) return;
     const t = new Date();
-    if (+t - lastTracks > 2000) {
+    if (!listOnly && +t - lastTracks > 2000) {
       const g = tracks(t);
       map.getSource("sat-lines")?.setData(g.lines);
       map.getSource("sat-swath")?.setData(g.swath);
@@ -113,9 +113,8 @@ window.Sats = (() => {
     for (const s of onMap()) {
       const p = now(s, t);
       if (!p) continue;
-      s.marker.setLngLat([p.lng, p.lat]);
-      s.arrow.style.transform = `rotate(${p.head}deg)`;
-      if (p.edges) map.getSource("sat-beam")?.setData({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: Math.abs(p.edges[0][0] - p.edges[1][0]) < 180 ? p.edges : [] } });
+      if (!listOnly) { s.marker.setLngLat([p.lng, p.lat]); s.arrow.style.transform = `rotate(${p.head}deg)`; }
+      if (!listOnly && p.edges) map.getSource("sat-beam")?.setData({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: Math.abs(p.edges[0][0] - p.edges[1][0]) < 180 ? p.edges : [] } });
       s.pos = p;
       rows.push(`<li><button data-sat="${s.id}"><i style="background:${s.color}"></i><span><b>${s.name}</b> ${s.role}</span><time>${Math.abs(p.lat).toFixed(1)}°${p.lat >= 0 ? "N" : "S"} ${Math.abs(p.lng).toFixed(1)}°${p.lng >= 0 ? "E" : "W"} · ${Math.round(p.alt)} km</time></button></li>`);
     }
@@ -123,12 +122,13 @@ window.Sats = (() => {
     if (list && !list.matches(":hover") && !list.contains(document.activeElement)) list.innerHTML = rows.join("");
   }
 
-  async function show(m) {
-    map = m; on = true;
+  // only = true: jen seznam v panelu (ve 3D pohledu kreslí družice zeměkoule, na plochou mapu se nepřidávají)
+  async function show(m, only = false) {
+    map = m; on = true; listOnly = only;
     try { await load(); } catch { el("#sat-note").textContent = "Satellite positions are not available right now."; return; }
     if (!on) return;
     const before = map.getLayer("events") ? "events" : undefined, empty = { type: "FeatureCollection", features: [] };
-    if (!map.getSource("sat-swath")) {
+    if (!listOnly && !map.getSource("sat-swath")) {
       map.addSource("sat-swath", { type: "geojson", data: empty });
       map.addSource("sat-lines", { type: "geojson", data: empty });
       map.addSource("sat-beam", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
@@ -137,7 +137,7 @@ window.Sats = (() => {
       map.addLayer({ id: "sat-future", type: "line", source: "sat-lines", filter: ["==", ["get", "part"], "future"], paint: { "line-color": ["get", "color"], "line-width": 1.2, "line-opacity": 0.4, "line-dasharray": [2, 3] } }, before);
       map.addLayer({ id: "sat-beam", type: "line", source: "sat-beam", paint: { "line-color": "#ffe9a8", "line-width": 3, "line-opacity": 0.9 } }, before);
     }
-    for (const s of onMap()) {
+    for (const s of listOnly ? [] : onMap()) {
       if (!s.marker) {
         const box = Object.assign(document.createElement("div"), { className: "sat" });
         s.arrow = Object.assign(document.createElement("div"), { className: "sat-icon", innerHTML: icon(s) });
@@ -167,6 +167,7 @@ window.Sats = (() => {
   function bind() {
     el("#sat-list").onclick = (e) => {
       const b = e.target.closest("[data-sat]"), s = b && sats.find((x) => x.id === b.dataset.sat);
+      if (s && window.Globe3D?.on) return Globe3D.follow(s.id); // ve 3D pohledu kamera poletí s družicí
       if (s?.pos) map.flyTo({ center: [s.pos.lng, s.pos.lat], zoom: Math.max(map.getZoom(), 3), duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 });
     };
   }

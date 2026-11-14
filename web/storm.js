@@ -138,7 +138,7 @@ window.Storm = (() => {
       : `<p class="hint">No wind reach is reported for this time: the storm was ${p.kt < 34 ? "still weaker than a tropical storm" : "not analysed in that detail"}. Move the timeline to a later position.</p>`;
     el("#st-note").textContent = photo ? `Photo: VIIRS daytime pass on ${p.t.slice(0, 10)}. The marked centre is for ${p.t.slice(11, 16)} UTC, so the clouds may be offset.` : "";
     chart();
-    history.replaceState(null, "", `#storm=${data.id}&t=${p.t.slice(0, 13)}`);
+    history.replaceState(null, "", `#storm=${data.id}&t=${p.t.slice(0, 13)}` + v3());
     if (sound && el("#st-sound").checked) Sonify.play("water", Math.min(1, p.kt / 160), 0);
   }
 
@@ -168,5 +168,5 @@ window.Storm = (() => {
     map = m;
     map.on("click", (e) => { if (!on || !map.getLayer("st-pts")) return; const f = map.queryRenderedFeatures(e.point, { layers: ["st-pts"] })[0]; if (f) { stop(); show(f.properties.k); } });
   }
-  return { enter, exit, bind, get on() { return on; } };
+  return { enter, exit, bind, marker, get on() { return on; } };
 })();

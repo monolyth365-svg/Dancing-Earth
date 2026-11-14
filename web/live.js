@@ -20,10 +20,10 @@ window.Live = (() => {
     document.body.classList.add("live");
     for (const l of ["perim", "sar"]) if (map.getLayer(l)) map.removeLayer(l);
     for (const s of ["perim", "sar"]) if (map.getSource(s)) map.removeSource(s);
-    history.replaceState(null, "", "#live" + (at ? "=" + at : ""));
+    history.replaceState(null, "", "#live" + (at ? "=" + at : "") + v3());
     if (!at) { map.resize(); map.fitBounds([[-150, -50], [160, 68]], { padding: 4, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 }); }
     el("#live-detail").innerHTML = "";
-    Sats.show(map);
+    Sats.show(map, !!window.Globe3D?.on); // ve 3D pohledu jen seznam družic; kreslí je zeměkoule
     await loadEvents();
     if (at) { const [lng, lat] = at.split(",").map(Number); if (isFinite(lng) && isFinite(lat)) pick({ lng, lat }, "Shared location"); }
   }
@@ -36,6 +36,7 @@ window.Live = (() => {
     marker.remove();
     for (const l of ["live-img", "events"]) if (map.getLayer(l)) map.removeLayer(l);
     for (const s of ["live-img", "events"]) if (map.getSource(s)) map.removeSource(s);
+    document.dispatchEvent(new Event("de:live"));
   }
 
   async function loadEvents() {
@@ -57,6 +58,7 @@ window.Live = (() => {
       map.addSource("events", { type: "geojson", data: { type: "FeatureCollection", features: list.map((e, i) => ({ type: "Feature", id: i, properties: { i, color: cat(e.cat)[1] }, geometry: { type: "Point", coordinates: [e.lng, e.lat] } })) } });
       map.addLayer({ id: "events", type: "circle", source: "events", paint: { "circle-radius": 6, "circle-color": ["get", "color"], "circle-stroke-color": "#0b0d10", "circle-stroke-width": 1.5, "circle-opacity": 0.9 } });
     }
+    document.dispatchEvent(new Event("de:live")); // 3D pohled si události vykreslí jako body na zeměkouli
     if (!events) return;
     const counts = {};
     list.forEach((e) => { counts[e.cat] = (counts[e.cat] || 0) + 1; });
@@ -70,7 +72,7 @@ window.Live = (() => {
     const id = ++reqId;
     fitted = false; lapse = null;
     marker.setLngLat(ll).addTo(map);
-    history.replaceState(null, "", `#live=${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}`);
+    history.replaceState(null, "", `#live=${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}` + v3());
     const head = `<h2>${esc(title)}</h2><p class="mono meta">${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°${ev ? ` · ${cat(ev.cat)[0]} · reported ${ev.date}` : ""}${ev?.link ? ` · <a href="${esc(ev.link)}" target="_blank" rel="noopener">source</a>` : ""}</p>`;
     el("#live-detail").innerHTML = head + `<p class="status" role="status">Asking NASA's archive (ASF) for NISAR passes over this spot…</p>`;
     el("#live-detail").scrollIntoView({ block: "nearest" });
@@ -300,5 +302,7 @@ window.Live = (() => {
     };
   }
 
-  return { enter, exit, bind, search, loadPass, clean, get on() { return on; } };
+  return { enter, exit, bind, search, loadPass, clean, marker, get on() { return on; },
+    events: () => (on && events ? events.map((e) => ({ lng: e.lng, lat: e.lat, title: e.title, color: cat(e.cat)[1] })) : []),
+    pickEvent: (i) => { const ev = events?.[i]; if (ev) pick({ lng: ev.lng, lat: ev.lat }, ev.title, ev); } };
 })();

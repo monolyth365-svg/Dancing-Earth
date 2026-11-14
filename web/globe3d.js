@@ -1,14 +1,16 @@
-// Velká 3D zeměkoule (knihovna CesiumJS, načítá se až na vyžádání).
+// 3D zeměkoule jako druhý pohled na stejnou aplikaci (knihovna CesiumJS, načítá se až na vyžádání).
+// Zeměkoule leží v ploše mapy vedle pravého panelu. Plochá mapa (MapLibre) běží dál pod ní a aplikace do ní kreslí
+// jako vždy; po každém překreslení se obsah jejího plátna (bez podkladové mapy) položí na zeměkouli jako vrstva
+// povrchu. Díky tomu ve 3D funguje vše, co ve 2D: vrstvy, časová osa, před/po, žár, nástroje, hurikán i živý svět.
 // Povrch se dočítá po dlaždicích podle toho, kam a jak zblízka se uživatel dívá: zdálky NASA Blue Marble,
-// zblízka mozaika Landsat (30 m). Kamerou jde otáčet, přibližovat až k zemi a naklonit ji vzhůru k družici.
-// Polohy družic se počítají stejně jako na mapě (TLE + SGP4). Model družice je zjednodušený náčrt, mnohonásobně zvětšený.
+// zblízka mozaika Landsat (30 m). Polohy družic se počítají stejně jako na mapě (TLE + SGP4).
 window.Globe3D = (() => {
   const BASE = "https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/", SCALE = 4000, el = (s) => document.querySelector(s);
   const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/";
   let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, swath = null;
   // Tablety a telefony mají málo grafické paměti (Safari na iPadu jinak stránku shodí) → úsporný režim
   const LIGHT = matchMedia("(pointer: coarse)").matches || /iPad|iPhone|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
-  let mapLost = null;
+  let evPts = null, ring = null, eye = null, labels = null, occ = null;
   let sel = null, track = null, spot = null; // vybraná družice; kamera letí s ní (track) nebo stojí na zemi a dívá se na ni (spot)
 
   const loadLib = () => (loading ??= new Promise((ok, bad) => {
@@ -138,8 +140,8 @@ window.Globe3D = (() => {
     });
     swath = viewer.entities.add({ polygon: { hierarchy: new C.PolygonHierarchy([]), material: C.Color.fromCssColorString("#e9b949").withAlpha(0.35), height: 0 } });
 
-    // Ťuknutí na zeměkouli načte radarový snímek toho místa (stejně jako klik na ploché mapě).
-    // Rozlišení gest: krátké ťuknutí bez pohybu = načíst; tažení = otáčet Zemí; dlouhé podržení = nic.
+    // Ťuknutí na zeměkouli = klik na ploché mapě (vybrat místo v radarovém snímku, bod žáru, roh měřené plochy…).
+    // Rozlišení gest: krátké ťuknutí bez pohybu = klik; tažení = otáčet Zemí; dlouhé podržení = nic.
     // LEFT_CLICK vyvolá knihovna jen tehdy, když se ukazatel mezi stiskem a puštěním nepohnul (myš i jeden prst);
     // při dvou prstech (přiblížení) se nevyvolá vůbec. Délku stisku hlídáme sami.
     viewer.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK); // dvojklik jinak „chytá“ družice
@@ -157,8 +159,39 @@ window.Globe3D = (() => {
       if (!c) return; // ťuknutí vedle Země
       lastTap = t;
       const g = C.Cartographic.fromCartesian(c);
-      radarAt({ lng: C.Math.toDegrees(g.longitude), lat: C.Math.toDegrees(g.latitude) });
+      tapped({ lng: C.Math.toDegrees(g.longitude), lat: C.Math.toDegrees(g.latitude) }, e.position);
     }, C.ScreenSpaceEventType.LEFT_CLICK);
+
+    // Body živých událostí (jen v režimu Live world), kroužek vybraného místa a střed hurikánu
+    evPts = viewer.scene.primitives.add(new C.PointPrimitiveCollection());
+    const dot = (color, size) => viewer.entities.add({ show: false, position: cart(0, 0, 2), point: { pixelSize: size, color: C.Color.fromCssColorString(color).withAlpha(0.3), outlineColor: C.Color.fromCssColorString(color), outlineWidth: 3, disableDepthTestDistance: 2e6 } });
+    ring = dot("#e9b949", 13); eye = dot("#ff8f20", 16);
+    occ = new C.EllipsoidalOccluder(viewer.scene.globe.ellipsoid, viewer.camera.positionWC);
+    viewer.scene.postRender.addEventListener(() => {
+      // starší promítnuté vrstvy zmizí, až se nová stihne vykreslit (bez probliknutí)
+      for (const m of mir.layers.slice(0, -1)) if (m.ttl != null && --m.ttl <= 0) { viewer.imageryLayers.remove(m.layer, true); mir.layers.splice(mir.layers.indexOf(m), 1); }
+      if (pop.pos) { // bublina se drží svého místa na zeměkouli
+        const to = C.SceneTransforms.worldToWindowCoordinates || C.SceneTransforms.wgs84ToWindowCoordinates, q = to(viewer.scene, pop.pos), box = el("#g3d-pop");
+        occ.cameraPosition = viewer.camera.positionWC;
+        const seen = !!q && occ.isPointVisible(pop.pos);
+        box.style.visibility = seen ? "visible" : "hidden";
+        if (seen) { box.style.left = `${q.x}px`; box.style.top = `${q.y}px`; }
+      }
+    });
+
+    // Nástroj „přejeď po řece a poslouchej“: tažení po zeměkouli místo otáčení (kamera je po tu dobu zamčená)
+    const llAt = (ev) => {
+      const r = viewer.scene.canvas.getBoundingClientRect(), c = viewer.camera.pickEllipsoid(new C.Cartesian2(ev.clientX - r.left, ev.clientY - r.top), viewer.scene.globe.ellipsoid);
+      if (!c) return null;
+      const g = C.Cartographic.fromCartesian(c);
+      return { lng: C.Math.toDegrees(g.longitude), lat: C.Math.toDegrees(g.latitude) };
+    };
+    const send = (type, lngLat) => document.dispatchEvent(new CustomEvent("de:trace3d", { detail: { type, lngLat } }));
+    let tracing = false;
+    holder.addEventListener("pointerdown", (ev) => { const ll = window.DE_TRACE && llAt(ev); if (!ll) return; tracing = true; send("down", ll); }, true);
+    holder.addEventListener("pointermove", (ev) => { const ll = tracing && llAt(ev); if (ll) send("move", ll); }, true);
+    for (const k of ["pointerup", "pointercancel"]) addEventListener(k, () => { if (tracing) { tracing = false; send("up"); } });
+    viewer.scene.screenSpaceCameraController.enableInputs = !window.DE_TRACE;
 
     viewer.clock.onTick.addEventListener(() => {
       follow();
@@ -251,110 +284,159 @@ window.Globe3D = (() => {
     viewer.camera.flyTo({ destination: dest, orientation: { direction: dir, up }, duration: sec });
   }
 
-  // --- Radarový snímek místa, na které uživatel ťukl -------------------------------------------------------------
-  // Dotaz do archivu i stažení snímku jsou stejné jako v živém režimu na ploché mapě (Live.search, Live.loadPass);
-  // snímek se položí na zeměkouli jako další vrstva povrchu.
-  const radar = { rq: 0, layer: null, mark: null, passes: [], ll: null };
-  const fmtLL = (ll) => `${Math.abs(ll.lat).toFixed(2)}°${ll.lat >= 0 ? "N" : "S"}, ${Math.abs(ll.lng).toFixed(2)}°${ll.lng >= 0 ? "E" : "W"}`;
-  async function radarAt(ll) {
-    const id = ++radar.rq, box = el("#g3d-radar"), head = `<h3>Radar image of ${fmtLL(ll)}</h3>`;
-    radar.ll = ll;
-    const pos = cart(ll.lng, ll.lat, 3);
-    if (radar.mark) radar.mark.position = pos;
-    else radar.mark = viewer.entities.add({ position: pos, point: { pixelSize: 13, color: C.Color.fromCssColorString("#e9b949").withAlpha(0.25), outlineColor: C.Color.fromCssColorString("#e9b949"), outlineWidth: 3, disableDepthTestDistance: 2e6 } });
-    box.hidden = false;
-    box.innerHTML = head + `<p class="status">Asking NASA's archive for NISAR passes over this spot…</p>`;
-    const found = await Live.search(ll);
-    if (id !== radar.rq) return;
-    if (!found) { box.innerHTML = head + `<p class="status">The archive did not answer. Tap again in a moment.</p>`; return; }
-    if (!found.passes.length) { box.innerHTML = head + `<p class="status">No NISAR image of this spot in the archive yet. NISAR mostly maps land and ice; open ocean is rarely imaged. Tap a place on land.</p>`; return; }
-    radar.passes = found.passes.slice(0, 8);
-    box.innerHTML = head + `<p>${found.count} NISAR radar products cover this spot. Newest: <b>${radar.passes[0].startTime.slice(0, 10)}</b>.</p>
-      <div class="passes" role="group" aria-label="Radar passes, newest first">${radar.passes.map((p, i) => `<button data-r3="${i}" aria-pressed="false">${p.startTime.slice(0, 10)}</button>`).join("")}</div>
-      <p class="status" id="g3d-radar-status" role="status"></p>
-      <div class="tools"><button data-r3="flat">Compare passes on the flat map</button><button data-r3="clear">Remove image</button></div>`;
-    radarShow(0, true);
+  // --- Promítání ploché mapy na zeměkouli ------------------------------------------------------------------------
+  const mir = { layers: [], last: 0, timer: null };
+  const pot = (v) => Math.min(2048, Math.max(256, 2 ** Math.round(Math.log2(v)))); // strany 2^n → hladké zmenšování při oddálení
+  function mirror() {
+    if (!open || !viewer) return;
+    clearTimeout(mir.timer);
+    const wait = 200 - (performance.now() - mir.last);
+    if (wait > 0) { mir.timer = setTimeout(mirror, wait); return; } // nejvýš 5× za vteřinu
+    mir.last = performance.now();
+    // Názvy měst (nástroj „voda nad jiným městem“): ve 3D jako vlastní vrstva po celé zeměkouli, ne jen ve výřezu 2D mapy
+    const lab = !!map.getLayer("t-labels");
+    if (lab && map.getLayoutProperty("t-labels", "visibility") !== "none") map.setLayoutProperty("t-labels", "visibility", "none");
+    if (lab && !labels) labels = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: GIBS + "Reference_Labels/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png", maximumLevel: 9, credit: "Labels: NASA GIBS, © OpenStreetMap contributors" }));
+    else if (!lab && labels) { viewer.imageryLayers.remove(labels, true); labels = null; }
+    marks();
+    const b = map.getBounds(), w = b.getWest(), e = b.getEast(), s = b.getSouth(), n = b.getNorth();
+    const any = ["sar", "live-img", "st-track", "t-ghost"].some((id) => map.getLayer(id));
+    if (!any || e - w > 80 || e <= w || n > 84 || s < -84) { clearMirror(); return; } // není co promítat, nebo je výřez přes půl světa
+    const src = map.getCanvas(), snap = Object.assign(document.createElement("canvas"), { width: pot(src.width), height: pot(src.height) });
+    snap.getContext("2d").drawImage(src, 0, 0, snap.width, snap.height);
+    const R = 6378137, mx = (lon) => (R * lon * Math.PI) / 180, my = (lat) => R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+    const scheme = new C.WebMercatorTilingScheme({ numberOfLevelZeroTilesX: 1, numberOfLevelZeroTilesY: 1, rectangleSouthwestInMeters: new C.Cartesian2(mx(w), my(s)), rectangleNortheastInMeters: new C.Cartesian2(mx(e), my(n)) });
+    // Vlastní zdroj snímků o jediné dlaždici: snímek plátna ploché mapy (Mercatorovo zobrazení; knihovna ho sama převede)
+    const provider = { tileWidth: snap.width, tileHeight: snap.height, minimumLevel: 0, maximumLevel: 0, tilingScheme: scheme, rectangle: scheme.rectangle, hasAlphaChannel: true,
+      errorEvent: new C.Event(), credit: undefined, proxy: undefined, tileDiscardPolicy: undefined, getTileCredits: () => undefined, pickFeatures: () => undefined, requestImage: () => Promise.resolve(snap) };
+    const layer = new C.ImageryLayer(provider);
+    viewer.imageryLayers.add(layer);
+    mir.layers.forEach((m) => { m.ttl ??= 10; });
+    mir.layers.push({ layer });
   }
-  async function radarShow(i, fly) {
-    const id = ++radar.rq, p = radar.passes[i], st = el("#g3d-radar-status"), day = p.startTime.slice(0, 10);
-    document.querySelectorAll("#g3d-radar [data-r3]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.r3 === String(i)));
-    st.textContent = `Loading the radar image of ${day} from NASA…`;
-    try {
-      const A = await Loader.during(`Loading the radar image of ${day} from NASA…`, (progress) => Live.loadPass(p, progress));
-      if (id !== radar.rq) return;
-      const provider = await C.SingleTileImageryProvider.fromUrl(Live.clean(A).toDataURL("image/png"), { rectangle: C.Rectangle.fromDegrees(A.w, A.s, A.e, A.n), credit: "NISAR quick-look image, NASA ASF DAAC" });
-      if (id !== radar.rq) return;
-      const layer = viewer.imageryLayers.addImageryProvider(provider);
-      if (radar.layer) viewer.imageryLayers.remove(radar.layer, true);
-      radar.layer = layer;
-      if (fly) { // přiletět nad snímek tak, aby byl celý vidět
-        free();
-        const padX = (A.e - A.w) * 0.6, padY = (A.n - A.s) * 0.6;
-        viewer.camera.flyTo({ destination: C.Rectangle.fromDegrees(A.w - padX, Math.max(-89, A.s - padY), A.e + padX, Math.min(89, A.n + padY)), duration: 1.6 });
-      }
-      st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC${A.approx ? " · placed approximately (provisional product)" : ""}. Brighter means a stronger radar echo; water and smooth ground are dark.`;
-    } catch (e) {
-      if (id === radar.rq) st.textContent = "This radar image could not be loaded. Try another date.";
+  function clearMirror() { mir.layers.forEach((m) => viewer.imageryLayers.remove(m.layer, true)); mir.layers = []; }
+
+  // Kamera nad stejné místo, které ukazuje plochá mapa (b = hranice jejího výřezu)
+  function lookAt(b, sec = 1.6) {
+    if (!open || !viewer) return;
+    const w = b.getWest(), e = b.getEast(), s = Math.max(-89, b.getSouth()), n = Math.min(89, b.getNorth());
+    if (e - w > 100 || e <= w) { whole(sec); return; }
+    free();
+    viewer.camera.flyTo({ destination: C.Rectangle.fromDegrees(w, s, e, n), duration: sec });
+  }
+
+  // Kroužek vybraného místa a střed hurikánu: na ploché mapě jsou to prvky stránky (ne kresba), proto je 3D kreslí samo
+  function marks() {
+    if (!viewer) return;
+    const live = (m) => m && m.getElement().isConnected;
+    const a = [typeof pointMarker !== "undefined" && pointMarker, Live.marker].find(live);
+    ring.show = !!a;
+    if (a) { const ll = a.getLngLat(); ring.position = cart(ll.lng, ll.lat, 2); }
+    const st2 = Storm.on && live(Storm.marker) ? Storm.marker : null;
+    eye.show = !!st2;
+    if (st2) {
+      const ll = st2.getLngLat(), col = C.Color.fromCssColorString(st2.getElement().style.getPropertyValue("--c") || "#ff8f20");
+      eye.position = cart(ll.lng, ll.lat, 3); eye.point.color = col.withAlpha(0.45); eye.point.outlineColor = col;
     }
   }
-  function radarClear() {
-    radar.rq++;
-    if (radar.layer) { viewer.imageryLayers.remove(radar.layer, true); radar.layer = null; }
-    if (radar.mark) { viewer.entities.remove(radar.mark); radar.mark = null; }
-    el("#g3d-radar").hidden = true;
+
+  // Bublina s informací u místa na zeměkouli (např. záchyt žáru)
+  const pop = { pos: null };
+  function popup(ll, html) {
+    if (!viewer) return;
+    const box = el("#g3d-pop");
+    if (!ll) { pop.pos = null; box.hidden = true; return; }
+    pop.pos = cart(ll.lng, ll.lat, 0);
+    box.innerHTML = `<button data-close aria-label="Close">×</button>${html}`;
+    box.style.visibility = "hidden"; box.hidden = false;
   }
 
-  // Na tabletu se po dobu 3D pohledu uvolní grafická paměť ploché mapy pod ním; při zavření se obnoví
-  function releaseMap(release) {
-    return; // vypnuto: příčinou pádů bylo hromadné načítání dlaždic, ne paměť mapy; ponecháno jen pro případ potřeby
-    if (!LIGHT || typeof map === "undefined") return;
-    try {
-      if (release && !mapLost) { mapLost = map.painter.context.gl.getExtension("WEBGL_lose_context"); mapLost?.loseContext(); }
-      else if (!release && mapLost) { mapLost.restoreContext(); mapLost = null; setTimeout(() => map.triggerRepaint(), 300); }
-    } catch { mapLost = null; }
+  // Živé události z NASA jako body na zeměkouli (po celém světě, ne jen ve výřezu ploché mapy)
+  function liveEvents() {
+    if (!viewer) return;
+    evPts.removeAll();
+    if (!open || !Live.on) return;
+    Live.events().forEach((e, i) => evPts.add({ position: cart(e.lng, e.lat, 4), pixelSize: 10, color: C.Color.fromCssColorString(e.color), outlineColor: C.Color.fromCssColorString("#0b0d10"), outlineWidth: 2, id: { ev: i } }));
   }
+
+  // Ťuknutí na zeměkouli → stejná reakce jako klik na ploché mapě
+  function tapped(ll, pos) {
+    if (window.DE_TRACE) return;
+    if (Live.on) {
+      const hit = viewer.scene.pick(pos);
+      if (hit?.id?.ev != null) { Live.pickEvent(hit.id.ev); marks(); return; }
+    }
+    const b = map.getBounds(), dx = b.getEast() - b.getWest(), dy = b.getNorth() - b.getSouth();
+    const near = ll.lng > b.getWest() - dx && ll.lng < b.getEast() + dx && ll.lat > b.getSouth() - dy && ll.lat < b.getNorth() + dy;
+    if (Live.on || window.DE_TOOL || near) {
+      map.fire("click", { lngLat: new maplibregl.LngLat(ll.lng, ll.lat), point: map.project([ll.lng, ll.lat]), originalEvent: { target: map.getCanvas() } });
+      marks();
+    } else goLive(`${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}`); // daleko od právě otevřeného místa: nejnovější snímek NISAR tam (režim Live world)
+  }
+
+  // Plochá mapa pod zeměkoulí: bez podkladu (ten má zeměkoule vlastní) a bez věcí, které si 3D kreslí samo
+  function flat(on3d) {
+    const vis = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", v ? "visible" : "none"); };
+    vis("base", !on3d); vis("events", !on3d); vis("t-labels", !on3d);
+    if (Live.on) { Sats.hide(); Sats.show(map, on3d); }
+    map.triggerRepaint();
+  }
+  // Odkaz ke sdílení si pamatuje, že je zapnutý 3D pohled
+  function viewHash() {
+    const q = new URLSearchParams(location.hash.slice(1));
+    open ? q.set("view", "3d") : q.delete("view");
+    history.replaceState(null, "", "#" + q.toString().replace(/=(&|$)/g, "$1"));
+  }
+  function card(showIt) { el("#g3d-card").hidden = !showIt; el("#g3d-sat-toggle").setAttribute("aria-expanded", showIt); }
 
   async function show() {
-    const box = el("#g3d");
-    releaseMap(true);
-    box.hidden = false; open = true;
-    box.style.top = el(".top").offsetHeight + "px";
-    el("#globe-btn").setAttribute("aria-expanded", "true");
-    if (!viewer) {
-      el("#g3d-text").textContent = "Loading the 3D Earth…";
-      const done = Loader.show("Loading the 3D Earth…");
-      try { await loadLib(); await Sats.load(); C = window.Cesium; build(); done(); }
-      catch (e) { done(); box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); releaseMap(false); throw e; }
-    } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; whole(0); }
+    open = true;
+    document.body.classList.add("view3d");
+    el("#g3d").hidden = false; el("#g3d-bar").hidden = false;
+    el("#globe-btn").setAttribute("aria-pressed", "true");
+    try {
+      if (!viewer) {
+        const done = Loader.show("Loading the 3D Earth…");
+        try { await loadLib(); await Sats.load(); C = window.Cesium; if (!viewer) build(); } finally { done(); }
+      } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; }
+    } catch (e) { hide(); throw e; }
+    if (!open) return; // mezitím zavřeno
+    flat(true);
     el("#g3d-beside").textContent = `Fly beside ${sel.name}`;
     el("#g3d-fast").setAttribute("aria-pressed", "false"); el("#g3d-fast").textContent = "Speed up time ×300";
-    el("#g3d-close").focus();
+    card(Live.on && el("#g3d").clientWidth >= 700);
+    // přiletět nad stejné místo, které ukazuje plochá mapa; bez vybraného místa pohled na celou Zemi
+    if (["sar", "live-img", "st-track"].some((id) => map.getLayer(id))) lookAt(map.getBounds(), 2); else whole(0);
+    liveEvents(); mirror(); viewHash();
   }
   function hide() {
-    open = false; el("#g3d").hidden = true; el("#globe-btn").setAttribute("aria-expanded", "false");
-    if (viewer) viewer.useDefaultRenderLoop = false; // nekreslit, když není vidět
-    releaseMap(false);
+    open = false;
+    document.body.classList.remove("view3d");
+    for (const id of ["#g3d", "#g3d-bar", "#g3d-card"]) el(id).hidden = true;
+    el("#globe-btn").setAttribute("aria-pressed", "false");
+    if (viewer) { viewer.useDefaultRenderLoop = false; popup(null); } // nekreslit, když není vidět
+    flat(false); viewHash();
   }
   const toggle = () => (open ? (hide(), Promise.resolve()) : show());
 
   function bind() {
     el("#g3d-close").onclick = hide;
+    el("#g3d-sat-toggle").onclick = () => card(el("#g3d-card").hidden);
+    el("#g3d-card-close").onclick = () => card(false);
+    el("#g3d-pop").onclick = (e) => { if (e.target.closest("[data-close]")) popup(null); };
     el("#g3d-whole").onclick = () => whole();
     el("#g3d-beside").onclick = beside;
     el("#g3d-sats").onclick = (e) => { const b = e.target.closest("[data-sat3]"); if (b) pick(b.dataset.sat3); };
-    el("#g3d-radar").onclick = (e) => {
-      const b = e.target.closest("[data-r3]"); if (!b) return;
-      if (b.dataset.r3 === "clear") radarClear();
-      else if (b.dataset.r3 === "flat") { const ll = radar.ll; hide(); goLive(`${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}`); } // plochá mapa umí porovnání a časosběr
-      else radarShow(+b.dataset.r3, false);
-    };
     el("#g3d-light").onclick = (e) => { const v = !viewer.scene.globe.enableLighting; viewer.scene.globe.enableLighting = v; e.target.setAttribute("aria-pressed", v); };
     el("#g3d-fast").onclick = (e) => {
       const fast = viewer.clock.multiplier === 1;
       viewer.clock.multiplier = fast ? 300 : 1; if (!fast) viewer.clock.currentTime = C.JulianDate.now();
       e.target.setAttribute("aria-pressed", fast); e.target.textContent = fast ? "Back to live" : "Speed up time ×300"; lastSlow = 0;
     };
-    addEventListener("keydown", (e) => { if (e.key === "Escape" && open) hide(); });
+    // režim Live world se zapnul, vypnul nebo načetl události → body na zeměkouli; ve 2D mapě je schovat, ať nejsou dvakrát
+    document.addEventListener("de:live", () => { if (!open || !viewer) return; if (map.getLayer("events")) map.setLayoutProperty("events", "visibility", "none"); liveEvents(); });
+    // nástroj „přejeď po řece“ zamyká kameru, aby tažení kreslilo čáru a neotáčelo Zemí
+    document.addEventListener("de:tool", () => { if (viewer) viewer.scene.screenSpaceCameraController.enableInputs = !window.DE_TRACE; });
   }
-  return { toggle, bind, get open() { return open; }, _viewer: () => viewer, _radar: () => radar };
+  return { toggle, bind, mirror, lookAt, popup, follow: (id) => { pick(id); card(true); }, get on() { return open; }, get open() { return open; }, _viewer: () => viewer, _state: () => ({ layers: mir.layers.length, ring: !!ring?.show, eye: !!eye?.show, events: evPts ? evPts.length : 0, labels: !!labels, pop: !!pop.pos }) };
 })();
