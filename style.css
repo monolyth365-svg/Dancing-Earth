@@ -299,3 +299,8 @@ body.storm #head, body.storm > main .side > .insight, body.storm > main .side > 
 body.quiz #head, body.quiz .insight, body.quiz #story, body.quiz #fire, body.quiz .legend { visibility: hidden; }
 body.quiz #sites [data-theme] { visibility: hidden; }
 body.tooling .maplibregl-canvas { cursor: crosshair !important; }
+
+#fv[aria-pressed="true"] { background: #6eff78; border-color: #6eff78; color: #08210b; }
+.fvnote { margin: 8px 0 0; padding: 8px 10px; border: 1px solid #2f6b35; border-radius: 3px; background: rgba(110,255,120,.06); }
+.fvnote:empty { display: none; }
+.fvnote b { color: #9dffa4; font-weight: 600; }
