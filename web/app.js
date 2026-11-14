@@ -169,6 +169,7 @@ async function loadSite(id, opts = {}) {
   state.site = id;
   const loaded = Loader.show("Loading radar images…");
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json().catch((e) => { loaded(); throw e; });
+  loaded.progress(0.15); // čára průběhu: popis místa 15 %, datová kostka do 80 %, první snímek 100 %
   markNav(`site:${id}`);
   const st = STORIES[id] || STORIES[d.kind], a = d.analysis, per = d.perimeter, cat = CATALOG.find(`site:${id}`);
   $("#head").innerHTML = `<div class="kind">${st.label}</div><h1>${st.title}</h1>
@@ -210,7 +211,8 @@ async function loadSite(id, opts = {}) {
   $("#frame").max = d.frames.length - 1;
   state.point = null; pointMarker.remove(); $("#point-hint").hidden = false; $("#clear-point").hidden = true; $(".pick").hidden = false;
   state.cube = null;
-  if (d.cube) state.cube = new Int16Array(await (await fetch(`data/${id}/${d.cube.file}`)).arrayBuffer());
+  if (d.cube) state.cube = new Int16Array(await (await Loader.fetchBlob(`data/${id}/${d.cube.file}`, (f) => loaded.progress(0.15 + 0.65 * f))).arrayBuffer());
+  loaded.progress(0.8);
   $("#point-hint").hidden = !state.cube;
 
   // Nabídka grafu: jen čísla, která pro toto místo existují

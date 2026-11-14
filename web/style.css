@@ -336,6 +336,15 @@ body.live #panel .credits[data-in], body.storm #panel .credits[data-in] { displa
 /* Dancing Earth loading indicator */
 .loader { position: fixed; z-index: 60; left: calc((100vw - 400px) / 2); bottom: 26px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 10px; background: rgba(14,17,21,.94); border: 1px solid #3a414c; border-radius: 40px; box-shadow: 0 10px 30px rgba(0,0,0,.6); pointer-events: none; max-width: calc(100vw - 24px); }
 .loader .ld-text { font-size: 14px; color: var(--text); }
+.loader .ld-col { display: grid; gap: 7px; min-width: min(250px, 56vw); }
+.ld-row { display: flex; align-items: center; gap: 8px; }
+.ld-bar { flex: 1; height: 4px; border-radius: 2px; background: #2a303a; overflow: hidden; }
+.ld-bar i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--accent); transition: width .18s linear; }
+.ld-bar.unknown i { width: 34%; transition: none; animation: ld-run 1.15s ease-in-out infinite; }
+.ld-pct { font: 11px var(--mono); color: var(--muted); min-width: 30px; text-align: right; }
+.ld-pct:empty { display: none; }
+@keyframes ld-run { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .ld-bar.unknown i { width: 100%; opacity: .4; } }
 .ld-body { transform-origin: 35px 66px; animation: ld-sway .9s ease-in-out infinite alternate; }
 .ld-l { transform-origin: 29px 55px; animation: ld-kick .9s ease-in-out infinite alternate; }
 .ld-r { transform-origin: 41px 55px; animation: ld-kick .9s ease-in-out infinite alternate-reverse; }
@@ -348,3 +357,11 @@ body.live #panel .credits[data-in], body.storm #panel .credits[data-in] { displa
 @keyframes ld-pulse { 0% { opacity: .15; transform: scale(.7); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: .15; transform: scale(1.1); } }
 @media (max-width: 860px) { .loader { left: 50%; } }
 .menu .fresh { color: #7bd88f; font-weight: 600; }
+
+/* Radar image picked on the 3D Earth */
+.g3d-radar { margin-top: 10px; padding: 10px 12px; }
+.g3d-radar h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+.g3d-radar p { margin: 0 0 6px; font-size: 13px; color: #c3c8cf; }
+.g3d-radar p b { color: var(--text); }
+.g3d-radar .status { min-height: 0; margin: 4px 0 6px; font-size: 12px; }
+.g3d-radar .tools { margin-top: 4px; }

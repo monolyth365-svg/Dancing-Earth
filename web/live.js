@@ -74,28 +74,16 @@ window.Live = (() => {
     const head = `<h2>${esc(title)}</h2><p class="mono meta">${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°${ev ? ` · ${cat(ev.cat)[0]} · reported ${ev.date}` : ""}${ev?.link ? ` · <a href="${esc(ev.link)}" target="_blank" rel="noopener">source</a>` : ""}</p>`;
     el("#live-detail").innerHTML = head + `<p class="status" role="status">Asking NASA's archive (ASF) for NISAR passes over this spot…</p>`;
     el("#live-detail").scrollIntoView({ block: "nearest" });
-    let res;
-    const asked = Loader.show("Asking NASA's archive for radar passes…");
-    try {
-      const q = new URLSearchParams({ platform: "NISAR", processingLevel: "GCOV", output: "jsonlite", maxResults: "60", intersectsWith: `POINT(${ll.lng.toFixed(4)} ${ll.lat.toFixed(4)})` });
-      res = (await (await fetch(`${ASF}?${q}`)).json()).results || [];
-    } catch { res = null; }
-    asked();
+    const found = await search(ll);
     if (id !== reqId) return;
-    if (!res) { el("#live-detail").innerHTML = head + `<p class="status">The archive did not answer. Try again in a moment.</p>`; return; }
-    const seen = new Set();
-    passes = res.filter((r) => r.browse?.length).sort((a, b) => b.startTime.localeCompare(a.startTime))
-      .filter((r) => !seen.has(r.startTime.slice(0, 13)) && seen.add(r.startTime.slice(0, 13))).slice(0, 14);
+    if (!found) { el("#live-detail").innerHTML = head + `<p class="status">The archive did not answer. Try again in a moment.</p>`; return; }
+    passes = found.passes;
     if (!passes.length) {
       el("#live-detail").innerHTML = head + `<p class="status">No NISAR image of this spot in the archive yet. NISAR mostly maps land and ice; open ocean is rarely imaged.</p>`;
       return;
     }
-    // Odhad dalšího přeletu: stejná dráha se opakuje po 12 dnech
-    const latest = {};
-    passes.forEach((p) => { const k = `${p.path}-${p.flightDirection}`; latest[k] ??= p.startTime; });
-    const now = Date.now(), next = Math.min(...Object.values(latest).map((t) => { let d = Date.parse(t); while (d < now) d += 12 * 864e5; return d; }));
     el("#live-detail").innerHTML = head + `
-      <p>${res.length >= 60 ? "60 or more" : res.length} NISAR radar products cover this spot. Newest: <b>${passes[0].startTime.slice(0, 10)}</b>. Next pass expected around <b>${new Date(next).toISOString().slice(0, 10)}</b> (estimate from the 12-day repeat).</p>
+      <p>${found.count} NISAR radar products cover this spot. Newest: <b>${passes[0].startTime.slice(0, 10)}</b>. Next pass expected around <b>${found.next}</b> (estimate from the 12-day repeat).</p>
       <div class="passes" role="group" aria-label="Radar passes, newest first">${passes.map((p, i) => `<button data-pass="${i}" aria-pressed="false">${p.startTime.slice(0, 10)}</button>`).join("")}</div>
       <p class="status" id="live-img-status" role="status"></p>
       <label class="pick">Compare this image with <select id="live-ref" aria-label="Pass to compare with"></select></label>
@@ -105,14 +93,35 @@ window.Live = (() => {
     showPass(0);
   }
 
-  // Náhledový snímek a jeho zeměpisné rohy čteme přímo z NASA
-  function loadPass(p) {
-    if (cache.has(p.granuleName)) return cache.get(p.granuleName);
+  // Dotaz do archivu ASF: které přelety NISAR pokrývají dané místo (používá ho plochá mapa i 3D zeměkoule).
+  // Vrací null, když archiv neodpoví.
+  async function search(ll) {
+    const asked = Loader.show("Asking NASA's archive for radar passes…");
+    try {
+      const q = new URLSearchParams({ platform: "NISAR", processingLevel: "GCOV", output: "jsonlite", maxResults: "60", intersectsWith: `POINT(${ll.lng.toFixed(4)} ${ll.lat.toFixed(4)})` });
+      const res = (await (await fetch(`${ASF}?${q}`)).json()).results || [], seen = new Set();
+      const list = res.filter((r) => r.browse?.length).sort((a, b) => b.startTime.localeCompare(a.startTime))
+        .filter((r) => !seen.has(r.startTime.slice(0, 13)) && seen.add(r.startTime.slice(0, 13))).slice(0, 14);
+      // Odhad dalšího přeletu: stejná dráha se opakuje po 12 dnech
+      const latest = {};
+      list.forEach((p) => { const k = `${p.path}-${p.flightDirection}`; latest[k] ??= p.startTime; });
+      const now = Date.now(), next = Math.min(...Object.values(latest).map((t) => { let d = Date.parse(t); while (d < now) d += 12 * 864e5; return d; }));
+      return { passes: list, count: res.length >= 60 ? "60 or more" : String(res.length), next: list.length ? new Date(next).toISOString().slice(0, 10) : null };
+    } catch { return null; } finally { asked(); }
+  }
+
+  // Náhledový snímek a jeho zeměpisné rohy čteme přímo z NASA. onProgress dostává podíl stažených dat (0 až 1).
+  function loadPass(p, onProgress) {
+    let entry = cache.get(p.granuleName);
+    if (entry) { if (onProgress) { entry.fns.add(onProgress); if (entry.frac) onProgress(entry.frac); } return entry.job; }
+    entry = { fns: new Set(onProgress ? [onProgress] : []), frac: 0 };
+    const tell = (f) => { entry.frac = f; entry.fns.forEach((fn) => fn(f)); };
     const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml") && u.includes("/BROWSE/"));
-    const job = !png ? Promise.reject(new Error("no browse")) : Promise.all([
+    const job = entry.job = !png ? Promise.reject(new Error("no browse")) : Promise.all([
       kml ? fetch(kml).then((r) => (r.ok ? r.text() : "")).catch(() => "") : "",
-      fetch(png).then((r) => r.blob()).then((b) => createImageBitmap(new Blob([b], { type: "image/png" }))),
+      Loader.fetchBlob(png, (f) => tell(f * 0.95), "image/png").then((b) => createImageBitmap(new Blob([b], { type: "image/png" }))),
     ]).then(([txt, bmp]) => {
+      tell(1);
       const m = txt.match(/<coordinates>([^<]+)</);
       let w, e, s2, n, approx = false;
       if (m) {
@@ -143,9 +152,18 @@ window.Live = (() => {
       return { bmp: small, coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
     });
     job.catch(() => cache.delete(p.granuleName));
-    cache.set(p.granuleName, job);
+    cache.set(p.granuleName, entry);
     if (cache.size > (matchMedia("(pointer: coarse)").matches ? 6 : 16)) cache.delete(cache.keys().next().value);
     return job;
+  }
+  // Snímek připravený k položení na mapu: zmenšený a s průhledným černým okolím, ať je vidět podklad
+  function clean(A, max = 1200) {
+    const k = Math.min(1, max / Math.max(A.bmp.width, A.bmp.height)), cv = canvas(Math.round(A.bmp.width * k), Math.round(A.bmp.height * k)), cx = cv.getContext("2d");
+    cx.drawImage(A.bmp, 0, 0, cv.width, cv.height);
+    const im = cx.getImageData(0, 0, cv.width, cv.height), a = im.data;
+    for (let j = 0; j < a.length; j += 4) if (a[j] + a[j + 1] + a[j + 2] < 10) a[j + 3] = 0;
+    cx.putImageData(im, 0, 0);
+    return cv;
   }
   function put(cv, coords) {
     const url = cv.toDataURL("image/png");
@@ -166,15 +184,9 @@ window.Live = (() => {
     el("#live-diff-status").textContent = "";
     st.textContent = `Loading radar image of ${p.startTime.slice(0, 10)} from NASA…`;
     try {
-      const A = await Loader.during(`Loading the radar image of ${p.startTime.slice(0, 10)} from NASA…`, loadPass(p));
+      const A = await Loader.during(`Loading the radar image of ${p.startTime.slice(0, 10)} from NASA…`, (progress) => loadPass(p, progress));
       if (id !== reqId) return;
-      const k = Math.min(1, 1200 / Math.max(A.bmp.width, A.bmp.height)), cv = canvas(Math.round(A.bmp.width * k), Math.round(A.bmp.height * k));
-      const cx = cv.getContext("2d");
-      cx.drawImage(A.bmp, 0, 0, cv.width, cv.height);
-      const im = cx.getImageData(0, 0, cv.width, cv.height), a = im.data;
-      for (let j = 0; j < a.length; j += 4) if (a[j] + a[j + 1] + a[j + 2] < 10) a[j + 3] = 0;
-      cx.putImageData(im, 0, 0);
-      put(cv, A.coords);
+      put(clean(A), A.coords);
       refs();
       if (!fitted || !map.getBounds().contains(marker.getLngLat())) fitted = true, map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
       st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC${A.approx ? " · placed on the map approximately (provisional product)" : ""}`;
@@ -192,7 +204,10 @@ window.Live = (() => {
     Sonify.resume();
     st.textContent = `Comparing ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}…`;
     try {
-      const [A, B] = await Loader.during("Comparing two radar images…", Promise.all([loadPass(a), loadPass(b)]));
+      const [A, B] = await Loader.during("Comparing two radar images…", (progress) => { // postup = průměr obou stahování
+        let fa = 0, fb = 0;
+        return Promise.all([loadPass(a, (f) => progress(((fa = f) + fb) / 2)), loadPass(b, (f) => progress((fa + (fb = f)) / 2))]);
+      });
       if (id !== reqId) return;
       const N = 600, grab = (I) => {
         const cv = canvas(N, N), cx = cv.getContext("2d");
@@ -285,5 +300,5 @@ window.Live = (() => {
     };
   }
 
-  return { enter, exit, bind, get on() { return on; } };
+  return { enter, exit, bind, search, loadPass, clean, get on() { return on; } };
 })();
