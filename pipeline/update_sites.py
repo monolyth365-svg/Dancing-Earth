@@ -55,6 +55,5 @@ if __name__ == "__main__":
     order = [s["id"] for s in json.loads((fn.OUT / "sites.json").read_text())]
     changed = [s for s in order if update(s)]
     # seznam míst vždy v původním pořadí (fetch_nisar ho přepisuje podle pipeline/sites.json)
-    (fn.OUT / "sites.json").write_text(json.dumps(
-        [{"id": s, "name": fn.SITES[s]["name"], "kind": fn.SITES[s]["kind"]} for s in order], ensure_ascii=False))
+    fn.write_index(order)
     print("aktualizováno:", changed or "nic")

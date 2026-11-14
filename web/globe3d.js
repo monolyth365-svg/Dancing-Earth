@@ -247,8 +247,9 @@ window.Globe3D = (() => {
     el("#globe-btn").setAttribute("aria-expanded", "true");
     if (!viewer) {
       el("#g3d-text").textContent = "Loading the 3D Earth…";
-      try { await loadLib(); await Sats.load(); C = window.Cesium; build(); }
-      catch (e) { box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); releaseMap(false); throw e; }
+      const done = Loader.show("Loading the 3D Earth…");
+      try { await loadLib(); await Sats.load(); C = window.Cesium; build(); done(); }
+      catch (e) { done(); box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); releaseMap(false); throw e; }
     } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; whole(0); }
     el("#g3d-beside").textContent = `Fly beside ${sel.name}`;
     el("#g3d-fast").setAttribute("aria-pressed", "false"); el("#g3d-fast").textContent = "Speed up time ×300";

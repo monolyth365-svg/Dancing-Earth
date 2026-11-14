@@ -378,11 +378,21 @@ def analyze(site_id):
               "| uvnitř obrysu", fr.get("lossInsideKm2"), fr.get("meanInsideDb"), "vně", fr.get("meanOutsideDb"))
 
 
+def write_index(order=None):
+    """Seznam míst pro web: jméno, typ, první a poslední přelet a jejich počet (nabídka je čte, takže nezastará)."""
+    rows = []
+    for sid in order or list(SITES):
+        f = OUT / sid / "series.json"
+        if not f.exists():
+            continue
+        fr = json.loads(f.read_text())["frames"]
+        rows.append({"id": sid, "name": SITES[sid]["name"], "kind": SITES[sid]["kind"], "first": fr[0]["date"], "last": fr[-1]["date"], "passes": len(fr)})
+    (OUT / "sites.json").write_text(json.dumps(rows, ensure_ascii=False))
+
+
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     only = "--analyze-only" in sys.argv
     for s in args or list(SITES):
         analyze(s) if only else process(s)
-    (OUT / "sites.json").write_text(json.dumps(
-        [{"id": s, "name": SITES[s]["name"], "kind": SITES[s]["kind"]}
-         for s in SITES if (OUT / s / "series.json").exists()], ensure_ascii=False))
+    write_index()
