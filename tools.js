@@ -149,22 +149,37 @@
   function quizEnd() { document.body.classList.remove("quiz"); q("#quiz").hidden = true; }
 
   // --- 4) Požár: kde radar zachytil úbytek i za oficiální hranicí -------------------------------------------------
+  // Vždy pro právě vybrané datum: tlačítko i fialová vrstva ukazují podíl úbytku mimo oficiální hranici v ten den
+  function outsideLabel() {
+    const d = state.data, f = d.frames[state.i], b = q("#t-outside"), has = !!d.perimeter && d.frames.some((x) => x.outside);
+    b.hidden = !has;
+    if (!has) return;
+    const any = f.outside && f.lossKm2 > 0 && f.lossOutsideKm2 > 0, pct = any ? 100 - Math.round((f.lossInsideKm2 / f.lossKm2) * 100) : 0;
+    b.disabled = !any;
+    b.textContent = any ? `Show the ${pct < 1 ? "less than 1" : pct}% outside the fire line (${f.date})` : f.date < d.event ? "Before the fire: no loss to show yet" : `No loss outside the fire line on ${f.date}`;
+    if (!map.getLayer("t-outside")) return;
+    if (!any) { drop("t-outside"); b.setAttribute("aria-pressed", "false"); out(`On ${f.date} radar shows no loss outside the official fire line.`); return; }
+    map.getSource("t-outside").updateImage({ url: `data/${state.site}/${f.outside}`, coordinates: d.corners });
+    outsideText(f, pct);
+  }
+  const outsideText = (f, pct) => out(`<b>Purple: ${f.lossOutsideKm2} km²</b> where radar saw the same loss of vegetation signal <b>outside</b> the official fire line on ${f.date}: ${pct < 1 ? "less than 1" : pct}% of all loss detected that day (${100 - pct}% is inside). Drag the yellow line to compare before and after, and move the timeline to see other dates. This is <b>not proof</b> that the fire went further: logging, farming, or a perimeter drawn a little too tight can look the same. It tells an inspector where to look.`);
   function outside() {
-    const d = state.data, last = d.frames.length - 1, f = d.frames[last];
+    const d = state.data, f = d.frames[state.i];
     if (map.getLayer("t-outside")) { drop("t-outside"); q("#t-outside").setAttribute("aria-pressed", "false"); out(""); return; }
-    show(last, false);
+    if (!(f.outside && f.lossOutsideKm2 > 0)) return;
     q('[data-layer="change"]').click();
     if (!state.compare) q("#compare").click();
     map.addSource("t-outside", { type: "image", url: `data/${state.site}/${f.outside}`, coordinates: d.corners });
     map.addLayer({ id: "t-outside", type: "raster", source: "t-outside", paint: { "raster-fade-duration": 0 } }, map.getLayer("heat-old") ? "heat-old" : map.getLayer("perim") ? "perim" : undefined);
     q("#t-outside").setAttribute("aria-pressed", "true");
     if (f.outsideFocus) map.flyTo({ center: f.outsideFocus, zoom: 10.6, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1200 });
-    out(`<b>Purple: ${f.lossOutsideKm2} km²</b> where radar saw the same loss of vegetation signal <b>outside</b> the official fire line (${Math.round((f.lossOutsideKm2 / f.lossKm2) * 100)}% of all detected loss on ${f.date}). The map moved to the place with most of it. Drag the yellow line to compare before and after. This is <b>not proof</b> that the fire went further: logging, farming, or a perimeter drawn a little too tight can look the same. It tells an inspector where to look.`);
+    outsideText(f, 100 - Math.round((f.lossInsideKm2 / f.lossKm2) * 100));
   }
 
   // --- 5) Jezero: kdy v kliknutém bodě byla voda a kdy souš --------------------------------------------------------
   function pointInfo() {
     const d = state.data, box = q("#point-info");
+    if (d && d.kind === "fire" && d.event && state.point && state.cube) { whyRed(); return; }
     if (!d || d.kind !== "water" || !state.point || !state.cube) { box.innerHTML = ""; return; }
     const thr = d.analysis.waterDb, pol = d.analysis.waterPol === "HV" ? 1 : 0;
     const wet = d.frames.map((_, t) => { const v = pixel(pol, t); return v == null ? null : v < thr; });
@@ -174,6 +189,49 @@
     box.innerHTML = `<b>Water or dry land at this spot?</b><div class="strip" aria-hidden="true">${wet.map((w, t) => `<i class="${w == null ? "" : w ? "w" : "d"}${t === state.i ? " cur" : ""}" title="${d.frames[t].date}: ${w == null ? "no data" : w ? "open water" : "not open water"}"></i>`).join("")}</div>
       ${known ? `Radar saw <b>open water on ${yes.length} of ${known} passes</b>${yes.length && yes.length < known ? `: ${runs.map(([a, b]) => (a === b ? a : `${a} to ${b}`)).join(", and ")}` : yes.length ? " (always water)" : " (never open water)"}. ` : "No radar data at this spot. "}
       <span class="muted">Blue = open water (${d.analysis.waterPol} below ${thr} dB), sand = not open water. The spot is about ${Math.round((d.extentKm[0] / 128) * 1000)} m wide; water under trees does not count.</span>`;
+  }
+
+  // --- 5b) Požár: „Proč je tahle skvrna červená?“ ---------------------------------------------------------------
+  // Pro kliknuté místo spojí tři nezávislé stopy: radar (pokles signálu vegetace a jestli vydržel),
+  // žár (zachytila tu družice oheň?) a oficiální hranici požáru. Z toho složí opatrný závěr.
+  let perim = null;
+  async function rings() {
+    const d = state.data;
+    if (!d.perimeter) return null;
+    if (perim?.site === state.site) return perim.rings;
+    const gj = await (await fetch(`data/${state.site}/${d.perimeter.file}`)).json(), r = [];
+    for (const ft of gj.features) for (const poly of ft.geometry.type === "MultiPolygon" ? ft.geometry.coordinates : [ft.geometry.coordinates]) for (const ring of poly) r.push(ring);
+    perim = { site: state.site, rings: r };
+    return r;
+  }
+  // uvnitř lichého počtu prstenců = uvnitř plochy (neshořelé ostrovy jsou díry)
+  const inRings = (r, x, y) => { let c = false; for (const ring of r) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) if ((ring[i][1] > y) !== (ring[j][1] > y) && x < ((ring[j][0] - ring[i][0]) * (y - ring[i][1])) / (ring[j][1] - ring[i][1]) + ring[i][0]) c = !c; return c; };
+  async function whyRed() {
+    const d = state.data, box = q("#point-info"), a = d.analysis, pt = state.point, site = state.site, thr = a.thresholdDb;
+    const hv = d.frames.map((_, t) => pixel(1, t)), pre = hv.filter((v, t) => v != null && d.frames[t].date < d.event);
+    if (!pre.length) { box.innerHTML = `<b>What happened at this spot?</b> There is no radar measurement from before the fire here, so the change cannot be judged.`; return; }
+    const base = pre.reduce((x, y) => x + y, 0) / pre.length, dv = hv.map((v) => (v == null ? null : v - base));
+    const post = d.frames.map((_, t) => t).filter((t) => d.frames[t].date >= d.event && dv[t] != null);
+    const firstLow = post.find((t) => dv[t] < -thr), later = firstLow == null ? [] : post.filter((t) => t > firstLow), kept = later.filter((t) => dv[t] < -thr).length;
+    const lasting = firstLow != null && (!later.length || kept / later.length >= 0.6);
+    const R = Math.max(0.6, (d.extentKm[0] / 128) * 1.5), heat = Fire.near(pt.lng, pt.lat, R), r = await rings();
+    if (site !== state.site || pt !== state.point) return;
+    const inside = r ? inRings(r, pt.lng, pt.lat) : null, now = dv[state.i], red = now != null && now < -a.showDb;
+    const verdict = firstLow != null && heat?.n && lasting ? `<b class="ok">Very likely burned.</b> Three independent clues agree: a radar drop that lasted, heat detected right here${inside ? ", and the official fire line around it" : ""}.`
+      : firstLow != null && heat?.n ? `<b class="ok">Probably burned,</b> but the radar drop did not last. Low plants can grow back, and rain can change the signal for one pass.`
+      : firstLow != null && inside ? `<b>Plausibly burned.</b> Radar sees a loss inside the official fire line, but no heat was caught here. Fire can burn unseen under cloud or between two satellite passes.`
+      : firstLow != null ? `<b class="no">Probably not this fire.</b> Radar sees a loss, but no heat was detected here${inside === false ? " and the spot is outside the official fire line" : ""}. Logging, farming or noise are more likely.`
+      : heat?.n ? `<b>Burned lightly, if at all.</b> Heat was detected here, but radar shows no lasting loss. Grass and low shrubs burn without changing the L-band signal much.`
+      : `<b>Nothing points to fire at this spot.</b>`;
+    box.innerHTML = `<b>${red ? "Why is this spot red?" : "What happened at this spot?"}</b>
+      <div class="strip" aria-hidden="true">${dv.map((v, t) => `<i class="${v == null ? "" : d.frames[t].date < d.event ? "p" : v < -thr ? "l" : "d2"}${t === state.i ? " cur" : ""}" title="${d.frames[t].date}: ${v == null ? "no data" : `${v < 0 ? "−" : "+"}${Math.abs(v).toFixed(1)} dB`}"></i>`).join("")}</div>
+      <ul class="why">
+        <li><b>Radar:</b> ${now == null ? `no measurement on ${d.frames[state.i].date}` : `on ${d.frames[state.i].date} the vegetation signal (HV) here is ${now < 0 ? "−" : "+"}${Math.abs(now).toFixed(1)} dB compared with before the fire${red ? ", which is why it is drawn red" : ""}`}. ${firstLow != null ? `A drop of more than ${thr} dB first shows on ${d.frames[firstLow].date}${later.length ? ` and is still there on <b>${kept} of the ${later.length} later ${later.length === 1 ? "pass" : "passes"}</b>` : ", the latest pass"}.` : `It never dropped by more than ${thr} dB after the fire began.`}</li>
+        <li><b>Heat:</b> ${heat?.n ? `satellites detected fire within ${R.toFixed(1)} km of this spot <b>${heat.n} ${heat.n === 1 ? "time" : "times"}</b>, from ${heat.first} to ${heat.last}.` : heat ? `no heat was detected within ${R.toFixed(1)} km. The nearest detection was ${heat.nearestKm.toFixed(1)} km away (${heat.nearestDay}).` : "no heat data for this place."}</li>
+        ${inside == null ? "" : `<li><b>Official fire line:</b> this spot is <b>${inside ? "inside" : "outside"}</b> it.</li>`}
+      </ul>
+      <p class="verdict">${verdict}</p>
+      <span class="muted">Strip: one square per radar pass; grey-blue = before the fire, red = HV more than ${thr} dB lower, grey = not lower. The spot is about ${Math.round((d.extentKm[0] / 128) * 3 * 1000)} m wide, so this is a quick check, coarser than the map.</span>`;
   }
 
   // --- 6) Přenést změnu vody ve stejném měřítku nad jiné místo -----------------------------------------------------
@@ -256,6 +314,45 @@
   }
   function fvToggle() { fvOn = !fvOn; q("#fv").setAttribute("aria-pressed", fvOn); fvShow(); }
 
+  // --- 8) Příběh požáru ve třech krocích --------------------------------------------------------------------------
+  // první záchyt žáru → den s nejvíce záchyty → jak stejné místo vidí radar o měsíc později
+  let st = { n: 0, timer: null };
+  function storySteps() {
+    const d = state.data, F = Fire.facts();
+    if (!F) return null;
+    const target = Date.parse(F.days[F.first]) + 30 * 864e5;
+    let fr = -1;
+    d.frames.forEach((f, t) => { if (f.date > d.event && f.lossKm2 != null && (fr < 0 || Math.abs(Date.parse(f.date) - target) < Math.abs(Date.parse(d.frames[fr].date) - target))) fr = t; });
+    const pre = d.frames.filter((f) => f.date < d.event).at(-1), f3 = d.frames[fr], k3 = F.days.indexOf(f3.date);
+    const recent = k3 < 0 ? 0 : F.perDay.slice(Math.max(0, k3 - 2), k3 + 1).reduce((x, y) => x + y, 0), weeks = Math.round((Date.parse(f3.date) - Date.parse(F.days[F.first])) / (7 * 864e5));
+    return [
+      { go: () => { Fire.show(); if (state.compare) q("#compare").click(); Fire.setDay(F.first, true); },
+        text: `<b>1 · The first sign.</b> On ${F.days[F.first]} at ${F.firstTime} UTC a satellite detects heat here for the first time: ${F.perDay[F.first]} hot ${F.perDay[F.first] === 1 ? "spot" : "spots"} (bright dots). Radar's last look before the fire was on ${pre ? pre.date : "an earlier pass"}, so nothing is red yet.` },
+      { go: () => { Fire.show(); if (state.compare) q("#compare").click(); Fire.setDay(F.peak, true); },
+        text: `<b>2 · The worst day.</b> ${F.days[F.peak]}: <b>${F.perDay[F.peak].toLocaleString("en-US")} heat detections</b> in a single day, the most of the whole fire. Bright dots are burning today, orange ones burned in the last three days, dark red earlier.` },
+      { go: () => { show(fr, true); if (!state.compare) q("#compare").click(); if (q("#heat").getAttribute("aria-pressed") === "true") q("#heat").click(); }, // žár schovat, ať je vidět radar
+        text: `<b>3 · ${weeks} weeks after it began.</b> ${f3.date}: ${recent ? `only ${recent} heat ${recent === 1 ? "detection remains" : "detections remain"} from the last three days` : "no heat was detected in the last three days"}. The heat dots are hidden now so you can see the radar, which shows what the fire left: vegetation signal lost on <b>${f3.lossKm2} km²</b>${f3.lossInsideKm2 != null && f3.lossKm2 > 0 ? `, ${Math.round((f3.lossInsideKm2 / f3.lossKm2) * 100)}% of it inside the official fire line` : ""}. Drag the yellow line: left is before the fire, right is ${f3.date}. Then click a red patch to ask why it is red, or turn Heat back on to compare.` },
+    ];
+  }
+  function story(n = 0, auto = true) {
+    const steps = storySteps(), card = q("#storycard");
+    if (!steps) return;
+    clearTimeout(st.timer);
+    if (n === 0) { // příprava scény
+      stop(); Sim.close(); setMode(null);
+      Fire.show();
+      if (state.layer !== "change") q('[data-layer="change"]').click();
+      const F = Fire.facts();
+      map.fitBounds(F.bbox, { padding: 70, maxZoom: 11, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 900 });
+    }
+    st.n = n;
+    steps[n].go();
+    card.hidden = false;
+    card.innerHTML = `<p>${steps[n].text}</p><div class="tools">${n > 0 ? `<button data-story="${n - 1}">‹ Back</button>` : ""}${n < steps.length - 1 ? `<button data-story="${n + 1}" class="primary">Next ›</button>` : `<button data-story="0">Play again</button>`}<button data-story="close">Close</button></div>`;
+    if (auto && n < steps.length - 1) st.timer = setTimeout(() => story(n + 1, true), 8000);
+  }
+  function storyEnd() { clearTimeout(st.timer); q("#storycard").hidden = true; }
+
   // --- napojení -------------------------------------------------------------------------------------------------
   map.on("click", (e) => {
     if (mode === "area") { pts.push(e.lngLat); areaDraw(); }
@@ -283,11 +380,15 @@
     q("#t-ghost").hidden = d.kind !== "water";
     q("#fv").hidden = d.kind !== "water"; fvCache.clear();
     if (map.getLayer("t-fv")) map.removeLayer("t-fv"); if (map.getSource("t-fv")) map.removeSource("t-fv");
-    q("#t-outside").hidden = !(last.outside && last.lossOutsideKm2 > 0);
     q("#t-outside").setAttribute("aria-pressed", "false");
-    if (!q("#t-outside").hidden) q("#t-outside").textContent = `Show the other ${Math.max(1, Math.round((last.lossOutsideKm2 / last.lossKm2) * 100))}%: loss outside the fire line`;
+    outsideLabel();
+    storyEnd();
+    q("#fire-story").hidden = !(d.kind === "fire" && d.hotspots);
+    q("#point-hint").textContent = d.kind === "fire" ? "Click a red patch on the map to ask why it is red. You also get its own chart and sound." : d.kind === "water" ? "Click anywhere by the lake to see when that spot was water and when it was dry." : "Click anywhere on the radar image to chart and hear that exact spot.";
   });
-  document.addEventListener("de:show", () => { pointInfo(); fvShow(); });
+  document.addEventListener("de:show", () => { pointInfo(); fvShow(); outsideLabel(); });
+  q("#fire-story").onclick = () => story(0);
+  q("#storycard").onclick = (e) => { const b = e.target.closest("[data-story]"); if (!b) return; if (b.dataset.story === "close") storyEnd(); else story(+b.dataset.story, false); };
   q("#fv").onclick = fvToggle;
   if (state.data) document.dispatchEvent(new Event("de:site"));
 })();

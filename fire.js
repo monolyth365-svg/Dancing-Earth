@@ -106,6 +106,34 @@ window.Fire = (() => {
     return true;
   }
 
+  // --- pomocné funkce pro ostatní části aplikace ---
+  const stamp = (p) => Date.parse(`${H.days[p[0]]}T${p[1] || "00:00"}:00Z`);
+  // Detekce žáru v okruhu km kolem bodu: kolik, kdy poprvé a naposled, a jak daleko je nejbližší
+  function near(lng, lat, km) {
+    if (!H) return null;
+    const c = Math.cos((lat * Math.PI) / 180), res = { n: 0, first: null, last: null, nearestKm: Infinity, nearestDay: null };
+    for (const p of H.points) {
+      const d = Math.hypot((p[2] - lng) * c, p[3] - lat) * 111.32;
+      if (d < res.nearestKm) { res.nearestKm = d; res.nearestDay = H.days[p[0]]; }
+      if (d > km) continue;
+      res.n++; res.first ??= `${H.days[p[0]]} ${p[1]} UTC`; res.last = `${H.days[p[0]]} ${p[1]} UTC`;
+    }
+    return res;
+  }
+  // Detekce z prvních hodin požáru (pro porovnání se simulací)
+  function early(hours) {
+    if (!H || !H.points.length) return [];
+    const t0 = stamp(H.points[0]);
+    return H.points.filter((p) => stamp(p) - t0 <= hours * 36e5).map((p) => [p[2], p[3]]);
+  }
+  // Základní fakta o průběhu požáru (pro „příběh požáru“)
+  function facts() {
+    if (!H || !H.points.length) return null;
+    let w = 180, e = -180, s = 90, n = -90;
+    for (const p of H.points) { if (p[2] < w) w = p[2]; if (p[2] > e) e = p[2]; if (p[3] < s) s = p[3]; if (p[3] > n) n = p[3]; }
+    return { days: H.days, perDay: H.perDay, first: H.first, peak: H.perDay.indexOf(Math.max(...H.perDay)), last: H.last, firstTime: H.points[0][1], bbox: [[w, s], [e, n]] };
+  }
+
   const legend = () => (!H || !shown ? "" : `<div class="heatleg"><b>Heat seen by satellite (VIIRS)</b>
     <span><i style="background:#fff7b0;border:1px solid #ff5a1f"></i>on the selected day</span><span><i style="background:#ff8a1f"></i>1–3 days earlier</span><span><i style="background:#8c2a17"></i>earlier: burned over</span>
     <em>Points are single detections at the moment the satellite passed, not a temperature map.</em></div>`);
@@ -115,5 +143,5 @@ window.Fire = (() => {
     el("#fire-day").oninput = (e) => setDay(+e.target.value, true);
   }
 
-  return { attach, clear, sync, setDay, play, hit, legend, bind, playable: () => !!H && shown, day: () => (H ? H.days[day] : null), info: () => H && { first: H.days[H.first], last: H.days[H.last], count: H.points.length } };
+  return { attach, clear, sync, setDay, play, hit, legend, bind, near, early, facts, show: () => { visible(true); document.dispatchEvent(new Event("fire-legend")); }, playable: () => !!H && shown, day: () => (H ? H.days[day] : null), info: () => H && { first: H.days[H.first], last: H.days[H.last], count: H.points.length } };
 })();

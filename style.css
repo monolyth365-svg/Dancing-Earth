@@ -304,3 +304,15 @@ body.tooling .maplibregl-canvas { cursor: crosshair !important; }
 .fvnote { margin: 8px 0 0; padding: 8px 10px; border: 1px solid #2f6b35; border-radius: 3px; background: rgba(110,255,120,.06); }
 .fvnote:empty { display: none; }
 .fvnote b { color: #9dffa4; font-weight: 600; }
+
+/* Why is this spot red? / story of the fire */
+.strip i.p { background: #5d7691; } .strip i.l { background: #ff4632; } .strip i.d2 { background: #6b7280; }
+.why { margin: 6px 0; padding-left: 18px; }
+.why li { margin-bottom: 4px; }
+.pointinfo b { color: var(--text); font-weight: 600; }
+.pointinfo .verdict { margin: 6px 0; padding: 6px 8px; border-left: 3px solid var(--accent); background: rgba(255,255,255,.04); }
+.pointinfo .ok { color: #7bd88f; } .pointinfo .no { color: #ff8a6b; }
+#fire-story { width: 100%; margin-bottom: 10px; }
+.storycard p { margin: 0 0 10px; }
+.storycard b { color: var(--text); }
+#toolbar button:disabled { opacity: .5; cursor: default; }
