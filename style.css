@@ -253,14 +253,14 @@ body.storm #head, body.storm > main .side > .insight, body.storm > main .side > 
 .heatleg + .warn { margin-top: 6px; }
 
 /* Big 3D Earth */
-.g3d { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; background: #000; }
+.g3d { position: absolute; inset: 0; background: #000; isolation: isolate; } /* v ploše mapy, vedle pravého panelu */
 #g3d-view { position: absolute; inset: 0; }
-.g3d-card { position: absolute; top: 12px; left: 12px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; background: rgba(14,17,21,.9); border: 1px solid #3a414c; border-radius: 6px; padding: 12px 14px 14px; }
+.g3d-card { position: absolute; z-index: 6; top: 54px; right: 12px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 66px); overflow: auto; background: rgba(14,17,21,.94); border: 1px solid #3a414c; border-radius: 6px; padding: 12px 14px 14px; }
 .g3d-card .tools { margin-top: 8px; gap: 6px; }
 .g3d-card .tools button { font-size: 12px; padding: 5px 9px; }
 .g3d-card .hint b { color: var(--text); font-weight: 600; }
 .g3d .cesium-viewer-bottom { font-size: 10px; }
-@media (max-width: 700px) { .g3d-card { top: auto; bottom: 12px; max-height: 46%; } .g3d-card .hint { display: none; } }
+@media (max-width: 700px) { .g3d-card .hint { display: none; } }
 
 /* What-if simulation */
 #sim-open { margin-top: 10px; width: 100%; border-color: #ff8a1f; color: #ffb066; }
@@ -358,10 +358,15 @@ body.live #panel .credits[data-in], body.storm #panel .credits[data-in] { displa
 @media (max-width: 860px) { .loader { left: 50%; } }
 .menu .fresh { color: #7bd88f; font-weight: 600; }
 
-/* Radar image picked on the 3D Earth */
-.g3d-radar { margin-top: 10px; padding: 10px 12px; }
-.g3d-radar h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
-.g3d-radar p { margin: 0 0 6px; font-size: 13px; color: #c3c8cf; }
-.g3d-radar p b { color: var(--text); }
-.g3d-radar .status { min-height: 0; margin: 4px 0 6px; font-size: 12px; }
-.g3d-radar .tools { margin-top: 4px; }
+
+/* 3D Earth as a second view of the same app */
+.g3d-bar { position: absolute; z-index: 6; top: 12px; right: 12px; display: flex; gap: 6px; }
+.g3d-bar button { background: rgba(11,13,16,.85); font-size: 13px; padding: 6px 10px; }
+.g3d-bar button[aria-expanded="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+body.view3d .mapui { top: 54px; right: 12px; } /* horní řádek patří tlačítkům 3D pohledu */
+.globebtn[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: rgba(233,185,73,.12); }
+.g3d-pop { position: absolute; z-index: 2; transform: translate(-50%, calc(-100% - 14px)); width: max-content; max-width: 260px; background: #12151a; color: #e8eaed; border: 1px solid #3a414c; border-radius: 4px; padding: 10px 28px 10px 12px; font-size: 12px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+.g3d-pop::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; background: #12151a; border-right: 1px solid #3a414c; border-bottom: 1px solid #3a414c; transform: translateX(-50%) rotate(45deg); }
+.g3d-pop [data-close] { position: absolute; top: 2px; right: 2px; border: 0; padding: 2px 8px; font-size: 16px; color: #e8eaed; }
+.g3d-pop .src { color: var(--muted); }
+#map { isolation: isolate; } /* ovládání a značky ploché mapy zůstanou pod 3D pohledem */

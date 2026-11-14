@@ -8,7 +8,7 @@ window.Fire = (() => {
 
   function clear() {
     H = null;
-    popup?.remove();
+    popup?.remove(); window.Globe3D?.popup(null);
     if (!map) return;
     for (const l of ["heat-now", "heat-glow", "heat-recent", "heat-old"]) if (map.getLayer(l)) map.removeLayer(l);
     if (map.getSource("heat")) map.removeSource("heat");
@@ -46,7 +46,7 @@ window.Fire = (() => {
     shown = v;
     el("#heat").setAttribute("aria-pressed", v);
     for (const l of ["heat-now", "heat-glow", "heat-recent", "heat-old"]) if (map.getLayer(l)) map.setLayoutProperty(l, "visibility", v ? "visible" : "none");
-    if (!v) popup?.remove();
+    if (!v) { popup?.remove(); window.Globe3D?.popup(null); }
   }
 
   // Sloupečky: kolik detekcí žáru bylo který den
@@ -100,9 +100,10 @@ window.Fire = (() => {
     const f = map.queryRenderedFeatures([[e.point.x - 4, e.point.y - 4], [e.point.x + 4, e.point.y + 4]], { layers: ["heat-now", "heat-recent", "heat-old"].filter((l) => map.getLayer(l)) })[0];
     if (!f) return false;
     const p = H.points[f.properties.n];
-    popup?.remove();
-    popup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px" }).setLngLat([p[2], p[3]])
-      .setHTML(`<b>Heat detected</b><br>${H.days[p[0]]} at ${p[1]} UTC (${p[7] === "D" ? "daytime" : "night"} pass)<br>Sensor: VIIRS on ${p[6]}, 375 m pixel<br>Fire radiative power: ${p[4]} MW<br>Confidence: ${CONF[p[5]] || p[5]}<br><span class="src">Source: NASA FIRMS via GIBS</span>`).addTo(map);
+    const html = `<b>Heat detected</b><br>${H.days[p[0]]} at ${p[1]} UTC (${p[7] === "D" ? "daytime" : "night"} pass)<br>Sensor: VIIRS on ${p[6]}, 375 m pixel<br>Fire radiative power: ${p[4]} MW<br>Confidence: ${CONF[p[5]] || p[5]}<br><span class="src">Source: NASA FIRMS via GIBS</span>`;
+    popup?.remove(); popup = null;
+    if (window.Globe3D?.on) Globe3D.popup({ lng: p[2], lat: p[3] }, html); // ve 3D pohledu bublina nad zeměkoulí
+    else popup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px" }).setLngLat([p[2], p[3]]).setHTML(html).addTo(map);
     return true;
   }
 

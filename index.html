@@ -16,37 +16,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css?v=1794674704" rel="stylesheet">
+<link href="style.css?v=1794677289" rel="stylesheet">
 </head>
 <body>
 <a class="skip" href="#panel">Skip to data panel</a>
 <header class="top">
   <div class="brand">Dancing Earth <span class="sub">Surface change seen and heard with NISAR radar</span></div>
-  <button id="globe-btn" class="globebtn" aria-expanded="false" aria-controls="orbit" title="Where NISAR and other satellites are right now" hidden>
-    <canvas id="globe-mini" aria-hidden="true"></canvas><span>NISAR<br>now</span>
+  <button id="globe-btn" class="globebtn" aria-pressed="false" aria-expanded="false" title="Switch between the flat map and the 3D Earth with satellites" hidden>
+    <canvas id="globe-mini" aria-hidden="true"></canvas><span>3D<br>Earth</span>
   </button>
   <nav id="sites" class="sites" aria-label="Study areas"></nav>
 </header>
 
 <div id="menu" class="menu" hidden></div>
-
-<section id="g3d" class="g3d" aria-label="3D Earth with satellites" hidden>
-  <div id="g3d-view"></div>
-  <div class="g3d-card">
-    <div class="orbit-head"><h2>Earth and its satellites, right now</h2><button id="g3d-close" aria-label="Close">✕</button></div>
-    <div class="g3d-pick">Follow a satellite</div>
-    <div id="g3d-sats" class="g3d-sats" role="group" aria-label="Satellite to follow"></div>
-    <p id="g3d-text" class="orbit-text" role="status" aria-live="off"></p>
-    <div class="tools">
-      <button id="g3d-whole">Whole Earth</button>
-      <button id="g3d-beside">Fly beside NISAR</button>
-      <button id="g3d-fast" aria-pressed="false">Speed up time ×300</button>
-      <button id="g3d-light" aria-pressed="false">Day and night</button>
-    </div>
-    <div id="g3d-radar" class="detail g3d-radar" hidden></div>
-    <p class="hint"><b>Tap any place on land</b> to load its newest NISAR radar image. <b>Drag</b> turns the Earth (or circles around the satellite you follow), <b>scroll or pinch</b> zooms right down to the ground, <b>Ctrl + drag</b> or two fingers tilt the view. The surface sharpens as you zoom in: only the part you look at is loaded. Earth, orbits, heights and the radar beam are to scale; each satellite has its own simplified model built from its real layout, enlarged about 4,000 times (the ISS about 450 times). Imagery: NASA Blue Marble and Landsat mosaic. Orbits: CelesTrak.</p>
-  </div>
-</section>
 
 <section id="orbit" class="orbit" aria-label="Satellites around Earth right now" hidden>
   <div class="orbit-head"><h2>Satellites around Earth right now</h2><button id="orbit-close" aria-label="Close">✕</button></div>
@@ -65,6 +47,10 @@
 <main class="layout">
   <section class="mapwrap" aria-label="Map">
     <div id="map" role="application" aria-label="Map with radar imagery. Use the controls below the map to change layer and date."></div>
+    <section id="g3d" class="g3d" aria-label="3D Earth showing the same content as the flat map" hidden>
+      <div id="g3d-view"></div>
+      <div id="g3d-pop" class="g3d-pop" role="status" hidden></div>
+    </section>
     <div class="mapui">
       <div class="layers" role="group" aria-label="Map layer">
         <button data-layer="hh" aria-pressed="true" title="HH radar image: surface roughness and water">HH</button>
@@ -99,6 +85,23 @@
         <button id="intro-live">Show Live world</button>
         <button id="intro-close">Explore on my own</button>
       </div>
+    </div>
+    <div id="g3d-bar" class="g3d-bar" hidden>
+      <button id="g3d-sat-toggle" aria-expanded="false" aria-controls="g3d-card">Satellites ▾</button>
+      <button id="g3d-close" title="Back to the flat map">Flat map</button>
+    </div>
+    <div id="g3d-card" class="g3d-card" hidden>
+      <div class="orbit-head"><h2>Earth and its satellites, right now</h2><button id="g3d-card-close" aria-label="Hide this panel">✕</button></div>
+      <div class="g3d-pick">Follow a satellite</div>
+      <div id="g3d-sats" class="g3d-sats" role="group" aria-label="Satellite to follow"></div>
+      <p id="g3d-text" class="orbit-text" role="status" aria-live="off"></p>
+      <div class="tools">
+        <button id="g3d-whole">Whole Earth</button>
+        <button id="g3d-beside">Fly beside NISAR</button>
+        <button id="g3d-fast" aria-pressed="false">Speed up time ×300</button>
+        <button id="g3d-light" aria-pressed="false">Day and night</button>
+      </div>
+      <p class="hint"><b>Everything on the flat map works here too:</b> pick a topic at the top, use the layers, the timeline and the tools, and tap the radar image to chart a spot. <b>Tap far away from the current place</b> to load the newest NISAR image there. <b>Drag</b> turns the Earth (or circles the satellite you follow), <b>scroll or pinch</b> zooms down to the ground, <b>Ctrl + drag</b> or two fingers tilt the view. Earth, orbits, heights and the radar beam are to scale; the satellite models are simplified and enlarged about 4,000 times (the ISS about 450 times). Imagery: NASA Blue Marble and Landsat mosaic. Orbits: CelesTrak.</p>
     </div>
   </section>
 
@@ -211,19 +214,19 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="loader.js?v=1794674704"></script>
-<script src="catalog.js?v=1794674704"></script>
-<script src="stories.js?v=1794674704"></script>
-<script src="sound.js?v=1794674704"></script>
-<script src="satellite.min.js?v=1794674704"></script>
-<script src="sats.js?v=1794674704"></script>
-<script src="globe3d.js?v=1794674704"></script>
-<script src="globe.js?v=1794674704"></script>
-<script src="storm.js?v=1794674704"></script>
-<script src="fire.js?v=1794674704"></script>
-<script src="sim.js?v=1794674704"></script>
-<script src="live.js?v=1794674704"></script>
-<script src="app.js?v=1794674704"></script>
-<script src="tools.js?v=1794674704"></script>
+<script src="loader.js?v=1794677289"></script>
+<script src="catalog.js?v=1794677289"></script>
+<script src="stories.js?v=1794677289"></script>
+<script src="sound.js?v=1794677289"></script>
+<script src="satellite.min.js?v=1794677289"></script>
+<script src="sats.js?v=1794677289"></script>
+<script src="globe3d.js?v=1794677289"></script>
+<script src="globe.js?v=1794677289"></script>
+<script src="storm.js?v=1794677289"></script>
+<script src="fire.js?v=1794677289"></script>
+<script src="sim.js?v=1794677289"></script>
+<script src="live.js?v=1794677289"></script>
+<script src="app.js?v=1794677289"></script>
+<script src="tools.js?v=1794677289"></script>
 </body>
 </html>

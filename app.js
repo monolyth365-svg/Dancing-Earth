@@ -28,11 +28,28 @@ const map = new maplibregl.Map({
     layers: [{ id: "base", type: "raster", source: "base", paint: { "raster-brightness-max": 0.55, "raster-saturation": -0.4 } }],
   },
   center: [0, 20], zoom: 1.5, attributionControl: { compact: true },
+  preserveDrawingBuffer: true, // 3D pohled si z plátna mapy bere obraz, který pokládá na zeměkouli
 });
 // Při rychlém přehrávání se starý snímek zahodí dřív, než se načte – to není chyba
 map.on("error", (e) => { if (e.error?.name !== "AbortError") console.error(e.error); });
 map.dragRotate.disable(); map.touchZoomRotate.disableRotation(); // sever je vždy nahoře
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+// 3D pohled (globe3d.js) ukazuje totéž co plochá mapa. Proto:
+//  • každý záměrný přesun ploché mapy (přiblížení na místo, přelet k bodu) zopakuje i kamera zeměkoule,
+//  • po každém dokončeném překreslení se obsah mapy promítne na zeměkouli.
+let moving3d = false;
+for (const fn of ["fitBounds", "flyTo"]) {
+  const orig = map[fn].bind(map);
+  map[fn] = (a, b) => {
+    if (!window.Globe3D?.on || moving3d) return orig(a, b);
+    moving3d = true;
+    map.once("moveend", () => Globe3D.lookAt(map.getBounds()));
+    try { return fn === "fitBounds" ? orig(a, { ...b, duration: 0 }) : orig({ ...a, duration: 0 }, b); } finally { moving3d = false; }
+  };
+}
+map.on("idle", () => { if (window.Globe3D?.on) Globe3D.mirror(); });
+function v3() { return window.Globe3D?.on ? "&view=3d" : ""; } // přípona odkazu ke sdílení
 
 // Odkaz ke sdílení: stav aplikace je v adrese za znakem #
 const readHash = () => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
@@ -43,6 +60,7 @@ function writeHash() {
   if (state.customBase) p.set("ref", state.data.frames[state.base].date);
   if (Fire.day()) p.set("day", Fire.day());
   if (state.point) p.set("pt", `${state.point.lng.toFixed(4)},${state.point.lat.toFixed(4)}`);
+  if (window.Globe3D?.on) p.set("view", "3d");
   history.replaceState(null, "", "#" + p);
 }
 
@@ -73,7 +91,10 @@ async function init() {
   Storm.bind(map);
   Globe.init();
   const h = readHash(), first = state.sites.some((s) => s.id === h.site) ? h.site : state.sites[0].id;
-  const go = () => ("live" in h ? goLive(h.live) : h.storm ? goStorm(h.storm, h.t) : loadSite(first, h));
+  const go = () => {
+    "live" in h ? goLive(h.live) : h.storm ? goStorm(h.storm, h.t) : loadSite(first, h);
+    if (h.view === "3d") Globe3D.toggle().catch(() => {}); // odkaz byl sdílen se zapnutým 3D pohledem
+  };
   // Úvod se ukáže jen při první návštěvě bez odkazu na konkrétní pohled
   let seen = false;
   try { seen = localStorage.getItem("de-intro") === "1"; } catch { /* soukromé okno */ }

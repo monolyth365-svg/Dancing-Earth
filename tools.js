@@ -30,7 +30,8 @@
     if (map.getSource(id)) map.removeSource(id);
   }
   function setMode(m, btn) {
-    mode = m; window.DE_TOOL = !!m;
+    mode = m; window.DE_TOOL = !!m; window.DE_TRACE = m === "trace";
+    document.dispatchEvent(new Event("de:tool")); // 3D pohled při kreslení čáry zamkne kameru
     document.body.classList.toggle("tooling", !!m);
     document.querySelectorAll("#toolbar button").forEach((b) => b.setAttribute("aria-pressed", b === btn && !!m));
     if (m !== "trace") map.dragPan.enable();
@@ -97,7 +98,7 @@
   }
   function traceMove(e) {
     if (mode !== "trace" || !tr?.down) return;
-    const b = map.getCanvas().getBoundingClientRect(), ll = map.unproject([e.clientX - b.left, e.clientY - b.top]), [x, y] = toPx(ll);
+    const b = map.getCanvas().getBoundingClientRect(), ll = e.lngLat || map.unproject([e.clientX - b.left, e.clientY - b.top]), [x, y] = toPx(ll); // e.lngLat posílá 3D pohled
     tr.path.push([ll.lng, ll.lat]);
     let v = 0;
     if (x >= 0 && y >= 0 && x < 512 && y < 512) { const k = Math.floor(y) * 512 + Math.floor(x); if (tr.r.ok[k]) v = tr.r.diff[k]; }
@@ -239,7 +240,7 @@
     if (mode === "ghost") { setMode(null); out(""); return; }
     setMode("ghost", q("#t-ghost"));
     if (!map.getSource("t-labels")) { // názvy měst, aby šlo najít vlastní město
-      map.addSource("t-labels", { type: "raster", tileSize: 256, maxzoom: 13, tiles: ["https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png"], attribution: "Labels: NASA GIBS, © OpenStreetMap contributors" });
+      map.addSource("t-labels", { type: "raster", tileSize: 256, maxzoom: 9, tiles: ["https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png"], attribution: "Labels: NASA GIBS, © OpenStreetMap contributors" });
       map.addLayer({ id: "t-labels", type: "raster", source: "t-labels" });
     }
     out(`Zoom out, find your town (place names are now shown) and <b>click on it</b>. The water change will be drawn there at the same scale. <button data-act="ghost-here">Use my location</button><button data-act="ghost-cancel">Cancel</button>`);
@@ -361,6 +362,8 @@
   const cvs = map.getCanvasContainer();
   cvs.addEventListener("pointerdown", traceDown); cvs.addEventListener("pointermove", traceMove);
   addEventListener("pointerup", traceUp); addEventListener("pointercancel", traceUp);
+  // totéž tažení ve 3D pohledu: polohu na zeměkouli posílá globe3d.js
+  document.addEventListener("de:trace3d", (e) => { const d = e.detail; if (d.type === "down") traceDown({ lngLat: d.lngLat }); else if (d.type === "move") traceMove({ lngLat: d.lngLat }); else traceUp(); });
   q("#t-area").onclick = areaStart; q("#t-trace").onclick = traceStart; q("#t-quiz").onclick = quiz; q("#t-outside").onclick = outside; q("#t-ghost").onclick = ghostStart;
   q("#tool-out").onclick = (e) => {
     const a = e.target.closest("[data-act]")?.dataset.act; if (!a) return;
