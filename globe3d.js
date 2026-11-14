@@ -80,16 +80,41 @@ window.Globe3D = (() => {
         billboard: { image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(Sats.icon(s, 96)), width: nisar ? 46 : 38, height: nisar ? 46 : 38, alignedAxis: new C.CallbackProperty(() => st(s)?.fwd, false), distanceDisplayCondition: new C.DistanceDisplayCondition(2.2e6, Number.MAX_VALUE) },
         label: { text: s.name, font: '500 13px "JetBrains Mono", monospace', pixelOffset: new C.Cartesian2(28, 0), horizontalOrigin: C.HorizontalOrigin.LEFT, fillColor: C.Color.WHITE, outlineColor: C.Color.BLACK, outlineWidth: 4, style: C.LabelStyle.FILL_AND_OUTLINE },
       });
-      // Zblízka prostorový náčrt: tělo, solární panely, u NISARu rameno a velká anténa na levé straně.
-      // Staví se JEDNOU a pak se jen posouvá (modelMatrix) – dřív se přestavoval každý snímek a obraz se sekal.
-      const gold = C.Color.fromCssColorString("#dcae3f"), blue = C.Color.fromCssColorString("#2b4fa8"), vf = C.PerInstanceColorAppearance.VERTEX_FORMAT;
-      const at = (f, l, u) => C.Matrix4.fromTranslation(new C.Cartesian3(f * SCALE, l * SCALE, u * SCALE));
-      const box = (f, l, u, x, y, z, color) => new C.GeometryInstance({ geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(x * SCALE, y * SCALE, z * SCALE), vertexFormat: vf }), modelMatrix: at(f, l, u), attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(color) } });
-      const inst = [box(0, 0, 0, 2.6, 1.8, 1.8, gold)];
-      if (nisar) {
-        inst.push(box(4.2, 0, 0, 5, 2.4, 0.12, blue), box(-4.2, 0, 0, 5, 2.4, 0.12, blue), box(0, 5, 0.4, 0.3, 8.5, 0.3, C.Color.LIGHTGRAY));
-        inst.push(new C.GeometryInstance({ geometry: new C.EllipsoidGeometry({ radii: new C.Cartesian3(6 * SCALE, 6 * SCALE, 0.9 * SCALE), vertexFormat: vf, stackPartitions: 16, slicePartitions: 24 }), modelMatrix: at(0, 11, -0.6), attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString("#e8c766")) } }));
-      } else inst.push(box(0, 4.6, 0, 2.2, 6, 0.12, blue), box(0, -4.6, 0, 2.2, 6, 0.12, blue));
+      // Zblízka prostorový model podle skutečného uspořádání každé družice (zjednodušený, z jednoduchých těles).
+      // Staví se JEDNOU a pak se jen posouvá (modelMatrix). Osy modelu: x = směr letu, y = vlevo, z = od Země.
+      const k = (s._k = s.id === "iss" ? 450 : SCALE), vf = C.PerInstanceColorAppearance.VERTEX_FORMAT, inst = [];
+      const hue = (h) => C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(h));
+      const place = (f, l, u, rot) => (rot ? C.Matrix4.fromRotationTranslation(rot, new C.Cartesian3(f * k, l * k, u * k)) : C.Matrix4.fromTranslation(new C.Cartesian3(f * k, l * k, u * k)));
+      const rx = (deg) => C.Matrix3.fromRotationX(C.Math.toRadians(deg)), ry = (deg) => C.Matrix3.fromRotationY(C.Math.toRadians(deg));
+      const box = (f, l, u, x, y, z, color, rot) => inst.push(new C.GeometryInstance({ geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(x * k, y * k, z * k), vertexFormat: vf }), modelMatrix: place(f, l, u, rot), attributes: { color: hue(color) } }));
+      const tube = (f, l, u, len, r, color, rot) => inst.push(new C.GeometryInstance({ geometry: new C.CylinderGeometry({ length: len * k, topRadius: r * k, bottomRadius: r * k, slices: 14, vertexFormat: vf }), modelMatrix: place(f, l, u, rot), attributes: { color: hue(color) } }));
+      const dish = (f, l, u, r, thick, color, rot) => inst.push(new C.GeometryInstance({ geometry: new C.EllipsoidGeometry({ radii: new C.Cartesian3(r * k, r * k, thick * k), vertexFormat: vf, stackPartitions: 12, slicePartitions: 20 }), modelMatrix: place(f, l, u, rot), attributes: { color: hue(color) } }));
+      const GOLD = "#dcae3f", BLUE = "#2b4fa8", GREY = "#c9ced6", WHITE = "#f2f4f7", DARK = "#3b4250", ALONG = ry(90), ACROSS = rx(90); // válec podél letu / napříč
+      s._len = 3; // polovina délky modelu ve směru letu (m), kvůli šipce
+      if (s.id === "nisar") { // tělo, dva solární panely, 9m rameno a 12m síťová anténa vlevo (radar se dívá vlevo)
+        box(0, 0, 0, 2.6, 1.8, 1.8, GOLD); box(4.2, 0, 0, 5, 2.4, 0.12, BLUE); box(-4.2, 0, 0, 5, 2.4, 0.12, BLUE);
+        box(0, 5, 0.4, 0.3, 8.5, 0.3, GREY); dish(0, 11, -0.6, 6, 0.9, "#e8c766"); box(0, 1.6, -1.2, 1.6, 1.2, 0.6, WHITE); s._len = 7;
+      } else if (s.id === "iss") { // 109m příčný nosník, osm křídel solárních panelů, moduly podél směru letu, radiátory
+        box(0, 0, 0, 2.5, 96, 2.5, GREY);
+        for (const y of [-44, -30, 30, 44]) for (const x of [-20, 20]) box(x, y, 0, 34, 11.5, 0.25, "#c9822b");
+        tube(4, 0, -4, 46, 2.2, WHITE, ALONG); tube(-26, 0, -4, 13, 2.1, GREY, ALONG);
+        tube(22, 0, -4, 24, 2.2, WHITE, ACROSS); tube(8, 0, -8.5, 7, 2.1, WHITE);
+        box(-9, 10, -2, 13, 3.4, 0.2, WHITE, rx(55)); box(-9, -10, -2, 13, 3.4, 0.2, WHITE, rx(-55)); s._len = 38;
+      } else if (s.id === "swot") { // dvě radarové antény na koncích 10m stožáru napříč letu, solární křídla vpředu a vzadu
+        box(0, 0, 0.4, 2.2, 2.2, 3, GOLD); box(0, 0, -1.6, 0.25, 10, 0.25, GREY);
+        box(0, 5, -1.6, 5, 0.25, 1.3, WHITE, rx(-20)); box(0, -5, -1.6, 5, 0.25, 1.3, WHITE, rx(20));
+        box(5.2, 0, 1, 7.5, 2.6, 0.1, BLUE); box(-5.2, 0, 1, 7.5, 2.6, 0.1, BLUE); s._len = 9;
+      } else if (s.id === "landsat9") { // jedno dlouhé solární křídlo na jedné straně, bílý přístroj dole
+        box(0, 0, 0, 3.2, 2.4, 2.4, GOLD); box(0.4, 0, -1.7, 1.8, 1.6, 1, WHITE); box(0, 2.2, 0.4, 0.2, 2, 0.2, GREY); box(0, 7.6, 0.4, 2.6, 9, 0.1, BLUE); tube(-1.2, -0.8, 1.9, 1.4, 0.12, GREY); dish(-1.2, -0.8, 2.7, 0.7, 0.2, WHITE);
+      } else if (s.id === "sentinel1a") { // 12m plochá radarová anténa podél letu a dvě solární křídla napříč
+        box(0, 0, 0, 3.4, 2.4, 2.4, GOLD); box(0, 1.5, -1.3, 12.3, 0.25, 0.9, WHITE, rx(-25)); box(0, 7.4, 0.6, 2, 10, 0.1, BLUE); box(0, -7.4, 0.6, 2, 10, 0.1, BLUE); s._len = 6.5;
+      } else if (s.id === "sentinel6") { // tvar „domečku“: solární panely tvoří šikmou střechu
+        box(0, 0, -0.5, 5.1, 2.3, 1.2, GOLD); box(0, 0.75, 0.55, 5.1, 2.1, 0.1, BLUE, rx(38)); box(0, -0.75, 0.55, 5.1, 2.1, 0.1, BLUE, rx(-38)); dish(1.4, 0, -1.4, 0.6, 0.25, WHITE); box(-2.9, 0, -0.3, 0.7, 0.9, 0.9, DARK);
+      } else if (s.id === "terra") { // velké autobusové tělo, jedno solární křídlo, anténa na stožáru
+        box(0, 0, 0, 6.8, 3.5, 3.5, GOLD); box(0, 2.6, 0.8, 0.25, 1.8, 0.25, GREY); box(0, 8.2, 0.8, 5, 9.5, 0.1, BLUE); tube(2, -0.6, 2.8, 2.2, 0.12, GREY); dish(2, -0.6, 4, 0.9, 0.25, WHITE); box(-1, 0, -2.1, 3, 2, 0.8, WHITE); s._len = 4;
+      } else { // NOAA-20 a Suomi NPP (stejná stavba): podlouhlé tělo, jedno solární křídlo, přístroje dole
+        box(0, 0, 0, 4.4, 2.2, 2.2, s.id === "snpp" ? "#b9bec7" : GOLD); box(0, 2, 0.5, 0.2, 1.8, 0.2, GREY); box(0, 6.6, 0.5, 3.2, 8, 0.1, BLUE, rx(12)); box(0.8, 0, -1.5, 1.6, 1.4, 0.8, WHITE); box(-1.2, 0, -1.4, 1, 1, 0.6, DARK);
+      }
       s._model = viewer.scene.primitives.add(new C.Primitive({ geometryInstances: inst, appearance: new C.PerInstanceColorAppearance({ closed: true, translucent: false }), asynchronous: false }));
       // šipka směru letu a dráha (plná = posledních 50 minut, čárkovaná = dalších 50) – čáry v jedné společné sadě
       s._arrow = lines.add({ width: 10, material: C.Material.fromType("PolylineArrow", { color: col }) });
@@ -105,7 +130,8 @@ window.Globe3D = (() => {
       for (const s of sats) {
         const S = st(s); if (!S) continue;
         s._model.modelMatrix = frame(S);
-        s._arrow.positions = [offset(S, 2, 0, 0), offset(S, 14, 0, 0)];
+        const a0 = (s._len * s._k + 9000) / SCALE; // šipka začíná před přídí modelu
+        s._arrow.positions = [offset(S, a0, 0, 0), offset(S, a0 + 11, 0, 0)];
       }
       const S = st(n);
       if (S?.p.edges) { rays.forEach((r, k) => { r.positions = [S.pos, ground(S, k)]; }); base.positions = [ground(S, 0), ground(S, RAYS - 1)]; }
