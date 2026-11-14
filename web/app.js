@@ -57,6 +57,7 @@ async function init() {
   $("#help").onclick = () => intro(true);
   $("#sites").onclick = (e) => { const s = e.target.dataset.site; if (s === "live") goLive(); else if (s) loadSite(s); };
   Live.bind(map);
+  Globe.init();
   const h = readHash(), first = state.sites.some((s) => s.id === h.site) ? h.site : state.sites[0].id;
   const go = () => ("live" in h ? goLive(h.live) : loadSite(first, h));
   // Úvod se ukáže jen při první návštěvě bez odkazu na konkrétní pohled

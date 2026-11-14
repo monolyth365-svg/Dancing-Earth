@@ -103,14 +103,36 @@ window.Live = (() => {
   // Náhledový snímek a jeho zeměpisné rohy čteme přímo z NASA
   function loadPass(p) {
     if (cache.has(p.granuleName)) return cache.get(p.granuleName);
-    const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml"));
-    const job = !png || !kml ? Promise.reject(new Error("no browse")) : Promise.all([
-      fetch(kml).then((r) => r.text()),
+    const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml") && u.includes("/BROWSE/"));
+    const job = !png ? Promise.reject(new Error("no browse")) : Promise.all([
+      kml ? fetch(kml).then((r) => (r.ok ? r.text() : "")).catch(() => "") : "",
       fetch(png).then((r) => r.blob()).then((b) => createImageBitmap(new Blob([b], { type: "image/png" }))),
     ]).then(([txt, bmp]) => {
-      const c = txt.match(/<coordinates>([^<]+)</)[1].trim().split(/\s+/).map((x) => x.split(",").map(Number)); // LL, LR, UR, UL
-      const lons = c.map((x) => x[0]), lats = c.map((x) => x[1]);
-      return { bmp, coords: [c[3], c[2], c[1], c[0]], w: Math.min(...lons), e: Math.max(...lons), s: Math.min(...lats), n: Math.max(...lats) };
+      const m = txt.match(/<coordinates>([^<]+)</);
+      let w, e, s2, n, approx = false;
+      if (m) {
+        const c = m[1].trim().split(/\s+/).map((x) => x.split(",").map(Number)); // LL, LR, UR, UL
+        const lons = c.map((x) => x[0]), lats = c.map((x) => x[1]);
+        [w, e, s2, n] = [Math.min(...lons), Math.max(...lons), Math.min(...lats), Math.max(...lats)];
+      } else {
+        // Některé (předběžné) produkty mají soubor s rohy jen po přihlášení. Pak polohu odhadneme:
+        // obrys snímku z katalogu se přiloží na neprázdnou část obrázku.
+        const pts = (p.wkt.match(/-?\d+(\.\d+)?\s+-?\d+(\.\d+)?/g) || []).map((t) => t.trim().split(/\s+/).map(Number));
+        if (pts.length < 3) throw new Error("no footprint");
+        const k = Math.min(1, 500 / Math.max(bmp.width, bmp.height)), cv = canvas(Math.round(bmp.width * k), Math.round(bmp.height * k)), cx = cv.getContext("2d");
+        cx.drawImage(bmp, 0, 0, cv.width, cv.height);
+        const d = cx.getImageData(0, 0, cv.width, cv.height).data;
+        let x0 = cv.width, x1 = -1, y0 = cv.height, y1 = -1;
+        for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) {
+          const q = (y * cv.width + x) * 4;
+          if (d[q] + d[q + 1] + d[q + 2] >= 30) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        if (x1 <= x0 || y1 <= y0) throw new Error("empty image");
+        const lons = pts.map((t) => t[0]), lats = pts.map((t) => t[1]);
+        const dx = (Math.max(...lons) - Math.min(...lons)) / (x1 + 1 - x0), dy = (Math.max(...lats) - Math.min(...lats)) / (y1 + 1 - y0);
+        w = Math.min(...lons) - x0 * dx; e = w + cv.width * dx; n = Math.max(...lats) + y0 * dy; s2 = n - cv.height * dy; approx = true;
+      }
+      return { bmp, coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
     });
     job.catch(() => cache.delete(p.granuleName));
     cache.set(p.granuleName, job);
@@ -146,7 +168,7 @@ window.Live = (() => {
       cx.putImageData(im, 0, 0);
       put(cv, A.coords);
       if (i === 0 || !map.getBounds().contains(marker.getLngLat())) map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
-      st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC`;
+      st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC${A.approx ? " · placed on the map approximately (provisional product)" : ""}`;
     } catch (e) {
       if (id === reqId) st.textContent = "This radar image could not be loaded. Try another date.";
     }

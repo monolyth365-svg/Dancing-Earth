@@ -20,6 +20,7 @@ Pick a place, then watch, compare and listen:
   - click an event, or any place on land, to load the newest NISAR quick-look radar image of that spot, with earlier passes to flip through and an estimate of the next pass;
   - one button compares two passes of the same track, colours what changed and plays it as music;
   - satellites overhead right now (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A) with their direction, their path for the last and next 50 minutes, and the strip NISAR's radar is looking at. The strip was checked against real NISAR images.
+- **Live globe** – the small globe in the top right corner opens a 3D view of Earth with the satellites at their true height, their orbits, and NISAR's radar beam reaching the ground, all drawn to scale and updated live. It says whether the radar is looking at day or night (it works in both), and time can be sped up ×300.
 - **Start here** – a short welcome card explains the app in four steps on the first visit (the "?" button reopens it).
 - **Dashboard** – a plain-English sentence generated from the data ("what happened"), three key numbers for the selected date, and a chart.
 - **Click any spot** on the image to get the time series of that exact place.
@@ -109,6 +110,7 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 ### Other data and tools
 
 - NIFC (US National Interagency Fire Center) WFIGS Interagency Fire Perimeters, year to date – https://data-nifc.opendata.arcgis.com/ (service: https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_YearToDate/FeatureServer/0)
+- NASA GIBS Blue Marble Next Generation, used as the surface of the live globe (`web/earth.jpg`) – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `BlueMarble_NextGeneration`)
 - CelesTrak, orbital elements (TLE) of the satellites shown in Live world – https://celestrak.org/
 - satellite.js 5.0.0 (MIT), SGP4 orbit propagation in the browser – https://github.com/shashwatak/satellite-js
 - MapLibre GL JS 4.7.1 (BSD-3-Clause) – https://maplibre.org/
