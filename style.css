@@ -272,3 +272,9 @@ body.storm #head, body.storm > main .side > .insight, body.storm > main .side > 
 .sim .hint b { color: var(--text); font-weight: 600; }
 .sim details { margin-top: 6px; font-size: 13px; }
 .sim summary { cursor: pointer; }
+
+.g3d-pick { font: 500 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 8px 0 5px; }
+.g3d-sats { display: flex; flex-wrap: wrap; gap: 5px; }
+.g3d-sats button { font-size: 12px; padding: 4px 8px; display: flex; align-items: center; gap: 6px; }
+.g3d-sats i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.g3d-sats button[aria-pressed="true"] { background: var(--text); color: var(--bg); }

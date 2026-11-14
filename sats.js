@@ -30,6 +30,7 @@ window.Sats = (() => {
   }
 
   const load = () => (loading ??= doLoad());
+  const onMap = () => sats.filter((s) => !s.extra);
   async function doLoad() {
     meta = await (await fetch("data/tle.json")).json();
     // Dráhové údaje stárnou: po třech dnech zkusit čerstvé přímo z CelesTrak (když to nejde, zůstanou přibalené)
@@ -73,7 +74,7 @@ window.Sats = (() => {
   // Čáry drah a pruh radaru (přepočítává se jednou za čas, ne každou vteřinu)
   function tracks(t0) {
     const lines = [], swath = [];
-    for (const s of sats) {
+    for (const s of onMap()) {
       let seg = [], prev = null, part = "past", prevEdges = null;
       const flush = () => { if (seg.length > 1) lines.push({ type: "Feature", properties: { color: s.color, part }, geometry: { type: "LineString", coordinates: seg } }); seg = []; };
       for (let dt = -SPAN; dt <= SPAN; dt += STEP) {
@@ -109,7 +110,7 @@ window.Sats = (() => {
       lastTracks = +t;
     }
     const rows = [];
-    for (const s of sats) {
+    for (const s of onMap()) {
       const p = now(s, t);
       if (!p) continue;
       s.marker.setLngLat([p.lng, p.lat]);
@@ -136,7 +137,7 @@ window.Sats = (() => {
       map.addLayer({ id: "sat-future", type: "line", source: "sat-lines", filter: ["==", ["get", "part"], "future"], paint: { "line-color": ["get", "color"], "line-width": 1.2, "line-opacity": 0.4, "line-dasharray": [2, 3] } }, before);
       map.addLayer({ id: "sat-beam", type: "line", source: "sat-beam", paint: { "line-color": "#ffe9a8", "line-width": 3, "line-opacity": 0.9 } }, before);
     }
-    for (const s of sats) {
+    for (const s of onMap()) {
       if (!s.marker) {
         const box = Object.assign(document.createElement("div"), { className: "sat" });
         s.arrow = Object.assign(document.createElement("div"), { className: "sat-icon", innerHTML: icon(s) });

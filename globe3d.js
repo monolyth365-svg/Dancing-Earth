@@ -6,6 +6,7 @@ window.Globe3D = (() => {
   const BASE = "https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/", SCALE = 4000, el = (s) => document.querySelector(s);
   const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/";
   let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, swath = null;
+  let sel = null, track = null, spot = null; // vybraná družice; kamera letí s ní (track) nebo stojí na zemi a dívá se na ni (spot)
 
   const loadLib = () => (loading ??= new Promise((ok, bad) => {
     window.CESIUM_BASE_URL = BASE;
@@ -48,6 +49,8 @@ window.Globe3D = (() => {
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
 
     sats = Sats.all();
+    sel = sats[0];
+    el("#g3d-sats").innerHTML = sats.map((x) => `<button data-sat3="${x.id}" aria-pressed="${x === sel}" title="${x.role}"><i style="background:${x.color}"></i>${x.name}</button>`).join("");
     for (const s of sats) {
       const col = C.Color.fromCssColorString(s.color), nisar = s.id === "nisar";
       viewer.entities.add({ // zdálky obrázek se šipkou směru letu a popisek
@@ -79,6 +82,7 @@ window.Globe3D = (() => {
     swath = viewer.entities.add({ polygon: { hierarchy: new C.PolygonHierarchy([]), material: C.Color.fromCssColorString("#e9b949").withAlpha(0.35), height: 0 } });
 
     viewer.clock.onTick.addEventListener(() => {
+      follow();
       const real = performance.now();
       if (real - lastSlow < (viewer.clock.multiplier > 1 ? 400 : 3000)) return;
       lastSlow = real;
@@ -91,32 +95,75 @@ window.Globe3D = (() => {
       const nearE = [], farE = [];
       for (let dt = -12 * 60; dt <= 0; dt += 30) { const p = Sats.at(n, new Date(t + dt * 1000)); if (p?.edges) { nearE.push(cart(p.edges[0][0], p.edges[0][1])); farE.push(cart(p.edges[1][0], p.edges[1][1])); } }
       swath.polygon.hierarchy = new C.PolygonHierarchy(nearE.concat(farE.reverse()));
-      el("#g3d-text").innerHTML = Globe.describeAt(new Date(t), viewer.clock.multiplier > 1 ? viewer.clock.multiplier : 0);
+      el("#g3d-text").innerHTML = describe(new Date(t));
     });
     whole(0);
   }
 
-  // Tři pohledy kamery
-  function free() { viewer.trackedEntity = undefined; viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); }
+  // Popis vybrané družice: kde je, jak vysoko a kam letí
+  const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+  function describe(date) {
+    const sim = viewer.clock.multiplier > 1 ? viewer.clock.multiplier : 0;
+    if (sel === sats[0]) return Globe.describeAt(date, sim);
+    const p = Sats.at(sel, date); if (!p) return "";
+    const v = satellite.propagate(sel.rec, date).velocity, kms = v ? Math.hypot(v.x, v.y, v.z) : null;
+    return `${sim ? `<b class="sim">Simulated time ×${sim}: ${date.toISOString().slice(0, 16).replace("T", " ")} UTC (not live)</b><br>` : ""}<b>${sel.name}</b> is over ${Math.abs(p.lat).toFixed(1)}°${p.lat >= 0 ? "N" : "S"} ${Math.abs(p.lng).toFixed(1)}°${p.lng >= 0 ? "E" : "W"}, ${Math.round(p.alt)} km up, flying ${COMPASS[Math.round((((p.head % 360) + 360) % 360) / 45) % 8]}${kms ? ` at ${kms.toFixed(1)} km/s` : ""}. ${sel.role}.`;
+  }
+
+  // Pohledy kamery. „Vedle družice“ = kamera letí s družicí (myší jde kolem ní kroužit a přibližovat);
+  // „ze země“ = kamera stojí na zemi a otáčí se za družicí, dokud je nad obzorem.
+  const frame = (S) => C.Matrix4.fromRotationTranslation(new C.Matrix3(S.fwd.x, S.left.x, S.up.x, S.fwd.y, S.left.y, S.up.y, S.fwd.z, S.left.z, S.up.z), S.pos);
+  function free() { track = null; spot = null; viewer.trackedEntity = undefined; viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); }
   function whole(sec = 1.5) {
     free();
-    const S = st(sats[0]); if (!S) return;
-    // kamera na straně, kam se dívá radar, aby byl paprsek vidět z boku
+    const S = st(sel); if (!S) return;
+    // kamera na levé straně dráhy (u NISARu strana, kam se dívá radar), aby byla družice vidět z boku
     const c = C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.up, 0.55, new C.Cartesian3()), C.Cartesian3.multiplyByScalar(S.left, 0.83, new C.Cartesian3()), new C.Cartesian3());
     viewer.camera.flyTo({ destination: C.Cartesian3.multiplyByScalar(C.Cartesian3.normalize(c, c), 2.6e7, new C.Cartesian3()), duration: sec });
   }
-  function beside() { // zblízka z boku: družice, paprsek a země pod ní
+  function beside() {
     free();
-    const S = st(sats[0]); if (!S) return;
-    const dest = C.Cartesian3.add(S.pos, C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.fwd, -1.1e6, new C.Cartesian3()), C.Cartesian3.add(C.Cartesian3.multiplyByScalar(S.left, -5e5, new C.Cartesian3()), C.Cartesian3.multiplyByScalar(S.up, 2.5e5, new C.Cartesian3()), new C.Cartesian3()), new C.Cartesian3()), new C.Cartesian3());
-    const target = C.Cartesian3.add(S.pos, C.Cartesian3.multiplyByScalar(S.up, -3.5e5, new C.Cartesian3()), new C.Cartesian3());
-    aim(dest, target, S.up, 1.5);
+    const S = st(sel); if (!S) return;
+    track = sel;
+    viewer.camera.lookAtTransform(frame(S), new C.Cartesian3(-9.5e5, -4.5e5, 2.6e5)); // za družicí, vpravo od ní a kousek nad ní
   }
-  function below() { // ze země pod paprskem: pohled vzhůru na družici
+  // Místo na zemi, odkud se díváme: u NISARu pod paprskem radaru, jinak 350 km za bodem pod družicí
+  function groundSpot(S) {
+    if (sel === sats[0] && S.p.edges) { const e = S.p.edges; return cart((e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2, 6); }
+    const g = C.Cartographic.fromCartesian(C.Cartesian3.subtract(S.pos, C.Cartesian3.multiplyByScalar(S.fwd, 3.5e5, new C.Cartesian3()), new C.Cartesian3()));
+    return C.Cartesian3.fromRadians(g.longitude, g.latitude, 6000);
+  }
+  function below() {
     free();
-    const S = st(sats[0]); if (!S) return;
-    const e = S.p.edges, dest = cart((e[0][0] + e[1][0]) / 2, (e[0][1] + e[1][1]) / 2, 6);
-    aim(dest, S.pos, C.Cartesian3.normalize(dest, new C.Cartesian3()), 2);
+    const S = st(sel); if (!S) return;
+    spot = groundSpot(S);
+    follow();
+  }
+  // Každý snímek: kamera se drží vybrané družice
+  function follow() {
+    const S = (track || spot) && st(sel);
+    if (!S) return;
+    if (track) { // posunout vztažnou soustavu s družicí a zachovat polohu kamery vůči ní (jinak by družice kameře uletěla)
+      const cam = viewer.camera, p = C.Cartesian3.clone(cam.position), d = C.Cartesian3.clone(cam.direction), u = C.Cartesian3.clone(cam.up);
+      cam.lookAtTransform(frame(S));
+      C.Cartesian3.clone(p, cam.position); C.Cartesian3.clone(d, cam.direction); C.Cartesian3.clone(u, cam.up); C.Cartesian3.cross(d, u, cam.right);
+      return;
+    }
+    const up = C.Cartesian3.normalize(spot, new C.Cartesian3());
+    let dir = C.Cartesian3.normalize(C.Cartesian3.subtract(S.pos, spot, new C.Cartesian3()), new C.Cartesian3());
+    if (C.Cartesian3.dot(dir, up) < 0.14) { // družice klesla k obzoru (pod 8°) → přesunout se pod ni
+      spot = groundSpot(S);
+      dir = C.Cartesian3.normalize(C.Cartesian3.subtract(S.pos, spot, new C.Cartesian3()), new C.Cartesian3());
+    }
+    const right = C.Cartesian3.normalize(C.Cartesian3.cross(dir, C.Cartesian3.normalize(spot, new C.Cartesian3()), new C.Cartesian3()), new C.Cartesian3());
+    viewer.camera.setView({ destination: spot, orientation: { direction: dir, up: C.Cartesian3.cross(right, dir, new C.Cartesian3()) } });
+  }
+  function pick(id) {
+    sel = sats.find((x) => x.id === id) || sats[0];
+    document.querySelectorAll("[data-sat3]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.sat3 === sel.id));
+    el("#g3d-beside").textContent = `Fly beside ${sel.name}`;
+    el("#g3d-text").innerHTML = describe(now());
+    beside();
   }
   function aim(dest, target, upHint, sec) {
     const dir = C.Cartesian3.normalize(C.Cartesian3.subtract(target, dest, new C.Cartesian3()), new C.Cartesian3());
@@ -134,6 +181,7 @@ window.Globe3D = (() => {
       try { await loadLib(); await Sats.load(); C = window.Cesium; build(); }
       catch (e) { box.hidden = true; open = false; el("#globe-btn").setAttribute("aria-expanded", "false"); throw e; }
     } else { viewer.clock.currentTime = C.JulianDate.now(); viewer.clock.multiplier = 1; viewer.useDefaultRenderLoop = true; whole(0); }
+    el("#g3d-beside").textContent = `Fly beside ${sel.name}`;
     el("#g3d-fast").setAttribute("aria-pressed", "false"); el("#g3d-fast").textContent = "Speed up time ×300";
     el("#g3d-close").focus();
   }
@@ -147,6 +195,7 @@ window.Globe3D = (() => {
     el("#g3d-close").onclick = hide;
     el("#g3d-whole").onclick = () => whole();
     el("#g3d-beside").onclick = beside;
+    el("#g3d-sats").onclick = (e) => { const b = e.target.closest("[data-sat3]"); if (b) pick(b.dataset.sat3); };
     el("#g3d-below").onclick = below;
     el("#g3d-light").onclick = (e) => { const v = !viewer.scene.globe.enableLighting; viewer.scene.globe.enableLighting = v; e.target.setAttribute("aria-pressed", v); };
     el("#g3d-fast").onclick = (e) => {
