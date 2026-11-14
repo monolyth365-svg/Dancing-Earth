@@ -68,6 +68,7 @@ async function init() {
   document.addEventListener("click", (e) => { if (state.menu >= 0 && !e.target.closest("#menu, #sites")) menu(-1); });
   Live.bind(map);
   Fire.bind();
+  Sim.bind();
   document.addEventListener("fire-legend", () => state.data && legend());
   Storm.bind(map);
   Globe.init();
@@ -149,6 +150,7 @@ async function loadSite(id, opts = {}) {
   stop();
   Live.exit();
   Storm.exit();
+  Sim.close();
   state.site = id;
   const d = state.data = await (await fetch(`data/${id}/series.json`)).json();
   markNav(`site:${id}`);
@@ -214,7 +216,7 @@ async function loadSite(id, opts = {}) {
     if (isFinite(lng) && isFinite(lat)) setPoint({ lng, lat });
   }
   $("#insight").textContent = insight(d) + cloudNote(d);
-  Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); });
+  Fire.attach(map, id, d, (j, sound) => show(j, !!sound)).then(() => { if (state.site !== id) return; Fire.sync(opts.day || d.frames[state.i].date); legend(); writeHash(); Sim.attach(map, d); });
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";

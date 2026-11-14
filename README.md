@@ -9,8 +9,13 @@ Built for the NASA Space Apps Challenge 2026, challenge **"Dancing with the SARs
 
 ## What it does
 
-Pick a place, then watch, compare and listen:
+Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, and watch, compare and listen. For every phenomenon the app keeps apart what is *seen* on the image and what is *known about the cause*.
 
+- **Compare any image with any other** – choose any pass as the reference image; the Change layer, the Before / after slider and the time-lapse then compare every other date with it, computed in the browser. The map stays where you put it.
+- **Fire seen two ways** – radar shows the burned area; a Heat layer shows where satellites (VIIRS) detected fire on each day. A day slider replays the spread; click a point for the time of detection, satellite, radiated power and source.
+- **Hurricane at its real size** – centre, track and the reach of three wind strengths in each quarter of the storm (so its asymmetry is visible), category, wind, pressure, reach of high waves, and the satellite photo of that day.
+- **"What if…" simulation** – change wind direction and speed and see how a simple fire-spread model changes from the same ignition point, next to the real-wind result and the real detections. Clearly labelled as a simulation.
+- **3D Earth** – a globe whose surface sharpens as you zoom (only the part you look at is loaded), with the satellites as 3D sketches, their orbits and NISAR's radar beam; you can fly beside NISAR or look up at it from the ground.
 - **Change map** – a coloured layer shows where the radar signal dropped or rose.
 - **Before / after slider** – swipe between the reference pass and any later pass.
 - **Optical layer** – a photo from a camera satellite (NASA VIIRS) taken on the same day. With the slider it sits next to the radar image, so you can see the clouds that radar looks through. A camera saw mostly cloud on 29 of the 77 radar pass days (rough estimate).
@@ -33,6 +38,7 @@ Pick a place, then watch, compare and listen:
 | --- | --- | --- |
 | Tonlé Sap, Cambodia | Water – monsoon flood pulse | Open water mapped from HV grows from about 1,040 km² to about 1,570 km² between June and October 2026 |
 | Poyang Lake, China | Water – a lake that empties | Open water mapped from HV shrinks from summer to autumn as the lake drains into the Yangtze |
+| Hurricane Isaias, Gulf of Mexico | Hurricane – wind and waves | Track, category 3 peak, wind reach 333 km to the north-east but 167 km to the south-west (NOAA NHC data, no radar) |
 | Shingle Fire, Oregon, USA | Wildfire – burn scar | HV drops inside the fire; 96 % of the detected loss lies inside the official fire perimeter |
 | Big Grass Fire, Oregon, USA | Wildfire – limit of the method | A large grass fire that L-band radar barely sees (about 5–9 % of the official burn area) |
 | Rondônia, Brazil | Forest clearing | HV loss and gain between dual-pol passes |
@@ -55,9 +61,10 @@ Pick a place, then watch, compare and listen:
 4. **Open water** = smoothed HV below −24 dB. HV is used because wind makes water bright in HH (visible on 18 August 2026 over Tonlé Sap) but not in HV.
 5. **Fire validation** – the detected HV loss is compared with the official fire perimeter (NIFC), which is not used in the detection itself.
 6. `pipeline/fetch_optical.py` downloads the VIIRS true-colour image of the same calendar day from NASA GIBS, resamples it to the radar grid and makes a rough cloud estimate (share of bright, colourless pixels).
-7. `pipeline/fetch_tle.py` downloads orbital elements (TLE) from CelesTrak; the browser turns them into live satellite positions with the SGP4 model (satellite.js).
-8. `pipeline/update_sites.py` and `.github/workflows/update.yml` re-run the pipeline once a day on GitHub, so new NISAR passes appear in the app automatically (needs an `EARTHDATA_TOKEN` repository secret; without it only the orbits are refreshed).
-9. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
+7. `pipeline/fetch_hotspots.py` downloads VIIRS active-fire detections (NASA FIRMS via GIBS vector tiles) for the fire sites; `pipeline/fetch_wind.py` adds the real first-day wind (Open-Meteo / ERA5) and the first-day reach of the fire for the what-if model; `pipeline/fetch_storms.py` parses NOAA NHC best-track files.
+8. `pipeline/fetch_tle.py` downloads orbital elements (TLE) from CelesTrak; the browser turns them into live satellite positions with the SGP4 model (satellite.js).
+9. `pipeline/update_sites.py` and `.github/workflows/update.yml` re-run the pipeline once a day on GitHub, so new NISAR passes appear in the app automatically (needs an `EARTHDATA_TOKEN` repository secret; without it only the orbits are refreshed).
+10. `pipeline/make_cube.py` packs all passes into a small binary cube used for click-to-chart and for the sound.
 
 All thresholds are listed in the app under "Method and limits" for each place.
 
@@ -69,6 +76,9 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Area numbers are approximate (pixel size 78–195 m, simple thresholds).
 - The optical photo is from the same calendar day, not the same hour, and its cloud percentage is a rough estimate that smoke, haze, fog or bright ground can confuse.
 - Live world works with NASA's quick-look images, which are not calibrated, so its change map is a rough visual comparison, not a measurement. Satellite positions are computed from orbital elements and are good to a few kilometres; the radar strip shows where the radar points, not whether it is recording. "Right now" for radar images means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate.
+- The what-if fire simulation is a teaching model (ellipse on flat ground, uniform fuel, steady wind), calibrated only to the first day's reach; it is not a forecast.
+- Heat detections are single 375 m pixels at the moment of a satellite overpass; cloud and thick smoke can hide a fire, and they are not a temperature map.
+- Hurricane wind reach is the largest distance in each quarter, every 6 hours, from preliminary best-track data.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
@@ -105,12 +115,18 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - NASA GIBS (Global Imagery Browse Services), Blue Marble Next Generation basemap – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg (docs: https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
 - NASA GIBS, VIIRS NOAA-20 Corrected Reflectance (True Color), daily optical images for the Optical layer – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `VIIRS_NOAA20_CorrectedReflectance_TrueColor`)
 - NISAR GCOV browse (quick-look) images and KML footprints, NASA ASF DAAC, read live in the Live world mode – https://nisar.asf.earthdatacloud.nasa.gov/
+- NASA FIRMS / GIBS, VIIRS Thermal Anomalies 375 m (NOAA-20, Suomi NPP), active-fire detections – https://www.earthdata.nasa.gov/data/tools/firms (tiles: https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/)
+- NASA GIBS, Landsat WELD true-colour mosaic (30 m), detail imagery of the 3D Earth – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/
 - NASA EONET (Earth Observatory Natural Event Tracker), used to find the wildfires and read live for the event map – https://eonet.gsfc.nasa.gov/api/v3/events
 
 ### Other data and tools
 
 - NIFC (US National Interagency Fire Center) WFIGS Interagency Fire Perimeters, year to date – https://data-nifc.opendata.arcgis.com/ (service: https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_YearToDate/FeatureServer/0)
 - NASA GIBS Blue Marble Next Generation, used as the surface of the live globe (`web/earth.jpg`) – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `BlueMarble_NextGeneration`)
+- NOAA National Hurricane Center, ATCF best-track files (track, wind, pressure, wind and wave radii) – https://ftp.nhc.noaa.gov/atcf/btk/
+- Open-Meteo historical weather API (ERA5 reanalysis), real wind for the what-if simulation – https://open-meteo.com/
+- CesiumJS 1.123 (Apache-2.0), 3D globe engine – https://cesium.com/platform/cesiumjs/
+- Canadian Forest Fire Behaviour Prediction System (Forestry Canada 1992), length-to-breadth and wind relations used in the what-if model – https://cwfis.cfs.nrcan.gc.ca/background/summary/fbp
 - CelesTrak, orbital elements (TLE) of the satellites shown in Live world – https://celestrak.org/
 - satellite.js 5.0.0 (MIT), SGP4 orbit propagation in the browser – https://github.com/shashwatak/satellite-js
 - MapLibre GL JS 4.7.1 (BSD-3-Clause) – https://maplibre.org/

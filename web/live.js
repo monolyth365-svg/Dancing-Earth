@@ -11,7 +11,7 @@ window.Live = (() => {
   const cat = (id) => CATS[id] || ["Other", "#9aa2ad"];
   const el = (s) => document.querySelector(s);
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let map, events = null, passes = [], reqId = 0, on = false, cur = 0;
+  let map, events = null, passes = [], reqId = 0, on = false, cur = 0, fitted = false, lapse = null;
   const cache = new Map(); // stažené náhledy (jeden má kolem 4 MB), ať se při přepínání nestahují znovu
   const marker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 
@@ -66,6 +66,7 @@ window.Live = (() => {
   // Vybrané místo: zeptat se archivu ASF, které přelety NISAR nad ním existují
   async function pick(ll, title, ev) {
     const id = ++reqId;
+    fitted = false; lapse = null;
     marker.setLngLat(ll).addTo(map);
     history.replaceState(null, "", `#live=${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}`);
     const head = `<h2>${esc(title)}</h2><p class="mono meta">${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°${ev ? ` · ${cat(ev.cat)[0]} · reported ${ev.date}` : ""}${ev?.link ? ` · <a href="${esc(ev.link)}" target="_blank" rel="noopener">source</a>` : ""}</p>`;
@@ -93,7 +94,8 @@ window.Live = (() => {
       <p>${res.length >= 60 ? "60 or more" : res.length} NISAR radar products cover this spot. Newest: <b>${passes[0].startTime.slice(0, 10)}</b>. Next pass expected around <b>${new Date(next).toISOString().slice(0, 10)}</b> (estimate from the 12-day repeat).</p>
       <div class="passes" role="group" aria-label="Radar passes, newest first">${passes.map((p, i) => `<button data-pass="${i}" aria-pressed="false">${p.startTime.slice(0, 10)}</button>`).join("")}</div>
       <p class="status" id="live-img-status" role="status"></p>
-      <button id="live-diff" class="primary">♪ What changed since the pass before? Show and play it</button>
+      <label class="pick">Compare this image with <select id="live-ref" aria-label="Pass to compare with"></select></label>
+      <div class="tools"><button id="live-diff" class="primary">♪ Show what changed and play it</button><button id="live-lapse">▶ Play all passes of this track</button></div>
       <p class="status" id="live-diff-status" role="status"></p>
       <p class="hint">Click the dates to flip between passes and spot what changed. Colours are NASA's quick-look composite of the HH and HV channels: brighter means a stronger radar echo; water and smooth ground are dark.</p>`;
     showPass(0);
@@ -131,11 +133,14 @@ window.Live = (() => {
         const dx = (Math.max(...lons) - Math.min(...lons)) / (x1 + 1 - x0), dy = (Math.max(...lats) - Math.min(...lats)) / (y1 + 1 - y0);
         w = Math.min(...lons) - x0 * dx; e = w + cv.width * dx; n = Math.max(...lats) + y0 * dy; s2 = n - cv.height * dy; approx = true;
       }
-      return { bmp, coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
+      // uchovat jen zmenšený snímek (max. 1000 px): časosběr drží v paměti víc přeletů najednou
+      const k = Math.min(1, 1000 / Math.max(bmp.width, bmp.height)), small = canvas(Math.round(bmp.width * k), Math.round(bmp.height * k));
+      small.getContext("2d").drawImage(bmp, 0, 0, small.width, small.height); bmp.close?.();
+      return { bmp: small, coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
     });
     job.catch(() => cache.delete(p.granuleName));
     cache.set(p.granuleName, job);
-    if (cache.size > 6) cache.delete(cache.keys().next().value);
+    if (cache.size > 16) cache.delete(cache.keys().next().value);
     return job;
   }
   function put(cv, coords) {
@@ -166,7 +171,8 @@ window.Live = (() => {
       for (let j = 0; j < a.length; j += 4) if (a[j] + a[j + 1] + a[j + 2] < 10) a[j + 3] = 0;
       cx.putImageData(im, 0, 0);
       put(cv, A.coords);
-      if (i === 0 || !map.getBounds().contains(marker.getLngLat())) map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
+      refs();
+      if (!fitted || !map.getBounds().contains(marker.getLngLat())) fitted = true, map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
       st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC${A.approx ? " · placed on the map approximately (provisional product)" : ""}`;
     } catch (e) {
       if (id === reqId) st.textContent = "This radar image could not be loaded. Try another date.";
@@ -176,8 +182,8 @@ window.Live = (() => {
   // Co se změnilo mezi dvěma přelety stejné dráhy: rozdíl jasu obou náhledů, spočítaný v prohlížeči, a přehraný jako hudba
   async function diff() {
     const a = passes[cur], st = el("#live-diff-status");
-    const j = passes.findIndex((p, k) => k > cur && p.path === a.path && p.frame === a.frame && p.flightDirection === a.flightDirection);
-    if (j < 0) { st.textContent = "There is no earlier pass on the same track in this list to compare with. Try a newer date."; return; }
+    const j = +el("#live-ref").value;
+    if (!(j >= 0) || !passes[j]) { st.textContent = "There is no other pass on the same track in this list to compare with. Try another date."; return; }
     const id = ++reqId, b = passes[j];
     Sonify.resume();
     st.textContent = `Comparing ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}…`;
@@ -223,6 +229,24 @@ window.Live = (() => {
       if (id === reqId) st.textContent = "The comparison could not be made. Try another date.";
     }
   }
+  // Přelety stejné dráhy jako právě zobrazený (jen ty jdou poctivě porovnat – stejný úhel pohledu)
+  const sameTrack = (a) => passes.map((p, k) => k).filter((k) => passes[k].path === a.path && passes[k].frame === a.frame && passes[k].flightDirection === a.flightDirection);
+  function refs() {
+    const ks = sameTrack(passes[cur]).filter((k) => k !== cur), sel = el("#live-ref"), keep = sel.value;
+    sel.innerHTML = ks.map((k) => `<option value="${k}">${passes[k].startTime.slice(0, 10)}${k > cur ? " (earlier)" : " (later)"}</option>`).join("");
+    sel.value = ks.includes(+keep) ? keep : ks.find((k) => k > cur) ?? ks[0] ?? "";
+    el("#live-lapse").disabled = ks.length < 1;
+  }
+  // Časosběr: všechny přelety stejné dráhy od nejstaršího po nejnovější, mapa zůstává na místě
+  async function timelapse() {
+    const b = el("#live-lapse");
+    if (lapse) { lapse = null; b.textContent = "▶ Play all passes of this track"; return; }
+    const ks = sameTrack(passes[cur]).reverse(), token = (lapse = {});
+    b.textContent = "■ Stop";
+    for (const k of ks) { if (lapse !== token) return; await showPass(k); await new Promise((r) => setTimeout(r, 1100)); }
+    if (lapse === token) { lapse = null; b.textContent = "▶ Play all passes of this track"; }
+  }
+
   // Průměr z okolí 5×5 potlačí radarový šum (speckle)
   function blur(a, ok, N) {
     const out = new Float32Array(N * N), R = 2;
@@ -253,6 +277,7 @@ window.Live = (() => {
       const b = e.target.closest("[data-pass]");
       if (b) showPass(+b.dataset.pass);
       else if (e.target.closest("#live-diff")) diff();
+      else if (e.target.closest("#live-lapse")) timelapse();
     };
   }
 
