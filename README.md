@@ -3,7 +3,9 @@
 An interactive web app that shows **and plays** how Earth's surface changes, using L-band radar data from the NASA-ISRO **NISAR** satellite.
 Built for the NASA Space Apps Challenge 2026, challenge **"Dancing with the SARs"**.
 
-**Live app:** _link will be added after publishing_
+**Live app:** https://monolyth365-svg.github.io/Dancing-Earth/
+
+**Source code:** https://github.com/monolyth365-svg/Dancing-Earth
 
 ## What it does
 
