@@ -1,7 +1,10 @@
 // Tancující Země: ukazatel, že se něco načítá (radarový snímek z NASA, nové místo, 3D zeměkoule…).
-// Použití: const done = Loader.show("text"); … done();   Více načítání najednou se sčítá; zmizí po posledním.
+// Pod textem běží čára průběhu:
+//   • když víme, kolik je staženo (např. velký radarový snímek), ukazuje skutečný podíl zleva doprava;
+//   • když jen čekáme na odpověď (např. dotaz do archivu NASA), běží čára dokola – délku čekání znát nejde.
+// Použití:  const done = Loader.show("text");  done.progress(0.4);  …  done();
 window.Loader = (() => {
-  let box = null, n = 0, since = 0, timer = null;
+  let box = null, tasks = [], since = 0, timer = null;
   function make() {
     box = document.createElement("div");
     box.className = "loader"; box.hidden = true;
@@ -18,27 +21,63 @@ window.Loader = (() => {
           <circle cx="29" cy="34" r="2.1" fill="#0b0d10"/><circle cx="41" cy="34" r="2.1" fill="#0b0d10"/>
           <path d="M29 42q6 5 12 0" fill="none" stroke="#0b0d10" stroke-width="2" stroke-linecap="round"/>
         </g>
-      </svg><span class="ld-text"></span>`;
+      </svg><span class="ld-col"><span class="ld-text"></span><span class="ld-row" aria-hidden="true"><span class="ld-bar"><i></i></span><span class="ld-pct"></span></span></span>`;
     document.body.append(box);
+  }
+  // Ukazuje se vždy poslední spuštěné načítání
+  function render() {
+    const t = tasks.at(-1);
+    if (!t) return;
+    const bar = box.querySelector(".ld-bar"), known = t.p != null;
+    box.querySelector(".ld-text").textContent = t.text;
+    bar.classList.toggle("unknown", !known);
+    bar.firstChild.style.width = known ? `${Math.round(t.p * 100)}%` : "";
+    box.querySelector(".ld-pct").textContent = known ? `${Math.round(t.p * 100)}%` : "";
   }
   function show(text = "Loading…") {
     if (!box) make();
-    n++;
-    box.querySelector(".ld-text").textContent = text;
+    const task = { text, p: null };
+    tasks.push(task);
     clearTimeout(timer);
     if (box.hidden) { box.hidden = false; since = performance.now(); }
-    let finished = false;
+    render();
+    let finished = false, guard;
     const done = () => { // zavolat, až je hotovo; ukazatel zůstane vidět aspoň půl vteřiny, aby neproblikl
       if (finished) return;
-      finished = true;
-      if (--n > 0) return;
-      n = 0;
-      timer = setTimeout(() => { if (n === 0) box.hidden = true; }, Math.max(0, 500 - (performance.now() - since)));
+      finished = true; clearTimeout(guard);
+      tasks = tasks.filter((x) => x !== task);
+      if (tasks.length) { render(); return; }
+      const bar = box.querySelector(".ld-bar"); // čára doběhne do konce a ukazatel zmizí
+      bar.classList.remove("unknown"); bar.firstChild.style.width = "100%"; box.querySelector(".ld-pct").textContent = "";
+      timer = setTimeout(() => { if (!tasks.length) box.hidden = true; }, Math.max(280, 500 - (performance.now() - since)));
     };
-    setTimeout(done, 30000); // pojistka: kdyby se něco zaseklo, ukazatel nezůstane viset
+    // pojistka: kdyby se něco zaseklo, ukazatel nezůstane viset (každý ohlášený postup ji odsune)
+    const arm = () => { clearTimeout(guard); guard = setTimeout(done, 30000); };
+    done.progress = (f) => { // f = 0 až 1
+      if (finished || !isFinite(f)) return;
+      task.p = Math.max(task.p || 0, Math.min(1, Math.max(0, f)));
+      arm();
+      if (tasks.at(-1) === task) render();
+    };
+    arm();
     return done;
   }
-  // pohodlná obálka: ukazatel po dobu běhu slibu (Promise)
-  const during = (text, promise) => { const done = show(text); return Promise.resolve(promise).finally(done); };
-  return { show, during };
+  // Ukazatel po dobu běhu slibu (Promise). Místo slibu lze předat funkci, která dostane hlášení postupu.
+  const during = (text, job) => { const done = show(text); return Promise.resolve(typeof job === "function" ? job(done.progress) : job).finally(done); };
+  // Stažení souboru s hlášením skutečného postupu (podíl stažených bajtů)
+  async function fetchBlob(url, onProgress, type) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const total = +r.headers.get("content-length") || 0;
+    if (!r.body || !total || !onProgress) return r.blob();
+    const reader = r.body.getReader(), chunks = [];
+    for (let got = 0; ;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      onProgress(got / total);
+    }
+    return new Blob(chunks, { type: type || r.headers.get("content-type") || "" });
+  }
+  return { show, during, fetchBlob };
 })();
