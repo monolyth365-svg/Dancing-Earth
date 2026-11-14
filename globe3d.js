@@ -240,7 +240,6 @@ window.Globe3D = (() => {
     el("#g3d-whole").onclick = () => whole();
     el("#g3d-beside").onclick = beside;
     el("#g3d-sats").onclick = (e) => { const b = e.target.closest("[data-sat3]"); if (b) pick(b.dataset.sat3); };
-    el("#g3d-below").onclick = below;
     el("#g3d-light").onclick = (e) => { const v = !viewer.scene.globe.enableLighting; viewer.scene.globe.enableLighting = v; e.target.setAttribute("aria-pressed", v); };
     el("#g3d-fast").onclick = (e) => {
       const fast = viewer.clock.multiplier === 1;
