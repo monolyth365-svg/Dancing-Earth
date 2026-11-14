@@ -14,6 +14,7 @@ function metricInfo(k) {
     lossInsideKm2: ["Loss area inside fire perimeter", "km²"],
     meanHH: ["Mean HH backscatter", "dB"],
     meanHV: ["Mean HV backscatter", "dB"],
+    cloudPct: ["Cloud cover in the optical photo (rough estimate)", "%"],
   }[k];
 }
 
@@ -73,6 +74,7 @@ async function loadSite(id, opts = {}) {
       <p>Data: NISAR L2 GCOV (geocoded backscatter), track ${d.track[0]}, frame ${d.track[1]}, ${d.track[2].toLowerCase()} orbit, about ${a.pixelM} m per pixel after averaging, ${fmt(d.validKm2, "km²")} mapped.</p>
       <p>Change layer: ${a.pol} compared with ${a.baselineDates.length > 1 ? `the mean of ${a.baselineDates.length} passes before the event (${a.baselineDates.join(", ")})` : `the first pass (${a.baselineDates[0]})`}, smoothed over ${a.smoothingPx}×${a.smoothingPx} pixels to reduce speckle. Colour starts at ±${a.showDb} dB; area numbers count pixels beyond ±${a.thresholdDb} dB.${a.sceneShiftRemoved ? " The median change of the whole scene is subtracted first." : ""}${d.unstableKm2 != null ? ` Pixels that already varied by more than ${a.thresholdDb} dB between the passes before the event (${fmt(d.unstableKm2, "km²")}) are left out.` : ""}</p>
       ${d.kind === "water" ? `<p>Open water: smoothed ${a.waterPol} below ${a.waterDb} dB.</p>` : ""}
+      ${d.optical ? `<p>Optical layer: ${d.optical.source}, ${d.optical.sensors.join(" / ")}, about ${d.optical.pixelM} m per pixel, taken on the same calendar day as the radar pass (not the same hour). Cloud cover is a rough estimate: the share of ${d.optical.cloudRule}. Smoke, haze and bright ground can confuse it.</p>` : ""}
       ${per ? `<p>Fire perimeter: ${per.source}, mapped ${per.mapped}; fire discovered ${per.discovered}, contained ${per.contained ?? "not yet"}; ${fmt(per.totalKm2, "km²")} in total.</p>` : ""}
       <p>${st.limits}</p>
     </details>`;
@@ -99,13 +101,16 @@ async function loadSite(id, opts = {}) {
   $("#point-hint").hidden = !state.cube;
 
   // Nabídka grafu: jen čísla, která pro toto místo existují
-  const keys = [MAIN[d.kind], "waterKm2", "lossKm2", "gainKm2", "lossInsideKm2", "meanHH", "meanHV"]
+  const keys = [MAIN[d.kind], "waterKm2", "lossKm2", "gainKm2", "lossInsideKm2", "meanHH", "meanHV", "cloudPct"]
     .filter((k, j, arr) => arr.indexOf(k) === j && d.frames.some((f) => f[k] != null) && (k !== "waterKm2" || d.kind === "water"));
   state.metric = keys[0];
   $("#metric").innerHTML = keys.map((k) => `<option value="${k}">${metricInfo(k)[0]}</option>`).join("");
 
   // Stav z odkazu (datum, vrstva, před/po, bod)
-  if (["hh", "hv", "change"].includes(opts.layer)) state.layer = opts.layer;
+  const hasOptical = d.frames.some((f) => f.optical);
+  $("[data-layer=optical]").hidden = !hasOptical;
+  if (["hh", "hv", "change", "optical"].includes(opts.layer)) state.layer = opts.layer;
+  if (state.layer === "optical" && !hasOptical) state.layer = "hh";
   document.querySelectorAll("[data-layer]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.layer === state.layer));
   setCompare(opts.compare === "1");
   const at = d.frames.findIndex((f) => f.date === opts.date);
@@ -113,7 +118,7 @@ async function loadSite(id, opts = {}) {
     const [lng, lat] = opts.pt.split(",").map(Number);
     if (isFinite(lng) && isFinite(lat)) setPoint({ lng, lat });
   }
-  $("#insight").textContent = insight(d);
+  $("#insight").textContent = insight(d) + cloudNote(d);
   // Bez odkazu: u události začít na posledním snímku s vrstvou změn, ať je hned vidět, co se stalo
   if (at < 0 && d.event && !opts.layer) {
     state.layer = "change";
@@ -151,6 +156,14 @@ function insight(d) {
   return `Fields here keep changing through the year. Compared with ${first.date}, ${a.pol} backscatter differed by more than ${a.thresholdDb} dB on up to ${fmt(busy.lossKm2 + busy.gainKm2, "km²")} (${busy.date}), ${Math.round(((busy.lossKm2 + busy.gainKm2) / d.validKm2) * 100)}% of the mapped area. On the latest pass (${l.date}) it is ${fmt(l.lossKm2 + l.gainKm2, "km²")}.`;
 }
 
+// Kolikrát by kamera kvůli mrakům neviděla nic – k větě „co se stalo“
+function cloudNote(d) {
+  const f = d.frames.filter((x) => x.cloudPct != null);
+  if (!f.length) return "";
+  const n = f.filter((x) => x.cloudPct >= 50).length;
+  return n ? ` On ${n} of the ${f.length} radar pass days a camera satellite saw mostly cloud; radar saw the ground every time.` : ` Skies were mostly clear on all ${f.length} days, but radar would have worked under cloud too.`;
+}
+
 // Tři čísla pro vybrané datum
 function kpis(i) {
   const d = state.data, f = d.frames[i], k = MAIN[d.kind] === "meanHV" ? "lossKm2" : MAIN[d.kind];
@@ -174,15 +187,21 @@ const img = (u) => imgs.get(u) || imgs.set(u, new Promise((ok, bad) => { const i
 let renderId = 0;
 async function render() {
   const id = ++renderId, i = state.i, L = state.layer, site = state.site;
-  const stack = async (k) => (L === "change" ? [await img(path(k, "hh")), await img(path(k, "change"))] : [await img(path(k, L))]);
-  const cur = await stack(i), before = state.compare ? await stack(state.base) : null;
+  const stack = async (k, l = L) => (l === "change" ? [await img(path(k, "hh")), await img(path(k, "change"))] : [await img(path(k, l))]);
+  // Vrstva Optical s posuvníkem: vlevo fotka z kamery, vpravo radar ze stejného dne
+  const optical = L === "optical";
+  const R = optical && state.compare ? "change" : L; // co se kreslí vpravo (nebo všude, když posuvník není zapnutý)
+  const cur = await stack(i, R), before = state.compare ? await stack(optical ? i : state.base) : null;
   if (id !== renderId || site !== state.site) return;
   ctx.clearRect(0, 0, 512, 512);
   const x = before ? Math.round(state.split * 512) : 0;
-  if (L === "change") ctx.filter = "brightness(0.6)";
-  const draw = (list, sx, w) => list.forEach((im, n) => { if (n) ctx.filter = "none"; ctx.drawImage(im, sx, 0, w, 512, sx, 0, w, 512); });
-  if (before) { draw(before, 0, x); if (L === "change") ctx.filter = "brightness(0.6)"; }
-  draw(cur, x, 512 - x);
+  // Pod barevnou vrstvou změn se šedý radarový snímek ztmaví, aby barvy vynikly
+  const draw = (list, layer, sx, w) => list.forEach((im, n) => {
+    ctx.filter = layer === "change" && n === 0 ? "brightness(0.6)" : "none";
+    ctx.drawImage(im, sx, 0, w, 512, sx, 0, w, 512);
+  });
+  if (before) draw(before, L, 0, x);
+  draw(cur, R, x, 512 - x);
   ctx.filter = "none";
   if (before) { ctx.fillStyle = "#e9b949"; ctx.fillRect(x - 1, 0, 3, 512); }
   map.getSource("sar")?.updateImage({ url: cv.toDataURL("image/png"), coordinates: state.data.corners });
@@ -305,8 +324,9 @@ function legend() {
     hv: ["HV backscatter (vegetation volume)", "linear-gradient(90deg,#000,#fff)", "−32 dB · bare", "−8 dB · dense canopy"],
     change: [`${a.pol} change compared with ${base}`, `linear-gradient(90deg,${a.colors.loss},transparent,${a.colors.gain})`,
       `−${a.scaleDb} dB · ${d.kind === "fire" ? "vegetation lost" : d.kind === "water" ? "new open water" : "darker"}`, `+${a.scaleDb} dB · brighter`],
+    optical: [`Optical photo, same day${f.cloudPct != null ? ` · about ${f.cloudPct}% cloud` : ""}`, "linear-gradient(90deg,#1d3b2a,#8a7a5a,#fff)", "what a camera sees", "white = cloud"],
   }[state.layer];
-  const missing = state.layer !== "hh" && !f[state.layer] ? `<div class="warn">${state.layer === "hv" ? "This pass recorded HH only, so the HH image is shown." : "No change map for this pass."}</div>` : "";
+  const missing = state.layer !== "hh" && !f[state.layer] ? `<div class="warn">${{ hv: "This pass recorded HH only, so the HH image is shown.", optical: "No optical photo for this day, so the radar image is shown." }[state.layer] || "No change map for this pass."}</div>` : "";
   $("#legend").innerHTML = `${L[0]}<div class="bar" style="background:${L[1]}"></div><div class="ends"><span>${L[2]}</span><span>${L[3]}</span></div>${d.perimeter && state.perim ? `<div class="ends"><span>- - -  official fire perimeter (NIFC)</span></div>` : ""}${missing}`;
 }
 
@@ -314,7 +334,7 @@ function legend() {
 function csv() {
   const d = state.data, pt = state.point ? series() : null;
   const cols = [["date", (f) => f.date], ["granule", (f) => f.granule], ["mode", (f) => f.mode], ["mean_hh_db", (f) => f.meanHH], ["mean_hv_db", (f) => f.meanHV],
-    ["open_water_km2", (f) => f.waterKm2], ["loss_km2", (f) => f.lossKm2], ["gain_km2", (f) => f.gainKm2]];
+    ["open_water_km2", (f) => f.waterKm2], ["loss_km2", (f) => f.lossKm2], ["gain_km2", (f) => f.gainKm2], ["optical_cloud_percent_estimate", (f) => f.cloudPct]];
   if (d.perimeter) cols.push(["loss_inside_perimeter_km2", (f) => f.lossInsideKm2], ["mean_change_inside_db", (f) => f.meanInsideDb], ["mean_change_outside_db", (f) => f.meanOutsideDb]);
   if (d.analysis.sceneShiftRemoved) cols.push(["scene_shift_removed_db", (f) => f.sceneShiftDb]);
   if (pt) cols.push([`point_${pt.label.slice(0, 2).toLowerCase()}_db_at_${state.point.lng.toFixed(4)}_${state.point.lat.toFixed(4)}`, (f, j) => pt.vals[j]]);
@@ -339,11 +359,14 @@ $("#play").onclick = () => {
   if (state.i === state.data.frames.length - 1) show(0);
   state.timer = setInterval(() => show((state.i + 1) % state.data.frames.length), 900);
 };
+const compareNote = () => state.data && (state.layer === "optical"
+  ? "Left: camera (optical) · Right: radar change map, same day"
+  : `Left: ${state.data.frames[state.base].date} · Right: selected date`);
 function setCompare(on) {
   state.compare = on;
   $("#compare").setAttribute("aria-pressed", on);
   $("#cmp").hidden = !on;
-  if (state.data) $("#compare-note").textContent = `Left: ${state.data.frames[state.base].date} · Right: selected date`;
+  if (state.data) $("#compare-note").textContent = compareNote();
 }
 $("#compare").onclick = () => { setCompare(!state.compare); render(); writeHash(); };
 $("#perim").onclick = () => {
@@ -360,6 +383,7 @@ document.querySelector(".layers").onclick = (e) => {
   const l = e.target.dataset.layer; if (!l) return;
   state.layer = l;
   document.querySelectorAll("[data-layer]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.layer === l));
+  setCompare(l === "optical" ? true : state.compare);
   show(state.i, false);
 };
 document.addEventListener("keydown", (e) => {
