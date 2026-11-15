@@ -53,6 +53,8 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
   - natural events NASA is tracking right now (wildfires, storms, ice, floods, volcanoes);
   - click an event, or any place on land, to load the newest NISAR quick-look radar image of that spot, with earlier passes to flip through and an estimate of the next pass;
   - one button compares two passes of the same track, colours what changed and plays it as music;
+  - if the newest image has no earlier pass on its own track, that button compares the newest pair that does share a track, and says so;
+  - if you click inside the strip NISAR's radar is crossing right now, the app says plainly that this pass cannot be shown yet, and how old the newest image in NASA's whole archive is at that moment (it asks the archive);
   - satellites overhead right now (NISAR, NOAA-20, SWOT, Landsat 9, Sentinel-1A) with their direction, their path for the last and next 50 minutes, and the strip NISAR's radar is looking at. The strip was checked against real NISAR images.
 - **Live globe** – the small globe in the top right corner opens a 3D view of Earth with the satellites at their true height, their orbits, and NISAR's radar beam reaching the ground, all drawn to scale and updated live. It says whether the radar is looking at day or night (it works in both), and time can be sped up ×300.
 - **Four tabs** keep the side panel short: *Explore* (what happened, numbers, timeline, chart), *Tools* (measure, trace, quiz, compare dates, simulation, export), *Charts* and *About* (story, method, sources).
@@ -111,7 +113,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Open-water area does not include water under trees or floating vegetation.
 - Area numbers are approximate (pixel size 78–195 m, simple thresholds).
 - The optical photo is from the same calendar day, not the same hour, and its cloud percentage is a rough estimate that smoke, haze, fog or bright ground can confuse.
-- Live world works with NASA's quick-look images, which are not calibrated, so its change map is a rough visual comparison, not a measurement. Satellite positions are computed from orbital elements and are good to a few kilometres; the radar strip shows where the radar points, not whether it is recording. "Right now" for radar images means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate.
+- Live world works with NASA's quick-look images, which are not calibrated, so its change map is a rough visual comparison, not a measurement. Satellite positions are computed from orbital elements and are good to a few kilometres; the radar strip shows where the radar points, not whether it is recording. "Right now" for radar images means the newest pass, because NISAR revisits a place every 12 days, and the next-pass date is an estimate. NASA publishes new NISAR images with a delay (about two days when checked on 15 November 2026), so a pass that is happening now is never in the archive yet.
 - The what-if fire simulation is a teaching model (ellipse on flat ground, uniform fuel, steady wind), calibrated only to the first day's reach; it is not a forecast.
 - Heat detections are single 375 m pixels at the moment of a satellite overpass; cloud and thick smoke can hide a fire, and they are not a temperature map.
 - Hurricane wind reach is the largest distance in each quarter, every 6 hours, from preliminary best-track data.

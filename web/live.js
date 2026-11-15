@@ -70,7 +70,7 @@ window.Live = (() => {
   // Vybrané místo: zeptat se archivu ASF, které přelety NISAR nad ním existují
   async function pick(ll, title, ev) {
     const id = ++reqId;
-    fitted = false; lapse = null;
+    nowReq++; fitted = false; lapse = null;
     marker.setLngLat(ll).addTo(map);
     history.replaceState(null, "", `#live=${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}` + v3());
     const head = `<h2>${esc(title)}</h2><p class="mono meta">${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°${ev ? ` · ${cat(ev.cat)[0]} · reported ${ev.date}` : ""}${ev?.link ? ` · <a href="${esc(ev.link)}" target="_blank" rel="noopener">source</a>` : ""}</p>`;
@@ -81,18 +81,60 @@ window.Live = (() => {
     if (!found) { el("#live-detail").innerHTML = head + `<p class="status">The archive did not answer. Try again in a moment.</p>`; return; }
     passes = found.passes;
     if (!passes.length) {
-      el("#live-detail").innerHTML = head + `<p class="status">No NISAR image of this spot in the archive yet. NISAR mostly maps land and ice; open ocean is rarely imaged.</p>`;
+      el("#live-detail").innerHTML = head + `<p class="status">No NISAR image of this spot in the archive yet. NISAR mostly maps land and ice; open ocean is rarely imaged.</p><p class="now" id="live-now" hidden></p>`;
+      overNow(ll);
       return;
     }
     el("#live-detail").innerHTML = head + `
       <p>${found.count} NISAR radar products cover this spot. Newest: <b>${passes[0].startTime.slice(0, 10)}</b>. Next pass expected around <b>${found.next}</b> (estimate from the 12-day repeat).</p>
+      <p class="now" id="live-now" hidden></p>
       <div class="passes" role="group" aria-label="Radar passes, newest first">${passes.map((p, i) => `<button data-pass="${i}" aria-pressed="false">${p.startTime.slice(0, 10)}</button>`).join("")}</div>
       <p class="status" id="live-img-status" role="status"></p>
       <label class="pick">Compare this image with <select id="live-ref" aria-label="Pass to compare with"></select></label>
+      <p class="status" id="live-pair"></p>
       <div class="tools"><button id="live-diff" class="primary">♪ Show what changed and play it</button><button id="live-lapse">▶ Play all passes of this track</button></div>
       <p class="status" id="live-diff-status" role="status"></p>
       <p class="hint">Click the dates to flip between passes and spot what changed. Colours are NASA's quick-look composite of the HH and HV channels: brighter means a stronger radar echo; water and smooth ground are dark.</p>`;
+    overNow(ll);
     showPass(0);
+  }
+
+  // Letí NISAR nad vybraným místem právě teď? Žlutý pruh ukazuje, kam radar míří; dnešní snímek ale v archivu ještě
+  // být nemůže (NASA nové snímky zveřejňuje se zpožděním). Aby to uživatele nemátlo, řekneme to na rovinu a doložíme
+  // tím, jak starý je nejnovější snímek v celém archivu (zjistí se jedním dotazem a pamatuje se po dobu návštěvy).
+  let freshest = null, nowReq = 0;
+  const newestInArchive = () => (freshest ??= (async () => {
+    for (const days of [5, 30]) {
+      const q = new URLSearchParams({ platform: "NISAR", processingLevel: "GCOV", output: "jsonlite", maxResults: "250", start: new Date(Date.now() - days * 864e5).toISOString().slice(0, 19) + "Z" });
+      const res = (await (await fetch(`${ASF}?${q}`)).json()).results || [];
+      if (res.length) return res.reduce((m, r) => (r.startTime > m ? r.startTime : m), "");
+    }
+    return null;
+  })().catch(() => { freshest = null; return null; }));
+  // Kdy pruh radaru přejel (nebo přejede) dané místo: vzdálenost místa od příčného řezu pruhem, po 5 vteřinách
+  function stripPass(ll) {
+    const n = Sats.all().find((x) => x.id === "nisar"); if (!n) return null;
+    const kx = 111.32 * Math.cos((ll.lat * Math.PI) / 180), xy = (c) => [(((c[0] - ll.lng + 540) % 360) - 180) * kx, (c[1] - ll.lat) * 110.57], t0 = Date.now();
+    let best = null;
+    for (let dt = -900; dt <= 300; dt += 5) {
+      const p = Sats.at(n, new Date(t0 + dt * 1000)); if (!p?.edges) continue;
+      const [ax, ay] = xy(p.edges[0]), [bx, by] = xy(p.edges[1]), L = (bx - ax) ** 2 + (by - ay) ** 2;
+      const u = L ? Math.max(0, Math.min(1, (-ax * (bx - ax) - ay * (by - ay)) / L)) : 0, d = Math.hypot(ax + u * (bx - ax), ay + u * (by - ay)); // km od místa k řezu
+      if (!best || d < best.d) best = { d, dt };
+    }
+    return best && best.d < 20 ? best : null; // řezy jsou od sebe asi 37 km, takže místo uvnitř pruhu je vždy blíž než 20 km
+  }
+  async function overNow(ll) {
+    const mine = ++nowReq, hit = stripPass(ll); if (!hit) return; // „mine“: poznámka patří jen k naposledy vybranému místu
+    const at = new Date(Date.now() + hit.dt * 1000), hm = at.toISOString().slice(11, 16), min = Math.round(Math.abs(hit.dt) / 60);
+    const when = Math.abs(hit.dt) < 45 ? `is crossing this spot right now (${hm} UTC)` : hit.dt < 0 ? `crossed this spot ${min} minute${min === 1 ? "" : "s"} ago (${hm} UTC)` : `will cross this spot in about ${min} minute${min === 1 ? "" : "s"} (${hm} UTC)`;
+    const say = (tail) => { const box = el("#live-now"); if (mine === nowReq && box) { box.innerHTML = `<b>NISAR's radar strip ${when}.</b> ${tail} The strip shows where the radar points; this app cannot tell whether it is recording.`; box.hidden = false; } };
+    say("That pass cannot be shown yet: NASA publishes new images with a delay.");
+    const newest = await newestInArchive();
+    if (newest) {
+      const days = (Date.now() - Date.parse(newest)) / 864e5;
+      say(`That pass cannot be shown yet: the newest image anywhere in NASA's archive right now is from ${newest.slice(0, 10)}, ${days < 1.5 ? "about a day" : `about ${Math.round(days)} days`} ago.`);
+    }
   }
 
   // Dotaz do archivu ASF: které přelety NISAR pokrývají dané místo (používá ho plochá mapa i 3D zeměkoule).
@@ -199,9 +241,17 @@ window.Live = (() => {
 
   // Co se změnilo mezi dvěma přelety stejné dráhy: rozdíl jasu obou náhledů, spočítaný v prohlížeči, a přehraný jako hudba
   async function diff() {
+    let swapped = "";
+    if (el("#live-ref").value === "") { // zobrazený přelet nemá na své dráze dvojici → porovnat nejnovější dvojici, která ji má
+      const pr = bestPair();
+      if (!pr) { el("#live-diff-status").textContent = "Every pass over this spot is on a different track, so no two of them can be compared fairly."; return; }
+      swapped = `${passes[cur].startTime.slice(0, 10)} is the only pass on its track here, so the newest pair that shares a track is compared instead. `;
+      await showPass(pr[0]);
+      if (cur !== pr[0] || el("#live-ref").value === "") return; // snímek se nepodařilo načíst
+    }
     const a = passes[cur], st = el("#live-diff-status");
     const j = +el("#live-ref").value;
-    if (!(j >= 0) || !passes[j]) { st.textContent = "There is no other pass on the same track in this list to compare with. Try another date."; return; }
+    if (!(j >= 0) || !passes[j] || j === cur) { st.textContent = "There is no other pass on the same track in this list to compare with. Try another date."; return; }
     const id = ++reqId, b = passes[j];
     Sonify.resume();
     st.textContent = `Comparing ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}…`;
@@ -243,7 +293,7 @@ window.Live = (() => {
       ox.putImageData(im, 0, 0);
       put(out, A.coords);
       const share = (changed / n) * 100;
-      st.textContent = `Compared ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}, same track. About ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the image changed noticeably. Blue: darker now, for example new water or lost vegetation. Orange: brighter now. You are hearing it west to east: louder notes mean more change. This is a rough comparison of NASA's quick-look images, not a calibrated measurement.`;
+      st.textContent = `${swapped}Compared ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}, same track. About ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the image changed noticeably. Blue: darker now, for example new water or lost vegetation. Orange: brighter now. You are hearing it west to east: louder notes mean more change. This is a rough comparison of NASA's quick-look images, not a calibrated measurement.`;
       // stejné pravidlo jako u připravených míst: jas = výška tónu, změna = hlasitost
       Sonify.playScan("water", cols.map((c) => (c.n ? { level: (c.lum / c.n / 255) * 25 - 25, delta: (c.down > c.up ? -1 : 1) * ((c.up + c.down) / c.n) * 30 } : null)), 2.6);
     } catch (e) {
@@ -252,8 +302,12 @@ window.Live = (() => {
   }
   // Přelety stejné dráhy jako právě zobrazený (jen ty jdou poctivě porovnat – stejný úhel pohledu)
   const sameTrack = (a) => passes.map((p, k) => k).filter((k) => passes[k].path === a.path && passes[k].frame === a.frame && passes[k].flightDirection === a.flightDirection);
+  // Nejnovější dvojice přeletů stejné dráhy [novější, starší]; null, když v seznamu žádná není
+  const bestPair = () => { for (let i = 0; i < passes.length; i++) { const k = sameTrack(passes[i]).find((q) => q > i); if (k != null) return [i, k]; } return null; };
   function refs() {
     const ks = sameTrack(passes[cur]).filter((k) => k !== cur), sel = el("#live-ref"), keep = sel.value;
+    const pr = ks.length ? null : bestPair(), day = (k) => passes[k].startTime.slice(0, 10);
+    el("#live-pair").textContent = ks.length ? "" : pr ? `This image (${day(cur)}) is the only pass on its track over this spot, so nothing can be compared with it fairly. The button below compares the newest pair that does share a track: ${day(pr[0])} with ${day(pr[1])}.` : "Every pass over this spot is on a different track, so no two of them can be compared fairly.";
     sel.innerHTML = ks.map((k) => `<option value="${k}">${passes[k].startTime.slice(0, 10)}${k > cur ? " (earlier)" : " (later)"}</option>`).join("");
     sel.value = ks.includes(+keep) ? keep : ks.find((k) => k > cur) ?? ks[0] ?? "";
     el("#live-lapse").disabled = ks.length < 1;
