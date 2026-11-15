@@ -116,6 +116,8 @@ body.live #head, body.live .insight, body.live .timeline, body.live #story, body
 .livebox > h2 { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; margin: 18px 0 8px; }
 .livebox p { color: #c3c8cf; margin: 0 0 10px; }
 .livebox p b { color: var(--text); font-weight: 600; }
+.livebox p.now { border-left: 3px solid var(--accent); padding: 2px 0 2px 10px; font-size: 13.5px; }
+.livebox #live-pair:empty { display: none; }
 .cats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
 .cats i, .evlist i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; flex: none; }
 .cats b { color: var(--text); font-weight: 500; }
