@@ -18,14 +18,42 @@ function metricInfo(k) {
   }[k];
 }
 
+// Podklad zblízka. Blue Marble končí na úrovni 8 (asi 500 m na bod), dál je jen rozmazaný. Od úrovně 8 se proto přes něj
+// postupně rozsvítí mozaika Landsat od NASA (30 m na bod, roční složenina 2000–2001, tedy starší než radarové snímky).
+// Dlaždice bez dat jsou černé; mapa si je proto bere přes vlastní „protokol“, který černou zprůhlední, aby pod ní zůstal
+// vidět Blue Marble (jinak by moře a místa bez dat zčernala). Když dlaždice nepřijde, vrátí se prázdná a nic se nestane.
+const LANDSAT = "gibs.earthdata.nasa.gov/wmts/epsg3857/best/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/default/2000-12-01/GoogleMapsCompatible_Level12";
+let emptyTile = null;
+maplibregl.addProtocol("landsat", async (params, abort) => {
+  const blank = async () => ({ data: (await (emptyTile ??= new Promise((ok) => Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).toBlob((b) => b.arrayBuffer().then(ok), "image/png")))).slice(0) });
+  let buf;
+  try {
+    const r = await fetch("https://" + LANDSAT + params.url.slice("landsat:/".length), { signal: abort.signal });
+    if (!r.ok) return blank();
+    buf = await r.arrayBuffer();
+  } catch (e) { if (e.name === "AbortError") throw e; return blank(); }
+  try {
+    const bmp = await createImageBitmap(new Blob([buf], { type: "image/jpeg" })), cv = Object.assign(document.createElement("canvas"), { width: bmp.width, height: bmp.height }), cx = cv.getContext("2d", { willReadFrequently: true });
+    cx.drawImage(bmp, 0, 0); bmp.close?.();
+    const im = cx.getImageData(0, 0, cv.width, cv.height), a = im.data;
+    let holes = 0;
+    for (let j = 0; j < a.length; j += 4) if (a[j] + a[j + 1] + a[j + 2] < 24) { a[j + 3] = 0; holes++; }
+    if (!holes) return { data: buf };          // celá dlaždice má data → beze změny
+    if (holes === a.length / 4) return blank(); // celá bez dat
+    cx.putImageData(im, 0, 0);
+    return { data: await (await new Promise((ok) => cv.toBlob(ok, "image/png"))).arrayBuffer() };
+  } catch { return blank(); }
+});
 const map = new maplibregl.Map({
   container: "map",
   style: {
     version: 8,
     sources: { base: { type: "raster", tileSize: 256, maxzoom: 8,
       tiles: ["https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg"],
-      attribution: "Basemap: NASA GIBS Blue Marble" } },
-    layers: [{ id: "base", type: "raster", source: "base", paint: { "raster-brightness-max": 0.55, "raster-saturation": -0.4 } }],
+      attribution: "Basemap: NASA GIBS Blue Marble" },
+      detail: { type: "raster", tileSize: 256, minzoom: 7, maxzoom: 12, tiles: ["landsat://{z}/{y}/{x}.jpg"], attribution: "Zoomed in: NASA Landsat mosaic 2000–2001 (WELD)" } },
+    layers: [{ id: "base", type: "raster", source: "base", paint: { "raster-brightness-max": 0.55, "raster-saturation": -0.4 } },
+      { id: "base-detail", type: "raster", source: "detail", minzoom: 8, paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0, 9, 1], "raster-brightness-max": 0.6, "raster-saturation": -0.35 } }],
   },
   center: [0, 20], zoom: 1.5, attributionControl: { compact: true },
   preserveDrawingBuffer: true, // 3D pohled si z plátna mapy bere obraz, který pokládá na zeměkouli
@@ -33,6 +61,8 @@ const map = new maplibregl.Map({
 // Při rychlém přehrávání se starý snímek zahodí dřív, než se načte – to není chyba
 map.on("error", (e) => { if (e.error?.name !== "AbortError") console.error(e.error); });
 map.dragRotate.disable(); map.touchZoomRotate.disableRotation(); // sever je vždy nahoře
+// Poznámka v rohu mapy, když je vidět podklad z Landsatu: je to starý snímek, jen pro orientaci
+map.on("zoom", () => { const n = document.querySelector("#bgnote"); if (n) n.hidden = map.getZoom() < 8.6; });
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
 // 3D pohled (globe3d.js) ukazuje totéž co plochá mapa. Proto:

@@ -402,7 +402,7 @@ window.Globe3D = (() => {
   // Plochá mapa pod zeměkoulí: bez podkladu (ten má zeměkoule vlastní) a bez věcí, které si 3D kreslí samo
   function flat(on3d) {
     const vis = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", v ? "visible" : "none"); };
-    vis("base", !on3d); vis("events", !on3d); vis("t-labels", !on3d);
+    vis("base", !on3d); vis("base-detail", !on3d); vis("events", !on3d); vis("t-labels", !on3d);
     if (Live.on) { Sats.hide(); Sats.show(map, on3d); }
     map.triggerRepaint();
   }
