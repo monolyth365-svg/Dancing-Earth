@@ -24,7 +24,9 @@
   .cap { display: inline-block; font-weight: 600; font-size: 40px; color: #07090c; background: #e9b949; padding: 9px 20px 11px; letter-spacing: -.01em; }
   .num { font: 700 26px/1 "JetBrains Mono", monospace; color: #e9b949; letter-spacing: .1em; }
   .gold { color: #e9b949; }
-  #mark { position: absolute; right: 34px; bottom: 22px; font: 400 14px/1 "JetBrains Mono", monospace; color: rgba(210,215,222,.5); letter-spacing: .03em; }
+  #mark { position: absolute; right: 34px; bottom: 26px; text-align: right; }
+  #mark b { display: inline-block; font: 700 15px/1 "JetBrains Mono", monospace; letter-spacing: .12em; color: #07090c; background: #e9b949; padding: 7px 11px 6px; }
+  #mark span { display: block; margin-top: 8px; font: 400 12.5px/1.4 "JetBrains Mono", monospace; color: rgba(214,219,226,.78); }
 </style>
 </head>
 <body>
@@ -34,7 +36,7 @@
   <div id="ui"></div>
   <div id="flash"></div>
   <div id="black"></div>
-  <div id="mark">Intro built from real screenshots of the app · edited with AI (SI) assistance</div>
+  <div id="mark"><b>AI-ASSISTED VIDEO</b><span>Intro built from real screenshots of the app,<br>animated with AI (SI-generated)</span></div>
 </div>
 <script>
 const $ = (s) => document.querySelector(s);

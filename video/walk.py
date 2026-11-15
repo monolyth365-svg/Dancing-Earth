@@ -28,14 +28,16 @@ OVERLAY = r"""
       #vw-chap { position: absolute; left: 34px; top: 13px; font: 500 12.5px/1 "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: #e9b949; }
       #vw-sub { position: absolute; left: 34px; top: 35px; width: 1240px; font-size: 26px; font-weight: 600; line-height: 1.22; letter-spacing: -.01em; transition: opacity .18s; }
       #vw-sub b { color: #e9b949; font-weight: 600; }
-      #vw-mark { position: absolute; right: 26px; bottom: 12px; width: 250px; text-align: right; font: 400 10.5px/1.45 "JetBrains Mono", monospace; color: rgba(210,215,222,.5); }
+      #vw-mark { position: absolute; right: 22px; top: 15px; text-align: right; }
+      #vw-mark b { display: inline-block; font: 700 12.5px/1 "JetBrains Mono", monospace; letter-spacing: .12em; color: #07090c; background: #e9b949; padding: 6px 9px 5px; }
+      #vw-mark span { display: block; margin-top: 7px; font: 400 10.5px/1.42 "JetBrains Mono", monospace; color: rgba(214,219,226,.78); }
       #vw-prog { position: absolute; left: 0; top: -1px; height: 2px; width: 0; background: #e9b949; }
       #vw-cur { position: fixed; left: 0; top: 0; z-index: 2147483647; pointer-events: none; width: 26px; height: 26px; transform: translate(-200px, -200px); filter: drop-shadow(0 2px 3px rgba(0,0,0,.7)); }
       .vw-ring { position: fixed; z-index: 2147483646; pointer-events: none; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%%; border: 3px solid #e9b949; animation: vwring .55s ease-out forwards; }
       @keyframes vwring { from { transform: scale(.5); opacity: 1; } to { transform: scale(4.2); opacity: 0; } }`;
     document.head.appendChild(st);
     const band = document.createElement("div"); band.id = "vw-band";
-    band.innerHTML = `<div id="vw-prog"></div><div id="vw-chap"></div><div id="vw-sub"></div><div id="vw-mark">Screen recording of the real app.<br>Captions and music added with AI (SI) assistance.</div>`;
+    band.innerHTML = `<div id="vw-prog"></div><div id="vw-chap"></div><div id="vw-sub"></div><div id="vw-mark"><b>AI-ASSISTED VIDEO</b><span>Real app, recorded live.<br>Captions, intro and music<br>made with AI (SI-generated).</span></div>`;
     document.body.appendChild(band);
     const cur = document.createElement("div"); cur.id = "vw-cur";
     cur.innerHTML = `<svg viewBox="0 0 26 26" width="26" height="26"><path d="M3 2 L3 21 L8.2 16.4 L11.6 24 L14.6 22.7 L11.3 15.2 L18 15 Z" fill="#fff" stroke="#07090c" stroke-width="1.6" stroke-linejoin="round"/></svg>`;

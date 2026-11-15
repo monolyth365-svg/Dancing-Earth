@@ -48,8 +48,10 @@ write(D / "mix.wav", mix / max(1.0, float(np.abs(mix).max()) / 0.95))
 print(f"app sound: {(env > 1e-3).sum() / SR:.1f} s, peak {app_peak:.2f}; music steps back to {duck.min():.2f}")
 
 dst = HERE / "out" / "dancing-earth-walkthrough.mp4"
-subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(D / "frames.txt"), "-i", str(D / "mix.wav"),
-                "-vf", "crop=1920:1080:0:0,fps=30,scale=in_range=full:out_range=tv,format=yuv420p", "-color_range", "tv",
+# the same clear "AI-assisted video" tag in the corner of the caption band on every chapter (older takes carried a smaller note)
+vf = (f"[0:v]crop=1920:1080:0:0,fps=30[a];[a][2:v]overlay=1580:952:enable='gte(t,{T_T:.3f})',scale=in_range=full:out_range=tv,format=yuv420p[v]")
+subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(D / "frames.txt"), "-i", str(D / "mix.wav"), "-i", str(D / "mark_patch.png"),
+                "-filter_complex", vf, "-map", "[v]", "-map", "1:a", "-color_range", "tv",
                 "-af", "loudnorm=I=-17:TP=-1.5:LRA=11", "-c:v", "libx264", "-preset", "medium", "-crf", sys.argv[1] if len(sys.argv) > 1 else "21",
                 "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-t", f"{T_T + total / speed:.2f}", "-movflags", "+faststart", str(dst)], check=True)
 print("written", dst, round(dst.stat().st_size / 1e6, 1), "MB")
