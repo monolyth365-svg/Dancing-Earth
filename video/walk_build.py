@@ -53,5 +53,5 @@ vf = (f"[0:v]crop=1920:1080:0:0,fps=30[a];[a][2:v]overlay=1580:952:enable='gte(t
 subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(D / "frames.txt"), "-i", str(D / "mix.wav"), "-i", str(D / "mark_patch.png"),
                 "-filter_complex", vf, "-map", "[v]", "-map", "1:a", "-color_range", "tv",
                 "-af", "loudnorm=I=-17:TP=-1.5:LRA=11", "-c:v", "libx264", "-preset", "medium", "-crf", sys.argv[1] if len(sys.argv) > 1 else "21",
-                "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-t", f"{T_T + total / speed:.2f}", "-movflags", "+faststart", str(dst)], check=True)
+                "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-t", f"{T_T + total / speed:.2f}", "-metadata", "title=Dancing Earth - five-minute walkthrough (AI-assisted video)", "-metadata", "artist=Team AlgoryX", "-metadata", "comment=AI-assisted video (SI-generated captions, intro and background music). Real-time screen recording of the real Dancing Earth app.", "-movflags", "+faststart", str(dst)], check=True)
 print("written", dst, round(dst.stat().st_size / 1e6, 1), "MB")

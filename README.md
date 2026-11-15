@@ -185,6 +185,7 @@ This project was built with the help of an AI assistant (Claude by Anthropic, us
 - **The idea and the decisions are human**: showing surface change on a map with water as the main topic, adding wildfires and other change, and turning the change into music.
 - **The AI also proposed technical options and helped find and read the data sources**; the choices were made by the author.
 - **The app itself contains no AI-generated images, video or audio.** All images in the app are computed directly from NISAR data; the sound is synthesised from the data in the browser.
+- The same is stated in the app footer, in the page metadata (`<meta name="ai-assistance">`), next to the data (`web/data/README.md`), in the metadata of both video files and in the commit history (co-author lines).
 - **The two demo videos were assembled with AI assistance.** They show real screenshots and a real screen recording of the app; their titles, cuts, captions and background music were made by code the AI wrote (`video/`). Both carry a visible "AI-assisted video" tag for their whole length.
 
 ## Licence

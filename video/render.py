@@ -38,7 +38,7 @@ async def main(mode, times):
         ff = imageio_ffmpeg.get_ffmpeg_exe(); dst = OUT / "dancing-earth-30s.mp4"
         cmd = [ff, "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", str(FR / "f%04d.jpg"), "-i", str(OUT / "music.wav"), "-t", str(T["total"]),
                "-af", f"loudnorm=I=-15:TP=-1.5:LRA=11,afade=t=out:st={T['total'] - 0.5}:d=0.5",
-               "-vf", "scale=in_range=full:out_range=tv,format=yuv420p", "-color_range", "tv", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-movflags", "+faststart", str(dst)]
+               "-vf", "scale=in_range=full:out_range=tv,format=yuv420p", "-color_range", "tv", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-metadata", "title=Dancing Earth - 30-second demo (AI-assisted video)", "-metadata", "artist=Team AlgoryX", "-metadata", "comment=AI-assisted video (SI-generated titles, cuts and music). All pictures are real screenshots of the Dancing Earth app.", "-movflags", "+faststart", str(dst)]
         subprocess.run(cmd, check=True); print("written", dst, round(dst.stat().st_size / 1e6, 1), "MB")
 mode = sys.argv[1] if len(sys.argv) > 1 else "test"
 asyncio.run(main(mode, [float(x) for x in sys.argv[2:]]))
