@@ -7,12 +7,14 @@ from pathlib import Path
 import numpy as np, imageio_ffmpeg
 from walk_script import CHAPTERS
 HERE = Path(__file__).parent; D = HERE / "out" / "walk"; FF = imageio_ffmpeg.get_ffmpeg_exe()
-TARGET = 299.0; SR = 48000   # whole video, preview included (the limit is five minutes)
+TARGET = 299.5; SR = 48000   # whole video, intro and closing card included (the limit is five minutes)
 TEASER = HERE / "out" / "walk" / "intro"; N_T = len(list(TEASER.glob("f*.jpg"))); T_T = N_T / 30   # the motion intro in front (video/intro.html, video/walk_intro.py)
+OUTRO = HERE / "out" / "walk" / "outro"; N_O = len(list(OUTRO.glob("f*.jpg"))); T_O = N_O / 30   # the closing card at the end (python video/walk_intro.py outro)
 names = [n for n in CHAPTERS if not n.startswith("_")]
 metas = {n: json.loads((D / n / "meta.json").read_text()) for n in names}
 durs = {n: metas[n]["end"] - metas[n]["ts"][0] for n in names}; total = sum(durs.values())
-speed = max(1.0, total / (TARGET - T_T)); print(f"intro {T_T:.1f} s + recorded {total:.1f} s at speed x{speed:.3f} = {T_T + total / speed:.1f} s")
+speed = max(1.0, total / (TARGET - T_T - T_O)); LEN = T_T + total / speed + T_O
+print(f"intro {T_T:.1f} s + recorded {total:.1f} s at speed x{speed:.3f} + closing card {T_O:.1f} s = {LEN:.1f} s")
 if speed > 1.07: sys.exit("more than 7 % too long: shorten the script instead of speeding up")
 
 # picture: every frame with the time it stayed on screen
@@ -21,6 +23,7 @@ for i in range(N_T): lines += [f"file '{(TEASER / f'f{i:05d}.jpg').as_posix()}'"
 for n in names:
     ts = metas[n]["ts"] + [metas[n]["end"]]
     for i in range(len(ts) - 1): lines += [f"file '{(D / n / f'f{i:05d}.jpg').as_posix()}'", f"duration {max(0.001, (ts[i + 1] - ts[i]) / speed):.5f}"]
+for i in range(N_O): lines += [f"file '{(OUTRO / f'f{i:05d}.jpg').as_posix()}'", f"duration {1 / 30:.5f}"]
 lines.append(lines[-2]); (D / "frames.txt").write_text("\n".join(lines))
 
 # sound of the app, chapter after chapter
@@ -33,9 +36,9 @@ for n in names:
     a = read(D / n / "audio.wav"); m = int(round(durs[n] * SR)); parts.append(np.pad(a, ((0, max(0, m - len(a))), (0, 0)))[:m])
 write(D / "app_raw.wav", np.concatenate(parts))
 subprocess.run([FF, "-y", "-loglevel", "error", "-i", str(D / "app_raw.wav"), "-af", f"atempo={speed:.5f}", str(D / "app.wav")], check=True)
-app = read(D / "app.wav"); n_out = int(round((T_T + total / speed) * SR))
+app = read(D / "app.wav"); n_out = int(round(LEN * SR))
 app = np.concatenate([np.zeros((int(round(T_T * SR)), 2), dtype=np.float32), app]); app = np.pad(app, ((0, max(0, n_out - len(app))), (0, 0)))[:n_out]   # the intro has music only
-subprocess.run([sys.executable, str(HERE / "walk_music.py"), f"{T_T + total / speed:.2f}", f"{T_T:.2f}"], check=True)
+subprocess.run([sys.executable, str(HERE / "walk_music.py"), f"{LEN:.2f}", f"{T_T:.2f}"], check=True)
 bed = read(D / "bed.wav"); bed = np.pad(bed, ((0, max(0, n_out - len(bed))), (0, 0)))[:n_out]
 # the music steps back while the app is heard (smoothed loudness of the app's sound, 0.25 s attack, about 1 s release)
 env = np.abs(app).max(axis=1); hop = 480; e = env[: len(env) // hop * hop].reshape(-1, hop).max(axis=1); sm = np.zeros_like(e); v = 0.0
@@ -49,9 +52,9 @@ print(f"app sound: {(env > 1e-3).sum() / SR:.1f} s, peak {app_peak:.2f}; music s
 
 dst = HERE / "out" / "dancing-earth-walkthrough.mp4"
 # the same clear "AI-assisted video" tag in the corner of the caption band on every chapter (older takes carried a smaller note)
-vf = (f"[0:v]crop=1920:1080:0:0,fps=30[a];[a][2:v]overlay=1580:952:enable='gte(t,{T_T:.3f})',scale=in_range=full:out_range=tv,format=yuv420p[v]")
+vf = (f"[0:v]crop=1920:1080:0:0,fps=30[a];[a][2:v]overlay=1580:952:enable='between(t,{T_T:.3f},{T_T + total / speed - 0.02:.3f})',scale=in_range=full:out_range=tv,format=yuv420p[v]")
 subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(D / "frames.txt"), "-i", str(D / "mix.wav"), "-i", str(D / "mark_patch.png"),
                 "-filter_complex", vf, "-map", "[v]", "-map", "1:a", "-color_range", "tv",
                 "-af", "loudnorm=I=-17:TP=-1.5:LRA=11", "-c:v", "libx264", "-preset", "medium", "-crf", sys.argv[1] if len(sys.argv) > 1 else "21",
-                "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-t", f"{T_T + total / speed:.2f}", "-metadata", "title=Dancing Earth - five-minute walkthrough (AI-assisted video)", "-metadata", "artist=Team AlgoryX", "-metadata", "comment=AI-assisted video (SI-generated captions, intro and background music). Real-time screen recording of the real Dancing Earth app.", "-movflags", "+faststart", str(dst)], check=True)
+                "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-t", f"{LEN:.2f}", "-metadata", "title=Dancing Earth - five-minute walkthrough (AI-assisted video)", "-metadata", "artist=Team AlgoryX", "-metadata", "comment=AI-assisted video (SI-generated captions, intro and background music). Real-time screen recording of the real Dancing Earth app.", "-movflags", "+faststart", str(dst)], check=True)
 print("written", dst, round(dst.stat().st_size / 1e6, 1), "MB")

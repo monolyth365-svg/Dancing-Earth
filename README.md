@@ -21,7 +21,7 @@ A real-time screen recording of the app being used (4:59), in ten chapters: star
 
 - A real Chrome is driven with real mouse moves and clicks by `video/walk.py`; what is clicked and what the captions say is in `video/walk_script.py`. For the recording only, three things are added to the page: a visible pointer with a ring on every click, a caption band under the app, and a recorder of the app's sound. The app itself is not changed.
 - The sound you hear from the app (the music of the radar passes, the tone while tracing a line, the comparison in Live world) is the app's real sound, recorded during the take. Under it runs quiet background music synthesized in code (`video/walk_music.py`, no recordings and no music model); it steps back whenever the app plays.
-- The first five seconds are a motion intro built from real screenshots of the app (`video/intro.html`).
+- The first five seconds are a motion intro built from real screenshots of the app (`video/intro.html`); the last second and a half is a closing card, so a full-screen card stays on the screen when the video stops.
 - The take is played about 6 % faster to fit under five minutes (the app's sound keeps its pitch). It was recorded in three continuous takes, joined between the Charts and Tools chapters and before Live world; the last take was recorded after the flicker fix in the 3D view.
 - The quiz picks its place at random; in this take it showed Tonlé Sap and the pointer chose the right answer for it.
 - The recording, captions, intro and music were made with AI assistance. A tag in the bottom right corner says so for the whole video: "AI-assisted video. Real app, recorded live. Captions, intro and music made with AI (SI-generated)."

@@ -120,6 +120,26 @@ async function render(t) {
   await new Promise((r) => requestAnimationFrame(() => r()));
 }
 
+// Closing card (t from 0 to 1.5 s). Its last frame is what stays on the screen when the video stops.
+async function renderOutro(t) {
+  await setImg($("#A"), shot("globe_89")); $("#B").style.opacity = 0;
+  cam(756, 556, lerp(1.44, 1.5, out3(t / 1.5)));
+  const c = "left:0;width:1920px;text-align:center", up = (at) => `opacity:${clamp((t - at) / 0.25).toFixed(2)};transform:translateY(${((1 - out3((t - at) / 0.4)) * 16).toFixed(1)}px)`;
+  $("#over").innerHTML = "";
+  $("#ui").innerHTML = `
+    <div class="abs k" style="${c};top:292px;${up(0.05)}">Dancing Earth</div>
+    <div class="abs title" style="${c};top:338px;font-size:146px;letter-spacing:-.04em;word-spacing:.1em">${rise("Thank you", t, 0.08, 0.45)} ${rise('for <span class="gold">watching</span>', t, 0.16, 0.45)}</div>
+    <div class="abs" style="left:${(960 - out5((t - 0.3) / 0.5) * 210).toFixed(1)}px;top:532px;width:${(out5((t - 0.3) / 0.5) * 420).toFixed(1)}px;height:6px;background:#e9b949"></div>
+    <div class="abs sub" style="${c};top:572px;font-size:42px;${up(0.35)}">See and hear how Earth's surface changes with NISAR radar</div>
+    <div class="abs k" style="${c};top:668px;font-size:30px;letter-spacing:.08em;text-transform:none;${up(0.45)}">monolyth365-svg.github.io/Dancing-Earth</div>
+    <div class="abs" style="${c};top:730px;font:400 22px/1 'JetBrains Mono', monospace;color:#dfe3e8;${up(0.55)}">Team AlgoryX · NASA Space Apps Challenge 2026 · Dancing with the SARs</div>
+    <div class="abs" style="${c};top:782px;font:400 16px/1 'JetBrains Mono', monospace;color:#9aa2ad;${up(0.65)}">Data: NISAR L2 GCOV (NASA-ISRO, ASF DAAC) · VIIRS (NASA GIBS, FIRMS) · NIFC · NOAA NHC · CelesTrak</div>`;
+  $("#mark").innerHTML = "<b>AI-ASSISTED VIDEO</b><span>Real app, recorded live. Captions, intro and music<br>made with AI (SI-generated).</span>";
+  $("#shade").style.opacity = 0.74; $("#flash").style.opacity = 0;
+  $("#black").style.opacity = (1 - clamp(t / 0.3)).toFixed(3); // in from dark; no fade-out, the card stays
+  await new Promise((r) => requestAnimationFrame(() => r()));
+}
+
 window.ready = (async () => {
   await document.fonts.ready;
   await Promise.all(["700 212px 'Instrument Sans'", "500 24px 'JetBrains Mono'", "600 40px 'Instrument Sans'", "500 46px 'Instrument Sans'", "700 26px 'JetBrains Mono'"].map((f) => document.fonts.load(f)));
