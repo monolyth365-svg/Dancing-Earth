@@ -52,6 +52,7 @@ Pick a topic (**Nature** or **Human activity**), then a phenomenon and a place, 
 - **Live world** – a world map that reads everything live from NASA in your browser:
   - natural events NASA is tracking right now (wildfires, storms, ice, floods, volcanoes);
   - click an event, or any place on land, to load the newest NISAR quick-look radar image of that spot, with earlier passes to flip through and an estimate of the next pass;
+  - when you zoom in, the image is reloaded at the full detail of NASA's quick-look (about 2,000 × 2,000 pixels, roughly twice as fine); the public quick-look holds no more detail than that;
   - one button compares two passes of the same track, colours what changed and plays it as music;
   - if the newest image has no earlier pass on its own track, that button compares the newest pair that does share a track, and says so;
   - if you click inside the strip NISAR's radar is crossing right now, the app says plainly that this pass cannot be shown yet, and how old the newest image in NASA's whole archive is at that moment (it asks the archive);
