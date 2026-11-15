@@ -199,15 +199,15 @@ async def live(R):
     await R.hover("[data-pass='1']", after=0.45); await R.hover("[data-pass='2']", after=0.45)
     await R.sub("One button compares two passes, colours the change and plays it.")
     await R.reveal("#live-diff"); await R.click("#live-diff", after=0.5)
-    await R.until("!document.querySelector('.loader:not([hidden])')", 45); await R.move(600, 420, 0.8); await R.wait(2.8)
+    await R.until("!document.querySelector('.loader:not([hidden])')", 45); await R.move(600, 420, 0.8); await R.wait(2.2)
 
 
 # ------------------------------------------------------------------------------------------------ 9
 async def _card(R, want):
     """Open or close the 3D view's satellite card (it opens by itself in some situations, so look first)."""
     is_open = await R.js("(() => { const c = document.querySelector('#g3d-card'); return !!c && !c.hidden && c.offsetParent !== null; })()")
-    if want and not is_open: await R.click("#g3d-sat-toggle", after=0.5)
-    if not want and is_open: await R.click("#g3d-card-close", after=0.3)
+    if want and not is_open: await R.click("#g3d-sat-toggle", after=0.3)
+    if not want and is_open: await R.click("#g3d-card-close", after=0.2)
 
 async def _globe_setup(R):
     await R.js("goLive()"); await R.wait(5)
@@ -215,16 +215,18 @@ async def _globe_setup(R):
 @chapter("globe", "3D Earth", _globe_setup)
 async def globe(R):
     await R.sub("The same app on a <b>3D Earth</b>: same menus, layers and tools, on a globe you can turn.")
-    await R.click("#globe-btn", after=0.5); await R.until("!!(window.Globe3D && Globe3D.on && Globe3D._viewer())", 25); await R.wait(2.4)
-    await _card(R, False); await R.drag((520, 430), (690, 405), dur=1.2, after=0.3)
+    await R.click("#globe-btn", after=0.5); await R.until("!!(window.Globe3D && Globe3D.on && Globe3D._viewer())", 25); await R.wait(1.2)
+    await _card(R, False); await R.drag((520, 430), (690, 405), dur=1.1, after=0.2)
     await R.sub("<b>Satellites</b> at their true height, with live paths behind and ahead.")
-    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(0.4)
-    await R.drag((470, 420), (640, 400), dur=1.3, after=0.5)
-    await R.sub("Fly beside <b>NISAR</b>: its radar beam meets the ground left of its path, to scale.")
-    await _card(R, True); await R.click("[data-sat3='nisar']", after=0.9); await R.click("#g3d-beside", after=0.4)
-    await _card(R, False); await R.wait(2.4)
-    await R.sub("Speed time up 300 times. NISAR returns over the same place every 12 days.")
-    await _card(R, True); await R.click("#g3d-fast", after=0.3); await _card(R, False); await R.wait(3.0)
+    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(0.3)
+    await R.drag((470, 420), (640, 400), dur=1.0, after=0.3)
+    # How NISAR maps: follow it, look straight down, zoom out, then let time run fast so the strip is laid along the orbit
+    await R.sub("Follow <b>NISAR</b> from above. Its radar looks left of its path, at a strip 240 km wide.")
+    await _card(R, True); await R.click("[data-sat3='nisar']", after=0.4); await _card(R, False)
+    await R.drag((600, 300), (600, 470), dur=1.3, after=0.2)
+    await R.scroll(520, at=(600, 430), dur=0.9); await R.wait(0.8)
+    await R.sub("Speed time up 300 times: the yellow band is where the radar has just swept. It returns every 12 days.")
+    await _card(R, True); await R.click("#g3d-fast", after=0.3); await _card(R, False); await R.wait(3.7)
 
 
 # ------------------------------------------------------------------------------------------------ 10
@@ -235,5 +237,5 @@ async def _end_setup(R):
 async def end(R):
     await R.sub("<b>Dancing Earth</b> · Team AlgoryX · NASA Space Apps Challenge 2026 · <b>monolyth365-svg.github.io/Dancing-Earth</b>")
     await R.js("(() => { try { const v = Globe3D._viewer(); v.clock.multiplier = 1; v.clock.currentTime = Cesium.JulianDate.now(); } catch (e) {} })()")
-    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(0.4)
-    await R.drag((430, 430), (700, 400), dur=2.6, after=2.2)
+    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(0.2)
+    await R.drag((430, 430), (700, 400), dur=2.0, after=1.5)
