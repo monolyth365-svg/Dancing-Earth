@@ -120,6 +120,7 @@ All thresholds are listed in the app under "Method and limits" for each place.
 - Hurricane wind reach is the largest distance in each quarter, every 6 hours, from preliminary best-track data.
 - "Under plants" is a hint, not a validated flood map: wet or ploughed fields can give the same signature, and nothing was checked on the ground.
 - In the fire chart a pass counts as unusual when the median change of the whole scene is larger than half the detection threshold. The app shows that it happened; it does not check the weather to say why.
+- The background of the map when zoomed in is a Landsat mosaic from 2000–2001, about 25 years older than the radar images. It is there for orientation only (the map says so in its corner) and is never part of any calculation.
 - The sound is an artistic mapping of the data, not a measurement.
 
 ## Run it locally
@@ -157,7 +158,7 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - NASA GIBS, VIIRS NOAA-20 Corrected Reflectance (True Color), daily optical images for the Optical layer – https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi (layer `VIIRS_NOAA20_CorrectedReflectance_TrueColor`)
 - NISAR GCOV browse (quick-look) images and KML footprints, NASA ASF DAAC, read live in the Live world mode – https://nisar.asf.earthdatacloud.nasa.gov/
 - NASA FIRMS / GIBS, VIIRS Thermal Anomalies 375 m (NOAA-20, Suomi NPP), active-fire detections – https://www.earthdata.nasa.gov/data/tools/firms (tiles: https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/)
-- NASA GIBS, Landsat WELD true-colour mosaic (30 m), detail imagery of the 3D Earth – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/
+- NASA GIBS, Landsat WELD true-colour mosaic (30 m, annual composite 2000–2001), detail imagery of the 3D Earth and the close-up background of the flat map – https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual/
 - NASA EONET (Earth Observatory Natural Event Tracker), used to find the wildfires and read live for the event map – https://eonet.gsfc.nasa.gov/api/v3/events
 
 ### Other data and tools
