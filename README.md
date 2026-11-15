@@ -173,6 +173,8 @@ Places are defined in `pipeline/sites.json` (centre, window size, track, event d
 - MapLibre GL JS 4.7.1 (BSD-3-Clause) – https://maplibre.org/
 - Fonts Instrument Sans and JetBrains Mono (SIL Open Font License) via Google Fonts – https://fonts.google.com/
 - Python libraries: NumPy https://numpy.org/ , h5py https://www.h5py.org/ , Requests https://requests.readthedocs.io/ , pyproj https://pyproj4.github.io/pyproj/ , Pillow https://python-pillow.org/
+- mapbox-vector-tile (Python, MIT), reads the VIIRS heat detections from GIBS vector tiles – https://github.com/tilezen/mapbox-vector-tile
+- Tools used only to make the two demo videos: Playwright https://playwright.dev/ (drives the browser and records it) and FFmpeg https://ffmpeg.org/ (encodes the video)
 - Sound is generated live in the browser with the Web Audio API; no recordings are used.
 
 ## Use of AI
@@ -181,7 +183,9 @@ This project was built with the help of an AI assistant (Claude by Anthropic, us
 
 - **AI wrote most of the code** (the Python data pipeline and the web app) and drafted the English texts in the app and in this README.
 - **The idea and the decisions are human**: showing surface change on a map with water as the main topic, adding wildfires and other change, and turning the change into music.
-- No AI-generated images, video or audio are used. All images in the app are computed directly from NISAR data; the sound is synthesised from the data in the browser.
+- **The AI also proposed technical options and helped find and read the data sources**; the choices were made by the author.
+- **The app itself contains no AI-generated images, video or audio.** All images in the app are computed directly from NISAR data; the sound is synthesised from the data in the browser.
+- **The two demo videos were assembled with AI assistance.** They show real screenshots and a real screen recording of the app; their titles, cuts, captions and background music were made by code the AI wrote (`video/`). Both carry a visible "AI-assisted video" tag for their whole length.
 
 ## Licence
 
