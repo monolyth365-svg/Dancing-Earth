@@ -12,6 +12,7 @@ window.Live = (() => {
   const el = (s) => document.querySelector(s);
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let map, events = null, passes = [], reqId = 0, on = false, cur = 0, fitted = false, lapse = null;
+  let shown = null, hiUrl = null, sharpTimer = null; // který přelet je právě na mapě (kvůli doostření po přiblížení)
   const cache = new Map(); // stažené náhledy (jeden má kolem 4 MB), ať se při přepínání nestahují znovu
   const marker = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pt" }) });
 
@@ -30,7 +31,7 @@ window.Live = (() => {
 
   function exit() {
     if (!on) return;
-    on = false; reqId++;
+    on = false; reqId++; shown = null;
     Sats.hide();
     document.body.classList.remove("live");
     marker.remove();
@@ -70,7 +71,7 @@ window.Live = (() => {
   // Vybrané místo: zeptat se archivu ASF, které přelety NISAR nad ním existují
   async function pick(ll, title, ev) {
     const id = ++reqId;
-    nowReq++; fitted = false; lapse = null;
+    nowReq++; fitted = false; lapse = null; shown = null;
     marker.setLngLat(ll).addTo(map);
     history.replaceState(null, "", `#live=${ll.lng.toFixed(3)},${ll.lat.toFixed(3)}` + v3());
     const head = `<h2>${esc(title)}</h2><p class="mono meta">${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°${ev ? ` · ${cat(ev.cat)[0]} · reported ${ev.date}` : ""}${ev?.link ? ` · <a href="${esc(ev.link)}" target="_blank" rel="noopener">source</a>` : ""}</p>`;
@@ -94,7 +95,7 @@ window.Live = (() => {
       <p class="status" id="live-pair"></p>
       <div class="tools"><button id="live-diff" class="primary">♪ Show what changed and play it</button><button id="live-lapse">▶ Play all passes of this track</button></div>
       <p class="status" id="live-diff-status" role="status"></p>
-      <p class="hint">Click the dates to flip between passes and spot what changed. Colours are NASA's quick-look composite of the HH and HV channels: brighter means a stronger radar echo; water and smooth ground are dark.</p>`;
+      <p class="hint">Click the dates to flip between passes and spot what changed. Zoom in and the image is reloaded at the full detail of NASA's quick-look. Colours are NASA's quick-look composite of the HH and HV channels: brighter means a stronger radar echo; water and smooth ground are dark.</p>`;
     overNow(ll);
     showPass(0);
   }
@@ -163,8 +164,8 @@ window.Live = (() => {
     const png = p.browse.find((u) => u.endsWith("_LATLON.png")), kml = (p.nisar?.additionalUrls || []).find((u) => u.endsWith("_LATLON.kml") && u.includes("/BROWSE/"));
     const job = entry.job = !png ? Promise.reject(new Error("no browse")) : Promise.all([
       kml ? fetch(kml).then((r) => (r.ok ? r.text() : "")).catch(() => "") : "",
-      Loader.fetchBlob(png, (f) => tell(f * 0.95), "image/png").then((b) => createImageBitmap(new Blob([b], { type: "image/png" }))),
-    ]).then(([txt, bmp]) => {
+      Loader.fetchBlob(png, (f) => tell(f * 0.95), "image/png").then(async (b) => { const blob = new Blob([b], { type: "image/png" }); return { blob, bmp: await createImageBitmap(blob) }; }),
+    ]).then(([txt, { blob, bmp }]) => {
       tell(1);
       const m = txt.match(/<coordinates>([^<]+)</);
       let w, e, s2, n, approx = false;
@@ -193,7 +194,7 @@ window.Live = (() => {
       // uchovat jen zmenšený snímek (max. 1000 px): časosběr drží v paměti víc přeletů najednou
       const k = Math.min(1, 1000 / Math.max(bmp.width, bmp.height)), small = canvas(Math.round(bmp.width * k), Math.round(bmp.height * k));
       small.getContext("2d").drawImage(bmp, 0, 0, small.width, small.height); bmp.close?.();
-      return { bmp: small, coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
+      return { bmp: small, blob, full: [Math.round(small.width / k), Math.round(small.height / k)], coords: [[w, n], [e, n], [e, s2], [w, s2]], w, e, s: s2, n, approx };
     });
     job.catch(() => cache.delete(p.granuleName));
     cache.set(p.granuleName, entry);
@@ -222,7 +223,7 @@ window.Live = (() => {
   // Černé okolí snímku zprůhledníme, ať je vidět mapa
   async function showPass(i) {
     const id = ++reqId, p = passes[i];
-    cur = i;
+    cur = i; shown = null;
     document.querySelectorAll("[data-pass]").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.pass === i));
     const st = el("#live-img-status");
     el("#live-diff-status").textContent = "";
@@ -231,6 +232,7 @@ window.Live = (() => {
       const A = await Loader.during(`Loading the radar image of ${p.startTime.slice(0, 10)} from NASA…`, (progress) => loadPass(p, progress));
       if (id !== reqId) return;
       put(clean(A), A.coords);
+      shown = { A, hi: false }; sharpenSoon();
       refs();
       if (!fitted || !map.getBounds().contains(marker.getLngLat())) fitted = true, map.fitBounds([[A.w, A.s], [A.e, A.n]], { padding: 40, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000 });
       st.textContent = `NISAR radar image, ${p.startTime.slice(0, 16).replace("T", " ")} UTC · track ${p.path}, frame ${p.frame}, ${p.flightDirection.toLowerCase()} · quick-look image from NASA ASF DAAC${A.approx ? " · placed on the map approximately (provisional product)" : ""}`;
@@ -291,6 +293,7 @@ window.Live = (() => {
         o[q * 4] = r; o[q * 4 + 1] = gg; o[q * 4 + 2] = bl; o[q * 4 + 3] = 255;
       }
       ox.putImageData(im, 0, 0);
+      shown = null; // mapa změn se nedoostřuje (počítá se ve zmenšené mřížce)
       put(out, A.coords);
       const share = (changed / n) * 100;
       st.textContent = `${swapped}Compared ${a.startTime.slice(0, 10)} with ${b.startTime.slice(0, 10)}, same track. About ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the image changed noticeably. Blue: darker now, for example new water or lost vegetation. Orange: brighter now. You are hearing it west to east: louder notes mean more change. This is a rough comparison of NASA's quick-look images, not a calibrated measurement.`;
@@ -319,7 +322,32 @@ window.Live = (() => {
     const ks = sameTrack(passes[cur]).reverse(), token = (lapse = {});
     b.textContent = "■ Stop";
     for (const k of ks) { if (lapse !== token) return; await showPass(k); await new Promise((r) => setTimeout(r, 1100)); }
-    if (lapse === token) { lapse = null; b.textContent = "▶ Play all passes of this track"; }
+    if (lapse === token) { lapse = null; b.textContent = "▶ Play all passes of this track"; sharpenSoon(); }
+  }
+
+  // Ostřejší snímek po přiblížení. Běžně se ukazuje zmenšená verze (rychlá, šetří paměť). Jakmile je snímek na obrazovce
+  // větší než tato verze, nahradí se plným náhledem NASA (asi 2000 × 2000 bodů, tedy zhruba dvakrát jemnější).
+  // Víc detailu veřejný náhled neobsahuje; plná radarová data (GCOV) jsou soubory po 1,8 GB a vyžadují přihlášení.
+  const sharpenSoon = () => { clearTimeout(sharpTimer); sharpTimer = setTimeout(sharpen, 250); };
+  async function sharpen() {
+    const s = shown;
+    if (!on || lapse || !s || s.hi || s.busy || !map.getSource("live-img")) return;
+    const A = s.A, a = map.project([A.w, A.n]), b = map.project([A.e, A.n]), c = map.project([A.w, A.s]);
+    const onScreen = Math.max(Math.hypot(b.x - a.x, b.y - a.y), Math.hypot(c.x - a.x, c.y - a.y)) * (window.devicePixelRatio || 1);
+    if (onScreen < Math.max(A.bmp.width, A.bmp.height) * 1.15 || Math.max(...A.full) <= Math.max(A.bmp.width, A.bmp.height)) return; // zmenšená verze zatím stačí
+    s.busy = true;
+    try {
+      const full = await createImageBitmap(A.blob), cv = clean({ bmp: full }, 2048);
+      full.close?.();
+      const png = await new Promise((r) => cv.toBlob(r, "image/png"));
+      if (shown !== s || !on || !png || !map.getSource("live-img")) return; // mezitím jiný přelet, mapa změn nebo jiné místo
+      const url = URL.createObjectURL(png), old = hiUrl;
+      map.getSource("live-img").updateImage({ url, coordinates: A.coords });
+      hiUrl = url; s.hi = true;
+      if (old) setTimeout(() => URL.revokeObjectURL(old), 5000);
+      const st = el("#live-img-status");
+      if (st && !st.textContent.includes("full quick-look detail")) st.textContent += ` · full quick-look detail loaded (${cv.width} × ${cv.height} px)`;
+    } catch { /* zůstane zmenšená verze */ } finally { s.busy = false; }
   }
 
   // Průměr z okolí 5×5 potlačí radarový šum (speckle)
@@ -345,6 +373,7 @@ window.Live = (() => {
       if (f) { const ev = events[f.properties.i]; pick({ lng: ev.lng, lat: ev.lat }, ev.title, ev); }
       else pick(e.lngLat, "Selected place");
     });
+    map.on("moveend", () => { if (on && shown && !shown.hi) sharpenSoon(); });
     map.on("mousemove", (e) => { if (on && map.getLayer("events")) map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers: ["events"] }).length ? "pointer" : ""; });
     el("#live-list").onclick = (e) => { const b = e.target.closest("[data-ev]"); if (b) { const ev = events[+b.dataset.ev]; pick({ lng: ev.lng, lat: ev.lat }, ev.title, ev); } };
     Sats.bind();
