@@ -7,7 +7,7 @@
 window.Globe3D = (() => {
   const BASE = "https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/", SCALE = 4000, el = (s) => document.querySelector(s);
   const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/";
-  let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, swath = null;
+  let C, viewer = null, loading = null, open = false, sats = [], lastSlow = 0, lastText = 0, lastBand = 0;
   // Tablety a telefony mají málo grafické paměti (Safari na iPadu jinak stránku shodí) → úsporný režim
   const LIGHT = matchMedia("(pointer: coarse)").matches || /iPad|iPhone|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
   let evPts = null, ring = null, eye = null, labels = null, occ = null;
@@ -56,6 +56,9 @@ window.Globe3D = (() => {
     detail.colorToAlpha = C.Color.BLACK; detail.colorToAlphaThreshold = 0.02;
     viewer.clock.shouldAnimate = true; viewer.clock.multiplier = 1; viewer.clock.currentTime = C.JulianDate.now();
     viewer.scene.globe.enableLighting = false;
+    // Bez logaritmické hloubky: s ní (a s „rovinou horizontu“, kterou knihovna schovává věci za Zemí) při pohybu kamery
+    // na jeden snímek problikávaly dráhy družic, které mají být schované za planetou. Měřeno: 26 probliknutí za 10 s → 0.
+    viewer.scene.logarithmicDepthBuffer = false;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
     viewer.scene.globe.maximumScreenSpaceError = LIGHT ? 3 : 2.6; // méně dlaždic najednou = plynulejší pohyb a méně paměti
     viewer.scene.globe.tileCacheSize = LIGHT ? 60 : 100;
@@ -137,8 +140,33 @@ window.Globe3D = (() => {
       }
       const S = st(n);
       if (S?.p.edges) { rays.forEach((r, k) => { r.positions = [S.pos, ground(S, k)]; }); base.positions = [ground(S, 0), ground(S, RAYS - 1)]; }
+      // Dráha družice, kterou kamera sleduje, a dráha NISARu se počítají každý snímek: konec čáry tak drží přesně u družice.
+      // (Dřív se všechny dráhy počítaly jednou za 3 s; zblízka pak čára za družicí zaostávala a po třech vteřinách poskočila.)
+      tracks(hot(), +now());
+      // Čelo pruhu radaru: úzký čtyřúhelník mezi naposledy postaveným pruhem a místem, kam paprsek dopadá právě teď.
+      if (S?.p.edges && bandFront) {
+        const a = ground(S, 0), b = ground(S, RAYS - 1);
+        bandLive = swap(bandLive, C.Cartesian3.distance(a, bandFront[0]) > 300 ? [bandFront[0], a, b, bandFront[1]] : null);
+      }
     });
-    swath = viewer.entities.add({ polygon: { hierarchy: new C.PolygonHierarchy([]), material: C.Color.fromCssColorString("#e9b949").withAlpha(0.35), height: 0 } });
+    // Pruh, který radar NISAR na zemi právě přejel (posledních 12 minut). Leží na zemi a nemění se, takže se celý staví
+    // jen občas; jeho čelo se dokresluje každý snímek (výše). Staví se hned (ne na pozadí) a starý se odebere ve stejném
+    // snímku, aby pruh ani na okamžik nezmizel a mezi pruhem a paprskem nevznikala mezera, která by pak „přeskočila“.
+    const BAND = C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString("#e9b949").withAlpha(0.35));
+    const band = (pts) => new C.Primitive({ asynchronous: false, appearance: new C.PerInstanceColorAppearance({ flat: true, translucent: true }),
+      geometryInstances: new C.GeometryInstance({ geometry: new C.PolygonGeometry({ polygonHierarchy: new C.PolygonHierarchy(pts), height: 0, vertexFormat: C.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT }), attributes: { color: BAND } }) });
+    const swap = (old, pts) => { const neu = pts ? viewer.scene.primitives.add(band(pts)) : null; if (old) viewer.scene.primitives.remove(old); return neu; };
+    let bandStatic = null, bandLive = null, bandFront = null;
+    // Dráhy: plná čára = posledních 50 minut, čárkovaná = dalších 50 (vzorek po minutě)
+    function tracks(list, t) {
+      for (const s of list) {
+        const past = [], future = [];
+        for (let dt = -3000; dt <= 3000; dt += 60) { const p = Sats.sub(s, new Date(t + dt * 1000)); if (!p) continue; const c = cart(p.lng, p.lat, p.alt); (dt <= 0 ? past : future).push(c); if (dt === 0) future.push(c); }
+        if (past.length > 1) s._pastL.positions = past;
+        if (future.length > 1) s._futL.positions = future;
+      }
+    }
+    const hot = () => (sel === n ? [n] : [n, sel]);
 
     // Ťuknutí na zeměkouli = klik na ploché mapě (vybrat místo v radarovém snímku, bod žáru, roh měřené plochy…).
     // Rozlišení gest: krátké ťuknutí bez pohybu = klik; tažení = otáčet Zemí; dlouhé podržení = nic.
@@ -195,20 +223,17 @@ window.Globe3D = (() => {
 
     viewer.clock.onTick.addEventListener(() => {
       follow();
-      const real = performance.now();
-      if (real - lastSlow < (viewer.clock.multiplier > 1 ? 400 : 3000)) return;
-      lastSlow = real;
-      const t = +now();
-      for (const s of sats) {
-        const past = [], future = [];
-        for (let dt = -3000; dt <= 3000; dt += 60) { const p = Sats.sub(s, new Date(t + dt * 1000)); if (!p) continue; const c = cart(p.lng, p.lat, p.alt); (dt <= 0 ? past : future).push(c); if (dt === 0) future.push(c); }
-        if (past.length > 1) s._pastL.positions = past;
-        if (future.length > 1) s._futL.positions = future;
+      const real = performance.now(), fast = viewer.clock.multiplier > 1, t = +now();
+      // Dráhy ostatních družic: při běžném čase stačí jednou za vteřinu; při zrychleném čase každý snímek (na tabletech
+      // a telefonech 8× za vteřinu, ať se nepřetěžují), jinak by čáry za družicemi viditelně zaostávaly a poskakovaly.
+      if (real - lastSlow >= (fast ? (LIGHT ? 120 : 0) : 1000)) { lastSlow = real; const h = hot(); tracks(sats.filter((s) => !h.includes(s)), t); }
+      if (real - lastBand >= (fast ? (LIGHT ? 400 : 150) : 3000)) { // tělo pruhu radaru
+        lastBand = real;
+        const nearE = [], farE = [];
+        for (let dt = -12 * 60; dt <= 0; dt += 30) { const p = Sats.at(n, new Date(t + dt * 1000)); if (p?.edges) { nearE.push(cart(p.edges[0][0], p.edges[0][1])); farE.push(cart(p.edges[1][0], p.edges[1][1])); } }
+        if (nearE.length > 1) { bandFront = [nearE.at(-1), farE.at(-1)]; bandStatic = swap(bandStatic, nearE.concat(farE.reverse())); bandLive = swap(bandLive, null); }
       }
-      const nearE = [], farE = [];
-      for (let dt = -12 * 60; dt <= 0; dt += 30) { const p = Sats.at(n, new Date(t + dt * 1000)); if (p?.edges) { nearE.push(cart(p.edges[0][0], p.edges[0][1])); farE.push(cart(p.edges[1][0], p.edges[1][1])); } }
-      swath.polygon.hierarchy = new C.PolygonHierarchy(nearE.concat(farE.reverse()));
-      el("#g3d-text").innerHTML = describe(new Date(t));
+      if (real - lastText >= (fast ? 400 : 3000)) { lastText = real; el("#g3d-text").innerHTML = describe(new Date(t)); }
     });
     whole(0);
   }
@@ -431,7 +456,7 @@ window.Globe3D = (() => {
     el("#g3d-fast").onclick = (e) => {
       const fast = viewer.clock.multiplier === 1;
       viewer.clock.multiplier = fast ? 300 : 1; if (!fast) viewer.clock.currentTime = C.JulianDate.now();
-      e.target.setAttribute("aria-pressed", fast); e.target.textContent = fast ? "Back to live" : "Speed up time ×300"; lastSlow = 0;
+      e.target.setAttribute("aria-pressed", fast); e.target.textContent = fast ? "Back to live" : "Speed up time ×300"; lastSlow = lastText = lastBand = 0;
     };
     // režim Live world se zapnul, vypnul nebo načetl události → body na zeměkouli; ve 2D mapě je schovat, ať nejsou dvakrát
     document.addEventListener("de:live", () => { if (!open || !viewer) return; if (map.getLayer("events")) map.setLayoutProperty("events", "visibility", "none"); liveEvents(); });
