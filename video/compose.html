@@ -27,7 +27,9 @@
   .gold { color: #e9b949; } .blue { color: #5aa2ff; } .red { color: #ff5a44; }
   .abs { position: absolute; }
   .tag { display: inline-block; background: rgba(7,9,12,.9); padding: 14px 26px 18px; }
-  #mark { position: absolute; right: 34px; bottom: 22px; font: 400 14px/1 "JetBrains Mono", monospace; color: rgba(210,215,222,.55); letter-spacing: .03em; }
+  #mark { position: absolute; right: 34px; bottom: 26px; text-align: right; }
+  #mark b { display: inline-block; font: 700 15px/1 "JetBrains Mono", monospace; letter-spacing: .12em; color: #07090c; background: #e9b949; padding: 7px 11px 6px; }
+  #mark span { display: block; margin-top: 8px; font: 400 12.5px/1.4 "JetBrains Mono", monospace; color: rgba(214,219,226,.8); }
 </style>
 <script src="out/scans.js"></script>
 </head>
@@ -39,7 +41,7 @@
   <div id="edge"></div>
   <div id="ui"></div>
   <div id="flash"></div>
-  <div id="mark">Real app footage · music synthesized in code, melody follows the NISAR data · edited with SI assistance</div>
+  <div id="mark"><b>AI-ASSISTED VIDEO</b><span>Real screenshots of the app. Titles, cuts and music<br>made with AI (SI-generated); melody follows the NISAR data.</span></div>
 </div>
 <script>
 const $ = (s) => document.querySelector(s), S = TL.scenes;

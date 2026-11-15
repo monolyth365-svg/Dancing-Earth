@@ -11,7 +11,7 @@ Built for the NASA Space Apps Challenge 2026, challenge **"Dancing with the SARs
 
 https://monolyth365-svg.github.io/Dancing-Earth/video/dancing-earth-30s.mp4
 
-Every picture in it is a real screenshot of the app. The video was assembled with code in `video/` (written with AI assistance): `capture.py` takes the screenshots, `compose.html` + `render.py` add titles and cuts, `score.py` synthesizes the music (no recordings and no music model; the piano line follows the open-water area and the mapped burn scar pass by pass, and in the "Hear the change" scene the app's own sound code plays the two radar images). The fire time-lapse leaves out the pass of 13 September 2026, which the app itself marks as unreliable.
+Every picture in it is a real screenshot of the app. The video was assembled with code in `video/` (written with AI assistance): `capture.py` takes the screenshots, `compose.html` + `render.py` add titles and cuts, `score.py` synthesizes the music (no recordings and no music model; the piano line follows the open-water area and the mapped burn scar pass by pass, and in the "Hear the change" scene the app's own sound code plays the two radar images). The fire time-lapse leaves out the pass of 13 September 2026, which the app itself marks as unreliable. A tag in the bottom right corner says for the whole video: "AI-assisted video. Real screenshots of the app. Titles, cuts and music made with AI (SI-generated); melody follows the NISAR data."
 
 ## Five-minute walkthrough video
 
