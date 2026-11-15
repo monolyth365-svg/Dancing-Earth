@@ -227,7 +227,7 @@ class Rec:
           return out.join('\n'); })()"""))
 
 
-from walk_script import CHAPTERS  # noqa: E402  (the scenes themselves: what is clicked and what the captions say)
+from walk_script import CHAPTERS, preroll  # noqa: E402  (the scenes themselves: what is clicked and what the captions say)
 
 
 async def main(names):
@@ -251,6 +251,7 @@ async def main(names):
                 if name != order[0]:
                     await page.evaluate("(() => { const i = document.querySelector('#intro'); if (i && !i.hidden) document.querySelector('#intro-close').click(); if (window.stop) stop(); })()")
                 if setup: await setup(R)
+                if "live" in names: await preroll(R, 232 if name == order[0] else 16)   # seconds from now to the click inside NISAR's strip
                 first = False
             real = [n for n in order if not n.startswith("_")]
             if name in real: await R.chap(f"{real.index(name) + 1} / {len(real)} · {title}", real.index(name) / len(real))

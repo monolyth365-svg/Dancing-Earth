@@ -17,13 +17,14 @@ Every picture in it is a real screenshot of the app. The video was assembled wit
 
 https://monolyth365-svg.github.io/Dancing-Earth/video/dancing-earth-walkthrough.mp4
 
-A real-time screen recording of the app being used (4:59), in ten chapters: start, the lake, the wildfire, charts, tools, honest limits, fields and hurricanes, Live world, 3D Earth, end.
+A real-time screen recording of the app being used (4:59), in ten chapters: start, the lake, the wildfire, charts, tools, honest limits, forest, fields and hurricanes, Live world, 3D Earth, end.
 
 - A real Chrome is driven with real mouse moves and clicks by `video/walk.py`; what is clicked and what the captions say is in `video/walk_script.py`. For the recording only, three things are added to the page: a visible pointer with a ring on every click, a caption band under the app, and a recorder of the app's sound. The app itself is not changed.
 - The sound you hear from the app (the music of the radar passes, the tone while tracing a line, the comparison in Live world) is the app's real sound, recorded during the take. Under it runs quiet background music synthesized in code (`video/walk_music.py`, no recordings and no music model); it steps back whenever the app plays.
 - The first five seconds are a motion intro built from real screenshots of the app (`video/intro.html`); the last second and a half is a closing card, so a full-screen card stays on the screen when the video stops.
-- The take is played about 6 % faster to fit under five minutes (the app's sound keeps its pitch). It was recorded in three continuous takes, joined between the Charts and Tools chapters and before Live world; the last take was recorded after the flicker fix in the 3D view.
-- The quiz picks its place at random; in this take it showed Tonlé Sap and the pointer chose the right answer for it.
+- It is one continuous take of all ten chapters, recorded on 15 November 2026 with the app exactly as published that day. The take is played 5 % faster to fit under five minutes (the app's sound keeps its pitch); nothing is cut out of it.
+- In Live world the pointer first clicks inside the strip NISAR's radar crossed three minutes earlier, to show what the app says about a pass that is not in NASA's archive yet. The recording waits for a moment when that strip lies on the flat map (`preroll` in `video/walk_script.py`). In this take the spot was open ocean, so the app also says it has no image of that spot.
+- The quiz picks its place at random; in this take it showed the Shingle Fire and the pointer chose the right answer for it.
 - The recording, captions, intro and music were made with AI assistance. A tag in the bottom right corner says so for the whole video: "AI-assisted video. Real app, recorded live. Captions, intro and music made with AI (SI-generated)."
 
 ## What it does
