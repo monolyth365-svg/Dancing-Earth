@@ -211,7 +211,7 @@ IMG_READY = "(() => { const s = document.querySelector('#live-img-status'); retu
 ON_MAP = "(ll) => { const r = document.querySelector('#map').getBoundingClientRect(), q = map.project(ll); return [q.x + r.left, q.y + r.top]; }"
 
 @chapter("live", "Live world", _live_setup)
-async def live(R):
+async def live(R, band=True):
     await R.sub("<b>Live world</b>: events NASA tracks right now, and satellites overhead.")
     await R.click("[data-site=live]", after=0.5); await R.until("document.body.classList.contains('live')", 10); await R.wait(1.0); await R.idle(0.2)
     await R.move(430, 300, 0.9); await R.wait(0.3)
@@ -220,13 +220,13 @@ async def live(R):
     # Click inside the band, three minutes behind the satellite: that pass is not in the archive yet, and the app says so
     ll = await R.js(f"{STRIP}(0)")
     xy = await R.page.evaluate(ON_MAP, ll) if ll else None
-    if xy and 60 < xy[0] < 1130 and 150 < xy[1] < 700:
+    if band and xy and 60 < xy[0] < 1130 and 150 < xy[1] < 700:
         await R.sub("Click inside that band: the app says plainly that today's pass is not in NASA's archive yet.")
         await R.click(tuple(xy), after=0.4)
         await R.until("(() => { const n = document.querySelector('#live-now'); return !!n && !n.hidden && n.textContent.includes('archive right now'); })()", 20)
         await R.reveal("#live-now"); await R.hover("#live-now", after=2.9)
     else:
-        print("  (NISAR's strip is not on the map right now: the 'today's pass' moment is left out)", flush=True)
+        if band: print("  (NISAR's strip is not on the map right now: the 'today's pass' moment is left out)", flush=True)
     await R.sub("Click <b>any place on land</b>, here Mount Etna. The app asks NASA's archive…")
     await R.until("!document.querySelector('.loader:not([hidden])')", 30)
     if await R.js("map.getZoom() > 2.6 || map.isMoving()"):   # an older image of that spot was loaded and the map flew to it: back to the whole world
@@ -255,23 +255,27 @@ async def _card(R, want):
     if want and not is_open: await R.click("#g3d-sat-toggle", after=0.3)
     if not want and is_open: await R.click("#g3d-card-close", after=0.2)
 
-async def _globe_setup(R):
-    await R.js("goLive('14.99,37.75')"); await R.wait(10)
+async def _globe_setup(R):   # the same clicks as the Live world chapter (without the click inside NISAR's band), so the app is in the same state
+    await live(R, band=False)
 
 @chapter("globe", "3D Earth", _globe_setup)
 async def globe(R):
     await R.sub("The same app on a <b>3D Earth</b>: same menus, layers and tools, on a globe you can turn.")
     await R.click("#globe-btn", after=0.5); await R.until("!!(window.Globe3D && Globe3D.on && Globe3D._viewer())", 25); await R.wait(0.6)
-    await _card(R, False); await R.drag((520, 430), (690, 405), dur=1.1, after=0.2)
+    await _card(R, False); await R.wait(0.9)
     await R.sub("<b>Satellites</b> at their true height, with live paths behind and ahead.")
-    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(1.2)
-    # How NISAR maps: follow it, look straight down, zoom out, then let time run fast so the strip is laid along the orbit
-    await R.sub("Follow <b>NISAR</b> from above. Its radar looks left of its path, at a strip 240 km wide.")
+    await _card(R, True); await R.click("#g3d-whole", after=0.4); await _card(R, False); await R.wait(0.3)
+    await R.drag((470, 420), (600, 405), dur=1.0, after=0.4)
+    # How NISAR maps: fly behind and a little above it, so the satellite, its beam, the strip on the ground and the horizon are all in view
+    await R.sub("Follow <b>NISAR</b>: its radar beam meets the ground left of its path, in a strip 240 km wide.")
     await _card(R, True); await R.click("[data-sat3='nisar']", after=0.4); await _card(R, False)
-    await R.drag((600, 300), (600, 470), dur=1.2, after=0.2)
-    await R.scroll(520, at=(600, 430), dur=0.8); await R.wait(0.3)
+    await R.drag((600, 330), (600, 370), dur=0.8, after=0.2)
+    for _ in range(3):   # three gentle steps back, with the pointer on the satellite so that it stays in the middle
+        await R.scroll(120, at=(600, 430), dur=0.6); await R.wait(0.35)
+    await R.move(300, 650, 0.5); await R.wait(0.3)
+    print("  camera:", await R.js("(() => { const p = Globe3D._viewer().camera.position; return `${(Math.atan2(p.z, Math.hypot(p.x, p.y)) * 180 / Math.PI).toFixed(0)}° above the satellite's level, ${(Math.hypot(p.x, p.y, p.z) / 1000).toFixed(0)} km from it`; })()"), flush=True)
     await R.sub("Speed time up 300 times: the yellow band is where the radar has just swept. It returns every 12 days.")
-    await _card(R, True); await R.click("#g3d-fast", after=0.3); await _card(R, False); await R.wait(3.5)
+    await _card(R, True); await R.click("#g3d-fast", after=0.3); await _card(R, False); await R.wait(3.0)
 
 
 # ------------------------------------------------------------------------------------------------ 10
