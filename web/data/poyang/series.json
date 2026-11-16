@@ -14,7 +14,7 @@
  "corners": [
   [
    115.88370891723322,
-   29.50268490426207
+   29.502684904262075
   ],
   [
    116.81139219661402,
@@ -39,12 +39,12 @@
    "hv": "2026-06-27_hv.png",
    "meanHH": -5.97,
    "meanHV": -14.28,
-   "waterKm2": 2022.6,
+   "waterKm2": 2022.1,
+   "waterHiKm2": 2617.2,
    "sceneShiftDb": null,
    "lossKm2": 0.0,
    "gainKm2": 0.0,
    "change": "2026-06-27_change.png",
-   "waterHiKm2": 2617.7,
    "optical": "2026-06-27_optical.jpg",
    "cloudPct": 33,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -58,12 +58,12 @@
    "hv": "2026-07-09_hv.png",
    "meanHH": -5.77,
    "meanHV": -14.24,
-   "waterKm2": 2203.5,
+   "waterKm2": 2203.1,
+   "waterHiKm2": 2710.7,
    "sceneShiftDb": null,
    "lossKm2": 47.3,
-   "gainKm2": 41.8,
+   "gainKm2": 41.9,
    "change": "2026-07-09_change.png",
-   "waterHiKm2": 2711.1,
    "optical": "2026-07-09_optical.jpg",
    "cloudPct": 62,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -78,11 +78,11 @@
    "meanHH": -5.35,
    "meanHV": -13.58,
    "waterKm2": 1481.1,
+   "waterHiKm2": 2308.9,
    "sceneShiftDb": null,
    "lossKm2": 11.0,
    "gainKm2": 197.1,
    "change": "2026-07-21_change.png",
-   "waterHiKm2": 2308.9,
    "optical": "2026-07-21_optical.jpg",
    "cloudPct": 100,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -97,11 +97,11 @@
    "meanHH": -5.33,
    "meanHV": -13.83,
    "waterKm2": 1114.9,
+   "waterHiKm2": 2022.0,
    "sceneShiftDb": null,
    "lossKm2": 27.3,
    "gainKm2": 478.3,
    "change": "2026-08-14_change.png",
-   "waterHiKm2": 2022.0,
    "optical": "2026-08-14_optical.jpg",
    "cloudPct": 99,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -116,11 +116,11 @@
    "meanHH": -5.81,
    "meanHV": -14.31,
    "waterKm2": 1169.1,
+   "waterHiKm2": 2206.5,
    "sceneShiftDb": null,
    "lossKm2": 21.0,
-   "gainKm2": 247.2,
+   "gainKm2": 247.1,
    "change": "2026-08-26_change.png",
-   "waterHiKm2": 2206.5,
    "optical": "2026-08-26_optical.jpg",
    "cloudPct": 53,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -135,11 +135,11 @@
    "meanHH": -5.53,
    "meanHV": -14.33,
    "waterKm2": 1630.9,
+   "waterHiKm2": 2499.5,
    "sceneShiftDb": null,
    "lossKm2": 16.1,
    "gainKm2": 65.8,
    "change": "2026-09-07_change.png",
-   "waterHiKm2": 2499.5,
    "optical": "2026-09-07_optical.jpg",
    "cloudPct": 8,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -154,11 +154,11 @@
    "meanHH": -5.57,
    "meanHV": -14.42,
    "waterKm2": 643.8,
+   "waterHiKm2": 1805.4,
    "sceneShiftDb": null,
    "lossKm2": 16.0,
    "gainKm2": 603.1,
    "change": "2026-09-19_change.png",
-   "waterHiKm2": 1805.4,
    "optical": "2026-09-19_optical.jpg",
    "cloudPct": 6,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -173,11 +173,11 @@
    "meanHH": -5.26,
    "meanHV": -14.1,
    "waterKm2": 832.6,
+   "waterHiKm2": 1766.9,
    "sceneShiftDb": null,
    "lossKm2": 14.5,
    "gainKm2": 674.6,
    "change": "2026-10-01_change.png",
-   "waterHiKm2": 1766.9,
    "optical": "2026-10-01_optical.jpg",
    "cloudPct": 91,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -192,11 +192,11 @@
    "meanHH": -5.44,
    "meanHV": -14.2,
    "waterKm2": 693.1,
+   "waterHiKm2": 1826.8,
    "sceneShiftDb": null,
    "lossKm2": 28.1,
-   "gainKm2": 623.9,
+   "gainKm2": 623.6,
    "change": "2026-10-13_change.png",
-   "waterHiKm2": 1826.8,
    "optical": "2026-10-13_optical.jpg",
    "cloudPct": 49,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
@@ -211,14 +211,33 @@
    "meanHH": -5.7,
    "meanHV": -14.33,
    "waterKm2": 776.1,
+   "waterHiKm2": 1844.8,
    "sceneShiftDb": null,
    "lossKm2": 35.2,
    "gainKm2": 664.1,
    "change": "2026-10-25_change.png",
-   "waterHiKm2": 1844.8,
    "optical": "2026-10-25_optical.jpg",
    "cloudPct": 13,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-11-06",
+   "granule": "NISAR_L2_PR_GCOV_035_018_D_074_2005_DHDH_A_20261106T110140_20261106T110215_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-11-06_hh.png",
+   "hv": "2026-11-06_hv.png",
+   "meanHH": -4.97,
+   "meanHV": -13.67,
+   "waterKm2": 726.8,
+   "waterHiKm2": 1567.8,
+   "sceneShiftDb": null,
+   "lossKm2": 16.7,
+   "gainKm2": 1275.1,
+   "change": "2026-11-06_change.png",
+   "optical": "2026-11-06_optical.jpg",
+   "cloudPct": 100,
+   "opticalLayer": "VIIRS_NOAA21_CorrectedReflectance_TrueColor"
   }
  ],
  "extentKm": [
@@ -248,7 +267,8 @@
  "optical": {
   "source": "NASA GIBS, Corrected Reflectance (True Color)",
   "sensors": [
-   "VIIRS NOAA20"
+   "VIIRS NOAA20",
+   "VIIRS NOAA21"
   ],
   "pixelM": 250,
   "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
