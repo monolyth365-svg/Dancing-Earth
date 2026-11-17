@@ -551,8 +551,32 @@
    "optical": "2026-10-27_optical.jpg",
    "cloudPct": 0,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-11-08",
+   "granule": "NISAR_L2_PR_GCOV_035_042_D_070_4005_DHDH_A_20261108T025639_20261108T025714_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-11-08_hh.png",
+   "hv": "2026-11-08_hv.png",
+   "meanHH": -8.11,
+   "meanHV": -13.92,
+   "waterKm2": 0.0,
+   "sceneShiftDb": null,
+   "lossKm2": 2.4,
+   "gainKm2": 1.2,
+   "change": "2026-11-08_change.png",
+   "optical": "2026-11-08_optical.jpg",
+   "cloudPct": 0,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   }
  ],
+ "extentKm": [
+  14.93,
+  15.0
+ ],
+ "validKm2": 223.9,
+ "unstableKm2": null,
  "analysis": {
   "pol": "HH",
   "scaleDb": 8,
@@ -571,12 +595,14 @@
    "gain": "#ff9628"
   }
  },
- "extentKm": [
-  14.93,
-  15.0
- ],
- "validKm2": 223.9,
- "unstableKm2": null,
+ "optical": {
+  "source": "NASA GIBS, Corrected Reflectance (True Color)",
+  "sensors": [
+   "VIIRS NOAA20"
+  ],
+  "pixelM": 250,
+  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
+ },
  "cube": {
   "file": "cube.bin",
   "size": 128,
@@ -586,13 +612,5 @@
   ],
   "scale": 100,
   "nodata": -32768
- },
- "optical": {
-  "source": "NASA GIBS, Corrected Reflectance (True Color)",
-  "sensors": [
-   "VIIRS NOAA20"
-  ],
-  "pixelM": 250,
-  "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
  }
 }
