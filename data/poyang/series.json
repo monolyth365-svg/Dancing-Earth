@@ -237,7 +237,26 @@
    "change": "2026-11-06_change.png",
    "optical": "2026-11-06_optical.jpg",
    "cloudPct": 100,
-   "opticalLayer": "VIIRS_NOAA21_CorrectedReflectance_TrueColor"
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-11-18",
+   "granule": "NISAR_L2_PR_GCOV_036_018_D_074_2005_DHDH_A_20261118T110141_20261118T110216_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-11-18_hh.png",
+   "hv": "2026-11-18_hv.png",
+   "meanHH": -5.2,
+   "meanHV": -13.83,
+   "waterKm2": 1117.9,
+   "waterHiKm2": 1677.1,
+   "sceneShiftDb": null,
+   "lossKm2": 13.8,
+   "gainKm2": 1098.6,
+   "change": "2026-11-18_change.png",
+   "optical": "2026-11-18_optical.jpg",
+   "cloudPct": 85,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   }
  ],
  "extentKm": [
@@ -267,8 +286,7 @@
  "optical": {
   "source": "NASA GIBS, Corrected Reflectance (True Color)",
   "sensors": [
-   "VIIRS NOAA20",
-   "VIIRS NOAA21"
+   "VIIRS NOAA20"
   ],
   "pixelM": 250,
   "cloudRule": "bright (mean RGB > 135) and colourless (max \u2212 min < 45) pixels"
