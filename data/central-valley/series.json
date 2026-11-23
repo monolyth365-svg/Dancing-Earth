@@ -569,6 +569,24 @@
    "optical": "2026-11-08_optical.jpg",
    "cloudPct": 0,
    "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
+  },
+  {
+   "date": "2026-11-20",
+   "granule": "NISAR_L2_PR_GCOV_036_042_D_070_4005_DHDH_A_20261120T025640_20261120T025715_P05036_N_F_J_001",
+   "mode": "DHDH",
+   "grid": "frequencyB 80 m",
+   "hh": "2026-11-20_hh.png",
+   "hv": "2026-11-20_hv.png",
+   "meanHH": -6.65,
+   "meanHV": -13.29,
+   "waterKm2": 0.0,
+   "sceneShiftDb": null,
+   "lossKm2": 1.0,
+   "gainKm2": 13.3,
+   "change": "2026-11-20_change.png",
+   "optical": "2026-11-20_optical.jpg",
+   "cloudPct": 100,
+   "opticalLayer": "VIIRS_NOAA20_CorrectedReflectance_TrueColor"
   }
  ],
  "extentKm": [
